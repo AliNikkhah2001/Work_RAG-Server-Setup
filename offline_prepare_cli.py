@@ -27,6 +27,7 @@ from rich.align import Align
 from rich.prompt import Confirm, Prompt, IntPrompt
 from rich.text import Text
 from rich.layout import Layout
+from rich.columns import Columns
 
 # ======================== CONFIGURATION ========================
 BASE_DIR = Path("./offline-prep")
@@ -100,26 +101,24 @@ SAMPLE_PROJECTS = [
     {"name": "prod-rag-systems", "url": "https://github.com/vishalanandl177/production-rag-systems-engineering.git"}
 ]
 
-# ======================== MATRIX STYLE ASCII ART ========================
+# ======================== MATRIX STYLE ASCII ART (SMALLER) ========================
 class MatrixASCII:
-    """Matrix-style animated ASCII art that runs in the background"""
+    """Matrix-style animated ASCII art (compact version)"""
     
     def __init__(self):
         self.running = False
         self.thread = None
         self.current_art = ""
         self.lock = threading.Lock()
-        self.width = 50
-        self.height = 10
+        self.width = 40  # Smaller width
+        self.height = 5  # Smaller height
         
         # Matrix characters
         self.chars = [
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
             'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-            'U', 'V', 'W', 'X', 'Y', 'Z',
-            '░', '▒', '▓', '█', '▄', '▀', '■', '□', '◆', '◇',
-            '▲', '▼', '◄', '►', '★', '☆', '♥', '♦', '♣', '♠'
+            'U', 'V', 'W', 'X', 'Y', 'Z'
         ]
         
         # Color codes
@@ -150,13 +149,13 @@ class MatrixASCII:
             self.columns.append({
                 'x': i,
                 'y': random.randint(0, self.height),
-                'speed': random.randint(1, 4),
-                'length': random.randint(3, 8),
+                'speed': random.randint(1, 3),
+                'length': random.randint(2, 5),
                 'char': random.choice(self.chars)
             })
     
     def generate_art(self):
-        """Generate a Matrix-style frame"""
+        """Generate a compact Matrix-style frame"""
         # Update columns
         matrix = [[' ' for _ in range(self.width)] for _ in range(self.height)]
         
@@ -188,18 +187,11 @@ class MatrixASCII:
             line = ''.join(row)
             art_lines.append(line)
         
-        # Add border
-        border_top = f"{self.colors['green']}╔{'═' * (self.width + 2)}╗{self.colors['end']}"
-        border_bottom = f"{self.colors['green']}╚{'═' * (self.width + 2)}╝{self.colors['end']}"
-        
-        art = border_top + '\n'
+        # Simple compact border
+        art = f"{self.colors['green']}╔{'═' * (self.width + 2)}╗{self.colors['end']}\n"
         for line in art_lines:
             art += f"{self.colors['green']}║{self.colors['end']}{line}{self.colors['green']}║{self.colors['end']}\n"
-        art += border_bottom
-        
-        # Add title
-        title = f"{self.colors['bold']}{self.colors['bright_green']}░▒▓█ MATRIX DOWNLOADER █▓▒░{self.colors['end']}"
-        art = title + '\n' + art
+        art += f"{self.colors['green']}╚{'═' * (self.width + 2)}╝{self.colors['end']}"
         
         return art
     
@@ -218,21 +210,22 @@ class MatrixASCII:
         try:
             with open(LOG_FILE, 'r') as f:
                 lines = f.readlines()
-                # Keep last 10 lines, but format them nicely
                 self.log_lines = lines[-10:] if lines else ["[INFO] No logs yet..."]
         except Exception:
             self.log_lines = ["[INFO] Waiting for logs..."]
     
     def get_log_tail(self):
-        """Get formatted log tail"""
+        """Get formatted log tail (last 5 lines for compact display)"""
         with self.log_lock:
             if not self.log_lines:
                 return "[INFO] No logs yet..."
             
-            # Format and colorize logs
+            # Format and colorize logs - show last 5 lines only
             formatted = []
-            for line in self.log_lines[-8:]:  # Show last 8 lines
+            for line in self.log_lines[-5:]:
                 line = line.strip()
+                if not line:
+                    continue
                 if '[ERROR]' in line:
                     formatted.append(f"[bold red]{line}[/bold red]")
                 elif '[WARNING]' in line:
@@ -357,9 +350,9 @@ def interactive_selection():
 
 # ======================== ENHANCED UI DASHBOARD ========================
 def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name="", retry_count=0, log_tail=""):
-    """Generates the split live-dashboard with Matrix art and log tail"""
+    """Generates the split live-dashboard with compact Matrix art and log tail"""
     
-    # Main metrics table
+    # Main metrics table (left side)
     table = Table(title="📊 Live Installation Summary", box=box.ROUNDED, expand=True)
     table.add_column("Metric", style="cyan", justify="left")
     table.add_column("Count", style="magenta", justify="right")
@@ -376,48 +369,58 @@ def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name=""
     if phase_name:
         table.add_row("Current Phase", f"[bold yellow]{phase_name}[/bold yellow]")
     
-    # Failed items list
+    # Failed items list (right side, compact)
     failed_items = state.get_failed_items()
     if failed_items:
-        fail_table = Table(box=box.MINIMAL, expand=True)
-        fail_table.add_column("⚠️ Failed Items", style="red")
-        for key in list(failed_items.keys())[:3]:
-            retries = failed_items[key].get("retries", 0)
-            fail_table.add_row(f"  • {key[:40]} (retries: {retries})")
+        fail_text = "\n".join([f"  • {key[:35]} (retries: {v.get('retries', 0)})" 
+                               for key, v in list(failed_items.items())[:3]])
         if len(failed_items) > 3:
-            fail_table.add_row(f"  • ... and {len(failed_items) - 3} more")
+            fail_text += f"\n  • ... and {len(failed_items) - 3} more"
+        fail_panel = Panel(fail_text, title="⚠️ Failed Items", border_style="red", box=box.ROUNDED)
     else:
-        fail_table = Table(box=box.MINIMAL, expand=True)
-        fail_table.add_row("[green]✓ No failures[/green]")
+        fail_panel = Panel("[green]✓ No failures[/green]", title="✅ Status", border_style="green", box=box.ROUNDED)
     
     # Current task info
     task_panel = Panel(
-        f"[bold yellow]Current Task:[/bold yellow] {current_task or 'Waiting...'}",
+        f"[bold yellow]{current_task or 'Waiting...'}[/bold yellow]",
+        title="Current Task",
         border_style="yellow",
         box=box.ROUNDED
     )
     
-    # Log tail panel
+    # Matrix art panel (compact)
+    art_panel = Panel(
+        Align.center(matrix_art or "[dim]Initializing Matrix...[/dim]"),
+        title="🖥️ Matrix Downloader",
+        border_style="green",
+        box=box.HEAVY,
+        height=9  # Fixed height
+    )
+    
+    # Log tail panel (always visible at bottom)
     log_panel = Panel(
         log_tail or "[dim]Waiting for logs...[/dim]",
         title="📋 Live Log Tail",
         border_style="blue",
         box=box.ROUNDED,
-        height=8
+        height=6  # Fixed height
     )
     
-    # Matrix art panel
-    art_panel = Panel(
-        Align.center(matrix_art or "[dim]Initializing Matrix...[/dim]"),
-        title="🖥️ Matrix Downloader",
-        border_style="green",
-        box=box.HEAVY
-    )
+    # Combine components in a vertical layout
+    # Top: Metrics and Status (2 columns)
+    top_row = Group(table, fail_panel)  # This creates a horizontal grouping
     
-    # Combine components
-    components = [table, fail_table, task_panel, art_panel, log_panel, progress_ui]
+    # Middle: Task + Matrix
+    middle_row = Group(task_panel, art_panel)
     
-    return Group(*components)
+    # Bottom: Log tail
+    bottom_row = log_panel
+    
+    # Progress at the very bottom
+    progress_row = progress_ui
+    
+    # Combine everything
+    return Group(top_row, middle_row, bottom_row, progress_row)
 
 # ======================== CORE LOGIC ========================
 def run_cmd(cmd, max_retries=3, timeout=600, cwd=None):
@@ -599,6 +602,10 @@ def main(interactive, skip_matrix, auto_retry):
                         pending_tasks.append(task_tuple)
                         break
             metrics["total"] = len(pending_tasks)
+    
+    if metrics["total"] == 0:
+        console.print("[green]All tasks completed successfully! 🎉[/green]")
+        return
     
     overall_task = progress_ui.add_task("[bold cyan]Total Progress", total=metrics["total"], completed=0)
     phase_task = progress_ui.add_task("[bold magenta]Current Phase", total=0)
