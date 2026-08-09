@@ -25,6 +25,8 @@ from rich.console import Group, Console
 from rich import box
 from rich.align import Align
 from rich.prompt import Confirm, Prompt, IntPrompt
+from rich.text import Text
+from rich.layout import Layout
 
 # ======================== CONFIGURATION ========================
 BASE_DIR = Path("./offline-prep")
@@ -32,6 +34,7 @@ STATE_FILE = BASE_DIR / ".state.json"
 PROJECTS_DIR = BASE_DIR / "sample-projects"
 REPORT_FILE = BASE_DIR / "COMPREHENSIVE_REPORT.md"
 RETRY_QUEUE = BASE_DIR / ".retry_queue.json"
+LOG_FILE = BASE_DIR / "download.log"
 
 DIRS = {
     "docker": BASE_DIR / "docker-images",
@@ -47,7 +50,7 @@ PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(BASE_DIR / "download.log")]
+    handlers=[logging.FileHandler(LOG_FILE)]
 )
 logger = logging.getLogger(__name__)
 console = Console()
@@ -97,142 +100,164 @@ SAMPLE_PROJECTS = [
     {"name": "prod-rag-systems", "url": "https://github.com/vishalanandl177/production-rag-systems-engineering.git"}
 ]
 
-# ======================== ASCII ART INFINITE PROGRESS ========================
-class ASCIIArtProgress:
-    """Threaded ASCII art generator that runs in the background"""
+# ======================== MATRIX STYLE ASCII ART ========================
+class MatrixASCII:
+    """Matrix-style animated ASCII art that runs in the background"""
     
     def __init__(self):
         self.running = False
         self.thread = None
         self.current_art = ""
         self.lock = threading.Lock()
-        self.p = 0
-        self.direction = 1
-        self.bar_idx = 0
-        self.spin_pos = 0
+        self.width = 50
+        self.height = 10
         
-        # ANSI color codes
+        # Matrix characters
+        self.chars = [
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+            'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+            'U', 'V', 'W', 'X', 'Y', 'Z',
+            '░', '▒', '▓', '█', '▄', '▀', '■', '□', '◆', '◇',
+            '▲', '▼', '◄', '►', '★', '☆', '♥', '♦', '♣', '♠'
+        ]
+        
+        # Color codes
         self.colors = {
-            'red': '\033[91m',
             'green': '\033[92m',
-            'yellow': '\033[93m',
-            'blue': '\033[94m',
-            'magenta': '\033[95m',
-            'cyan': '\033[96m',
+            'light_green': '\033[92m',
+            'dark_green': '\033[32m',
+            'bright_green': '\033[96m',
             'white': '\033[97m',
+            'yellow': '\033[93m',
             'bold': '\033[1m',
-            'blink': '\033[5m',
+            'dim': '\033[2m',
             'end': '\033[0m'
         }
         
-        self.bar_chars = [
-            ['█', '░'],
-            ['▓', '▒'],
-            ['■', '□'],
-            ['●', '○'],
-            ['◄', '►'],
-            ['▀', '▄'],
-            ['┃', '━'],
-        ]
+        # Matrix columns
+        self.columns = []
+        self.init_columns()
         
-        self.spinners = [
-            ['|', '/', '-', '\\'],
-            ['◢', '◣', '◤', '◥'],
-            ['←', '↖', '↑', '↗', '→', '↘', '↓', '↙'],
-            ['┤', '┘', '┴', '└', '├', '┌', '┬', '┐'],
-        ]
+        # Log tail
+        self.log_lines = []
+        self.log_lock = threading.Lock()
         
-        self.tasks = [
-            "COMPILING KERNEL",
-            "DECRYPTING FILES",
-            "RENDERING FRAMES",
-            "INDEXING DATA",
-            "SYNCHRONIZING",
-            "OPTIMIZING CODE",
-            "CALCULATING PI",
-            "DEFRAGMENTING",
-            "GENERATING KEYS",
-            "LOADING MODULES"
-        ]
-        
-        self.status_messages = [
-            "PROCESSING...",
-            "WORKING...",
-            "IN PROGRESS...",
-            "CALCULATING...",
-            "LOADING...",
-            "EXECUTING..."
-        ]
-    
-    def get_color(self):
-        return random.choice([
-            self.colors['red'], self.colors['green'], self.colors['yellow'],
-            self.colors['blue'], self.colors['magenta'], self.colors['cyan']
-        ])
+    def init_columns(self):
+        """Initialize matrix columns with random speeds"""
+        self.columns = []
+        for i in range(self.width):
+            self.columns.append({
+                'x': i,
+                'y': random.randint(0, self.height),
+                'speed': random.randint(1, 4),
+                'length': random.randint(3, 8),
+                'char': random.choice(self.chars)
+            })
     
     def generate_art(self):
-        """Generate a single frame of ASCII art"""
-        # Update progress with bounce
-        self.p += self.direction * random.randint(1, 3)
-        if self.p >= 100:
-            self.p = 100
-            self.direction = -1
-            self.bar_idx = (self.bar_idx + 1) % len(self.bar_chars)
-        elif self.p <= 0:
-            self.p = 0
-            self.direction = 1
-            self.bar_idx = (self.bar_idx + 1) % len(self.bar_chars)
+        """Generate a Matrix-style frame"""
+        # Update columns
+        matrix = [[' ' for _ in range(self.width)] for _ in range(self.height)]
         
-        self.spin_pos = (self.spin_pos + 1) % len(self.spinners[0])
+        for col in self.columns:
+            # Move column down
+            col['y'] = (col['y'] + col['speed']) % (self.height + col['length'])
+            
+            # Draw column
+            for i in range(col['length']):
+                y_pos = (col['y'] - i) % self.height
+                if 0 <= y_pos < self.height:
+                    if i == 0:
+                        # Head of the column (bright)
+                        matrix[y_pos][col['x']] = f"{self.colors['bright_green']}{random.choice(self.chars)}{self.colors['end']}"
+                    elif i < col['length'] // 2:
+                        # Body (green)
+                        matrix[y_pos][col['x']] = f"{self.colors['green']}{random.choice(self.chars)}{self.colors['end']}"
+                    else:
+                        # Tail (dim)
+                        matrix[y_pos][col['x']] = f"{self.colors['dim']}{self.colors['dark_green']}{random.choice(self.chars)}{self.colors['end']}"
+            
+            # Randomly change character
+            if random.random() < 0.3:
+                col['char'] = random.choice(self.chars)
         
-        # Build the bar
-        filled = int(self.p / 2)
-        empty = 50 - filled
-        bar_style = self.bar_chars[self.bar_idx]
+        # Build the ASCII art string
+        art_lines = []
+        for row in matrix:
+            line = ''.join(row)
+            art_lines.append(line)
         
-        bar = f"{self.get_color()}{bar_style[0] * filled}{self.colors['end']}"
-        bar += f"{self.colors['white']}{bar_style[1] * empty}{self.colors['end']}"
+        # Add border
+        border_top = f"{self.colors['green']}╔{'═' * (self.width + 2)}╗{self.colors['end']}"
+        border_bottom = f"{self.colors['green']}╚{'═' * (self.width + 2)}╝{self.colors['end']}"
         
-        # Generate random status
-        task = random.choice(self.tasks)
-        status = random.choice(self.status_messages)
-        cpu = random.randint(1, 99)
-        mem = random.randint(1, 99)
+        art = border_top + '\n'
+        for line in art_lines:
+            art += f"{self.colors['green']}║{self.colors['end']}{line}{self.colors['green']}║{self.colors['end']}\n"
+        art += border_bottom
         
-        # Build the ASCII art - condensed version for panel display
-        art = f"""{self.colors['bold']}{self.get_color()}╔══════════════════════════════════════════════╗{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.colors['blink']}{self.get_color()}░░░ INFINITE PROGRESS ░░░{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════╣{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}[{self.colors['end']}{bar}{self.get_color()}]{self.colors['end']} {self.get_color()}{self.p:3d}%{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════╣{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}▶ {self.colors['end']}{self.get_color()}{self.spinners[0][self.spin_pos]}{self.colors['end']}  {self.get_color()}{task[:20]}{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}⚡ {self.colors['end']}{self.get_color()}CPU:{cpu:2d}% MEM:{mem:2d}%{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}⌛ {self.colors['end']}{self.colors['red']}∞ ETA{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╚══════════════════════════════════════════════╝{self.colors['end']}"""
+        # Add title
+        title = f"{self.colors['bold']}{self.colors['bright_green']}░▒▓█ MATRIX DOWNLOADER █▓▒░{self.colors['end']}"
+        art = title + '\n' + art
+        
         return art
     
     def _run(self):
-        """Background thread that continuously updates ASCII art"""
+        """Background thread that continuously updates Matrix art"""
         while self.running:
             with self.lock:
                 self.current_art = self.generate_art()
-            time.sleep(random.uniform(0.08, 0.2))
+                # Update log tail
+                with self.log_lock:
+                    self.update_log_tail()
+            time.sleep(random.uniform(0.05, 0.15))
+    
+    def update_log_tail(self):
+        """Read last few lines from log file"""
+        try:
+            with open(LOG_FILE, 'r') as f:
+                lines = f.readlines()
+                # Keep last 10 lines, but format them nicely
+                self.log_lines = lines[-10:] if lines else ["[INFO] No logs yet..."]
+        except Exception:
+            self.log_lines = ["[INFO] Waiting for logs..."]
+    
+    def get_log_tail(self):
+        """Get formatted log tail"""
+        with self.log_lock:
+            if not self.log_lines:
+                return "[INFO] No logs yet..."
+            
+            # Format and colorize logs
+            formatted = []
+            for line in self.log_lines[-8:]:  # Show last 8 lines
+                line = line.strip()
+                if '[ERROR]' in line:
+                    formatted.append(f"[bold red]{line}[/bold red]")
+                elif '[WARNING]' in line:
+                    formatted.append(f"[bold yellow]{line}[/bold yellow]")
+                elif '[INFO]' in line:
+                    formatted.append(f"[cyan]{line}[/cyan]")
+                else:
+                    formatted.append(f"[white]{line}[/white]")
+            return '\n'.join(formatted)
     
     def start(self):
-        """Start the ASCII art thread"""
+        """Start the Matrix thread"""
         if not self.running:
             self.running = True
             self.thread = threading.Thread(target=self._run, daemon=True)
             self.thread.start()
     
     def stop(self):
-        """Stop the ASCII art thread"""
+        """Stop the Matrix thread"""
         self.running = False
         if self.thread:
             self.thread.join(timeout=1)
     
     def get_art(self):
-        """Get the current ASCII art frame"""
+        """Get the current Matrix art frame"""
         with self.lock:
             return self.current_art
 
@@ -264,12 +289,10 @@ class StateManager:
         }
         if status == "failed":
             self.state["items"][key]["retries"] += 1
-            # Add to retry queue if under max retries
             if self.state["items"][key]["retries"] <= self.state.get("max_retries", 3):
                 if key not in self.retry_queue:
                     self.retry_queue.append(key)
         elif status == "completed":
-            # Remove from retry queue if completed
             if key in self.retry_queue:
                 self.retry_queue.remove(key)
         self.save()
@@ -281,7 +304,6 @@ class StateManager:
         return {k: v for k, v in self.state["items"].items() if v.get("status") == "failed"}
     
     def get_pending_items(self):
-        """Get items that haven't been attempted yet"""
         all_items = set()
         for img, _ in DOCKER_IMAGES: all_items.add(f"docker_{img}")
         for pkg in PYTHON_PACKAGES: all_items.add(f"pip_{pkg}")
@@ -293,7 +315,6 @@ class StateManager:
         return list(all_items - completed)
     
     def get_retry_queue(self):
-        """Get items that need retrying"""
         retry_items = []
         for key in self.retry_queue:
             if key in self.state["items"]:
@@ -311,23 +332,19 @@ def interactive_selection():
     """Allow user to select/modify packages before installation"""
     console.print("\n[bold cyan]🔧 INTERACTIVE CONFIGURATION[/bold cyan]\n")
     
-    # Show current state summary
     total = len(state.state["items"])
     completed = sum(1 for v in state.state["items"].values() if v.get("status") == "completed")
     failed = sum(1 for v in state.state["items"].values() if v.get("status") == "failed")
     
     console.print(f"[yellow]Current progress: {completed}/{total} completed, {failed} failed[/yellow]\n")
     
-    # Ask if user wants to continue previous session
     if total > 0:
         if not Confirm.ask("[cyan]Continue previous installation session?[/cyan]", default=True):
-            # Reset state
             state.state = {"items": {}, "retry_count": 0, "max_retries": 3}
             state.retry_queue = []
             state.save()
             console.print("[green]State reset[/green]")
     
-    # Configure retry settings
     max_retries = IntPrompt.ask(
         "[cyan]Max retry attempts for failed downloads[/cyan]",
         default=state.state.get("max_retries", 3),
@@ -336,30 +353,11 @@ def interactive_selection():
     state.state["max_retries"] = max_retries
     state.save()
     
-    # Show available tasks
-    pending = state.get_pending_items()
-    if pending:
-        console.print(f"\n[green]📋 {len(pending)} tasks pending[/green]")
-        if not Confirm.ask("[cyan]Install all pending tasks?[/cyan]", default=True):
-            # If not, we'll continue with all tasks
-            pass
-    
-    # Show retry queue
-    retry_items = state.get_retry_queue()
-    if retry_items:
-        console.print(f"\n[yellow]🔄 {len(retry_items)} tasks in retry queue[/yellow]")
-        if Confirm.ask("[cyan]Retry failed tasks now?[/cyan]", default=True):
-            # This will be handled in the main loop
-            pass
-    
-    return {
-        'max_retries': max_retries,
-        'retry_failed': True
-    }
+    return {'max_retries': max_retries}
 
 # ======================== ENHANCED UI DASHBOARD ========================
-def generate_layout(progress_ui, ascii_art=None, current_task="", phase_name="", retry_count=0):
-    """Generates the split live-dashboard with ASCII art integration"""
+def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name="", retry_count=0, log_tail=""):
+    """Generates the split live-dashboard with Matrix art and log tail"""
     
     # Main metrics table
     table = Table(title="📊 Live Installation Summary", box=box.ROUNDED, expand=True)
@@ -378,16 +376,16 @@ def generate_layout(progress_ui, ascii_art=None, current_task="", phase_name="",
     if phase_name:
         table.add_row("Current Phase", f"[bold yellow]{phase_name}[/bold yellow]")
     
-    # Failed items list (if any)
+    # Failed items list
     failed_items = state.get_failed_items()
     if failed_items:
         fail_table = Table(box=box.MINIMAL, expand=True)
         fail_table.add_column("⚠️ Failed Items", style="red")
-        for key in list(failed_items.keys())[:5]:
+        for key in list(failed_items.keys())[:3]:
             retries = failed_items[key].get("retries", 0)
-            fail_table.add_row(f"  • {key} (retries: {retries})")
-        if len(failed_items) > 5:
-            fail_table.add_row(f"  • ... and {len(failed_items) - 5} more")
+            fail_table.add_row(f"  • {key[:40]} (retries: {retries})")
+        if len(failed_items) > 3:
+            fail_table.add_row(f"  • ... and {len(failed_items) - 3} more")
     else:
         fail_table = Table(box=box.MINIMAL, expand=True)
         fail_table.add_row("[green]✓ No failures[/green]")
@@ -399,21 +397,25 @@ def generate_layout(progress_ui, ascii_art=None, current_task="", phase_name="",
         box=box.ROUNDED
     )
     
+    # Log tail panel
+    log_panel = Panel(
+        log_tail or "[dim]Waiting for logs...[/dim]",
+        title="📋 Live Log Tail",
+        border_style="blue",
+        box=box.ROUNDED,
+        height=8
+    )
+    
+    # Matrix art panel
+    art_panel = Panel(
+        Align.center(matrix_art or "[dim]Initializing Matrix...[/dim]"),
+        title="🖥️ Matrix Downloader",
+        border_style="green",
+        box=box.HEAVY
+    )
+    
     # Combine components
-    components = [table, fail_table, task_panel]
-    
-    # Add ASCII art panel if available
-    if ascii_art:
-        art_panel = Panel(
-            Align.center(ascii_art),
-            title="🎨 Infinite ASCII Progress",
-            border_style="magenta",
-            box=box.HEAVY
-        )
-        components.append(art_panel)
-    
-    # Add progress bar
-    components.append(progress_ui)
+    components = [table, fail_table, task_panel, art_panel, log_panel, progress_ui]
     
     return Group(*components)
 
@@ -422,7 +424,9 @@ def run_cmd(cmd, max_retries=3, timeout=600, cwd=None):
     for attempt in range(1, max_retries + 1):
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd)
-            if proc.returncode == 0: return True, proc.stdout
+            if proc.returncode == 0: 
+                logger.info(f"Command succeeded: {' '.join(cmd[:2])}")
+                return True, proc.stdout
             logger.warning(f"Attempt {attempt} failed: {proc.stderr.strip()[:200]}")
         except subprocess.TimeoutExpired:
             logger.warning(f"Timeout on attempt {attempt}")
@@ -434,12 +438,15 @@ def run_cmd(cmd, max_retries=3, timeout=600, cwd=None):
     return False, "Max retries exceeded"
 
 def pull_docker(image):
+    logger.info(f"Pulling Docker image: {image}")
     success, err = run_cmd(["docker", "pull", image], max_retries=3, timeout=1200)
     if not success: return False, err
     tar_path = DIRS["docker"] / f"{image.replace('/', '_').replace(':', '_')}.tar"
+    logger.info(f"Saving Docker image to: {tar_path}")
     return run_cmd(["docker", "save", "-o", str(tar_path), image], max_retries=2, timeout=600)
 
 def download_pip(pkg, cu124=False):
+    logger.info(f"Downloading Python package: {pkg} (CUDA: {cu124})")
     dest = DIRS["python_cu124"] if cu124 else DIRS["python"]
     cmd = ["uv", "pip", "download", pkg, "-d", str(dest)]
     if cu124: cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
@@ -452,6 +459,7 @@ def download_pip(pkg, cu124=False):
     return run_cmd(fallback, max_retries=2)
 
 def download_hf_model(repo_id):
+    logger.info(f"Downloading HuggingFace model: {repo_id}")
     dest_path = DIRS["models_hf"] / repo_id.replace("/", "_")
     cmd = ["huggingface-cli", "download", repo_id, "--local-dir", str(dest_path), "--local-dir-use-symlinks", "False", "--resume-download"]
     return run_cmd(cmd, max_retries=5, timeout=7200)
@@ -463,6 +471,7 @@ def test_venv_imports(venv_python, packages):
 
 def setup_project(project):
     name, url = project["name"], project["url"]
+    logger.info(f"Setting up project: {name}")
     dest = PROJECTS_DIR / name
     
     if not dest.exists():
@@ -524,9 +533,9 @@ def generate_report():
 # ======================== MAIN ORCHESTRATOR ========================
 @click.command()
 @click.option('--interactive', is_flag=True, help='Interactive selection of components')
-@click.option('--skip-ascii', is_flag=True, help='Skip ASCII art animation')
+@click.option('--skip-matrix', is_flag=True, help='Skip Matrix ASCII animation')
 @click.option('--auto-retry', is_flag=True, help='Automatically retry failed tasks without prompting')
-def main(interactive, skip_ascii, auto_retry):
+def main(interactive, skip_matrix, auto_retry):
     # Interactive configuration
     if interactive:
         config = interactive_selection()
@@ -536,10 +545,10 @@ def main(interactive, skip_ascii, auto_retry):
     else:
         max_retries = state.state.get("max_retries", 3)
     
-    # Start ASCII art thread
-    ascii_art = ASCIIArtProgress()
-    if not skip_ascii:
-        ascii_art.start()
+    # Start Matrix thread
+    matrix = MatrixASCII()
+    if not skip_matrix:
+        matrix.start()
     
     # Setup progress UI
     progress_ui = Progress(
@@ -571,23 +580,19 @@ def main(interactive, skip_ascii, auto_retry):
         if not state.is_completed(key):
             pending_tasks.append(task_tuple)
     
-    # Add retry queue tasks (if not already in pending)
+    # Add retry queue tasks
     retry_items = state.get_retry_queue()
     for key in retry_items:
-        # Find the task tuple for this key
         for task_tuple in all_tasks:
             if task_tuple[1] == key and task_tuple not in pending_tasks:
                 pending_tasks.append(task_tuple)
                 break
     
-    # Calculate total tasks
     metrics["total"] = len(pending_tasks)
     
-    # If no tasks pending, check if we need to retry
     if metrics["total"] == 0 and retry_items:
         console.print("[yellow]All tasks completed, but some failed items in retry queue[/yellow]")
         if Confirm.ask("[cyan]Retry failed tasks?[/cyan]", default=True):
-            # Add retry items to pending
             for key in retry_items:
                 for task_tuple in all_tasks:
                     if task_tuple[1] == key:
@@ -622,73 +627,52 @@ def main(interactive, skip_ascii, auto_retry):
             
         progress_ui.advance(overall_task)
         progress_ui.advance(phase_task)
-        
-        # Check if we should auto-retry
-        retry_items = state.get_retry_queue()
-        if retry_items and auto_retry:
-            # Process retry queue immediately
-            process_retry_queue()
 
-    def process_retry_queue():
-        """Process items in the retry queue"""
-        retry_items = state.get_retry_queue()
-        if not retry_items:
-            return
-        
-        # Add retry items to pending tasks
-        for key in retry_items:
-            for task_tuple in all_tasks:
-                if task_tuple[1] == key:
-                    # Add back to pending
-                    if task_tuple not in pending_tasks:
-                        pending_tasks.append(task_tuple)
-                    break
-
-    # Main execution loop with Live display
+    # Main execution loop
     try:
         with Live(generate_layout(progress_ui, 
-                                 ascii_art.get_art() if not skip_ascii else None,
+                                 matrix.get_art() if not skip_matrix else None,
                                  "Waiting to start...",
-                                 "Initializing"),
+                                 "Initializing",
+                                 len(state.get_retry_queue()),
+                                 matrix.get_log_tail() if not skip_matrix else ""),
                   refresh_per_second=10, 
                   screen=True) as live:
             
-            # Process all pending tasks
             while pending_tasks:
-                # Get next task
                 task_tuple = pending_tasks.pop(0)
                 task_type = task_tuple[0]
                 key = task_tuple[1]
                 
-                # Skip if already completed
                 if state.is_completed(key):
                     progress_ui.advance(overall_task)
                     continue
                 
-                # Execute based on type
                 if task_type == "docker":
-                    phase_name = f"Docker Images ({len([t for t in all_tasks if t[0]=='docker'])})"
+                    phase_name = f"Docker Images"
                     progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", 
                                      total=len([t for t in all_tasks if t[0]=='docker']), completed=0)
                     img = task_tuple[2]
                     live.update(generate_layout(progress_ui, 
-                                               ascii_art.get_art() if not skip_ascii else None,
-                                               f"docker: {img}",
+                                               matrix.get_art() if not skip_matrix else None,
+                                               f"docker: {img[:30]}",
                                                phase_name,
-                                               len(state.get_retry_queue())))
+                                               len(state.get_retry_queue()),
+                                               matrix.get_log_tail() if not skip_matrix else ""))
                     execute_with_ui(key, "Docker", pull_docker, img)
                     
                 elif task_type in ["pip", "pip_cuda"]:
-                    phase_name = "Python Packages (CUDA)" if task_type == "pip_cuda" else "Python Packages"
+                    phase_name = "CUDA Packages" if task_type == "pip_cuda" else "Python Packages"
                     progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", 
                                      total=len([t for t in all_tasks if t[0]==task_type]), completed=0)
                     pkg = task_tuple[2]
                     cu124 = task_tuple[3] if len(task_tuple) > 3 else False
                     live.update(generate_layout(progress_ui, 
-                                               ascii_art.get_art() if not skip_ascii else None,
+                                               matrix.get_art() if not skip_matrix else None,
                                                f"{'cuda' if cu124 else 'pip'}: {pkg}",
                                                phase_name,
-                                               len(state.get_retry_queue())))
+                                               len(state.get_retry_queue()),
+                                               matrix.get_log_tail() if not skip_matrix else ""))
                     execute_with_ui(key, "Python_Libs" if not cu124 else "Python_Libs_CUDA", 
                                   download_pip, pkg, cu124)
                     
@@ -698,10 +682,11 @@ def main(interactive, skip_ascii, auto_retry):
                                      total=len([t for t in all_tasks if t[0]=='model']), completed=0)
                     repo = task_tuple[2]
                     live.update(generate_layout(progress_ui, 
-                                               ascii_art.get_art() if not skip_ascii else None,
-                                               f"model: {repo}",
+                                               matrix.get_art() if not skip_matrix else None,
+                                               f"model: {repo[:40]}",
                                                phase_name,
-                                               len(state.get_retry_queue())))
+                                               len(state.get_retry_queue()),
+                                               matrix.get_log_tail() if not skip_matrix else ""))
                     execute_with_ui(key, "Models", download_hf_model, repo)
                     
                 elif task_type == "project":
@@ -710,40 +695,28 @@ def main(interactive, skip_ascii, auto_retry):
                                      total=len([t for t in all_tasks if t[0]=='project']), completed=0)
                     proj = task_tuple[2]
                     live.update(generate_layout(progress_ui, 
-                                               ascii_art.get_art() if not skip_ascii else None,
+                                               matrix.get_art() if not skip_matrix else None,
                                                f"project: {proj['name']}",
                                                phase_name,
-                                               len(state.get_retry_queue())))
+                                               len(state.get_retry_queue()),
+                                               matrix.get_log_tail() if not skip_matrix else ""))
                     execute_with_ui(key, "Sample_Projects", setup_project, proj)
                 
-                # After each task, check if we need to add retries back to queue
-                if not auto_retry:
-                    retry_items = state.get_retry_queue()
-                    if retry_items:
-                        # Ask if user wants to retry now
-                        live.update(generate_layout(progress_ui, 
-                                                   ascii_art.get_art() if not skip_ascii else None,
-                                                   f"⚠️ {len(retry_items)} tasks failed",
-                                                   "Waiting for retry decision",
-                                                   len(retry_items)))
-                        # We'll handle this in the next loop iteration
-                        time.sleep(0.5)
-                
-                # If auto-retry is enabled, retry queue items will be processed immediately
+                # Auto-retry logic
                 if auto_retry and state.get_retry_queue():
-                    # Add retry items back to pending
                     for retry_key in state.get_retry_queue():
                         for task in all_tasks:
                             if task[1] == retry_key and task not in pending_tasks:
                                 pending_tasks.append(task)
                                 break
             
-            # Final update - all done
+            # Final update
             live.update(generate_layout(progress_ui, 
-                                       ascii_art.get_art() if not skip_ascii else None,
+                                       matrix.get_art() if not skip_matrix else None,
                                        "✅ All phases completed!",
                                        "Complete",
-                                       len(state.get_retry_queue())))
+                                       len(state.get_retry_queue()),
+                                       matrix.get_log_tail() if not skip_matrix else ""))
             time.sleep(2)
     
     except KeyboardInterrupt:
@@ -751,14 +724,12 @@ def main(interactive, skip_ascii, auto_retry):
         console.print("[cyan]State saved. You can resume later with: python3 enhanced_installer.py --interactive[/cyan]")
         
     finally:
-        # Cleanup
-        if not skip_ascii:
-            ascii_art.stop()
+        if not skip_matrix:
+            matrix.stop()
         
         generate_report()
         console.print(f"\n[bold green]📊 Report generated: {REPORT_FILE}[/bold green]")
         
-        # Show final summary
         total = len(state.state["items"])
         completed = sum(1 for v in state.state["items"].values() if v.get("status") == "completed")
         failed = sum(1 for v in state.state["items"].values() if v.get("status") == "failed")
@@ -772,9 +743,6 @@ def main(interactive, skip_ascii, auto_retry):
         
         if failed > 0:
             console.print("\n[bold yellow]💡 To retry failed tasks:[/bold yellow]")
-            console.print("  python3 enhanced_installer.py --interactive --auto-retry")
-        elif retry_count > 0:
-            console.print("\n[bold yellow]💡 Tasks in retry queue. Run:[/bold yellow]")
             console.print("  python3 enhanced_installer.py --interactive --auto-retry")
 
 if __name__ == "__main__":
