@@ -26,6 +26,7 @@ from rich.console import Group, Console
 from rich import box
 from rich.layout import Layout
 from rich.align import Align
+from rich.text import Text
 
 # ======================== CONFIGURATION ========================
 BASE_DIR = Path("./offline-prep")
@@ -65,6 +66,7 @@ class ASCIIArtProgress:
         self.direction = 1
         self.bar_idx = 0
         self.spin_pos = 0
+        self.last_update = time.time()
         
         # ANSI color codes
         self.colors = {
@@ -95,6 +97,7 @@ class ASCIIArtProgress:
             ['◢', '◣', '◤', '◥'],
             ['←', '↖', '↑', '↗', '→', '↘', '↓', '↙'],
             ['┤', '┘', '┴', '└', '├', '┌', '┬', '┐'],
+            ['▉', '▊', '▋', '▌', '▍', '▎', '▏'],
         ]
         
         self.tasks = [
@@ -154,24 +157,16 @@ class ASCIIArtProgress:
         cpu = random.randint(1, 99)
         mem = random.randint(1, 99)
         
-        # Build the ASCII art
-        art = f"""
-{self.colors['bold']}{self.get_color()}╔══════════════════════════════════════════════════════════════════╗{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.colors['blink']}{self.get_color()}░░░░░ INFINITE PROGRESS BAR ░░░░░{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════════════════════════╣{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}                                                          {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}[{self.colors['end']}{bar}{self.get_color()}]{self.colors['end']}  {self.get_color()}{self.p:3d}%{self.colors['end']}     {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}                                                          {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════════════════════════╣{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}SPINNER: {self.colors['end']}{self.get_color()}{self.spinners[0][self.spin_pos]}{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}TASK:   {self.colors['end']}{self.get_color()}{task}{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════════════════════════╣{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}CPU: {self.colors['end']}{self.get_color()}{cpu:2d}%{self.colors['end']}  {self.get_color()}MEM: {self.colors['end']}{self.get_color()}{mem:2d}%{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}ETA:  {self.colors['end']}{self.colors['red']}∞ INFINITE{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════════════════════════╣{self.colors['end']}
-{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}{status}{self.colors['end']}  {self.get_color()}PRESS CTRL+C TO EXIT{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
-{self.colors['bold']}{self.get_color()}╚══════════════════════════════════════════════════════════════════╝{self.colors['end']}
-"""
+        # Build the ASCII art - condensed version for panel display
+        art = f"""{self.colors['bold']}{self.get_color()}╔══════════════════════════════════════════════╗{self.colors['end']}
+{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.colors['blink']}{self.get_color()}░░░ INFINITE PROGRESS ░░░{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
+{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════╣{self.colors['end']}
+{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}[{self.colors['end']}{bar}{self.get_color()}]{self.colors['end']} {self.get_color()}{self.p:3d}%{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
+{self.colors['bold']}{self.get_color()}╠══════════════════════════════════════════════╣{self.colors['end']}
+{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}▶ {self.colors['end']}{self.get_color()}{self.spinners[0][self.spin_pos]}{self.colors['end']}  {self.get_color()}{task[:20]}{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
+{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}⚡ {self.colors['end']}{self.get_color()}CPU:{cpu:2d}% MEM:{mem:2d}%{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
+{self.colors['bold']}{self.get_color()}║{self.colors['end']}  {self.get_color()}⌛ {self.colors['end']}{self.colors['red']}∞ ETA{self.colors['end']}  {self.colors['bold']}{self.get_color()}║{self.colors['end']}
+{self.colors['bold']}{self.get_color()}╚══════════════════════════════════════════════╝{self.colors['end']}"""
         return art
     
     def _run(self):
@@ -267,55 +262,16 @@ def interactive_selection():
         default=[p['name'] for p in SAMPLE_PROJECTS]
     ).ask()
     
-    # Ask about retry settings
-    retry_count = questionary.select(
-        "Max retry attempts for failed downloads:",
-        choices=[1, 2, 3, 5],
-        default=3
-    ).ask()
-    
-    # Ask about parallel downloads
-    parallel = questionary.confirm(
-        "Enable parallel downloads (experimental)?",
-        default=False
-    ).ask()
-    
     return {
         'docker': docker_selected,
         'packages': pkg_selected,
         'cuda': cuda_selected,
         'models': model_selected,
-        'projects': project_selected,
-        'retries': retry_count,
-        'parallel': parallel
+        'projects': project_selected
     }
 
-def modify_installation():
-    """Allow modification of ongoing installation"""
-    console.print("\n[bold yellow]🔧 MODIFY INSTALLATION[/bold yellow]")
-    
-    failed_items = state.get_failed_items()
-    if failed_items:
-        console.print("\n[red]Failed items:[/red]")
-        for key, data in failed_items.items():
-            console.print(f"  • [red]{key}[/red]: {data['details'][:100]}")
-        
-        retry = questionary.confirm("Retry failed items?").ask()
-        if retry:
-            return {'action': 'retry', 'items': list(failed_items.keys())}
-    
-    show_logs = questionary.confirm("Show recent logs?").ask()
-    if show_logs:
-        with open(BASE_DIR / "download.log", "r") as f:
-            lines = f.readlines()[-20:]
-            console.print("\n[cyan]Recent logs:[/cyan]")
-            for line in lines:
-                console.print(line.strip())
-    
-    return {'action': 'continue'}
-
 # ======================== ENHANCED UI DASHBOARD ========================
-def generate_layout(progress_ui, ascii_art=None, current_task=""):
+def generate_layout(progress_ui, ascii_art=None, current_task="", phase_name=""):
     """Generates the split live-dashboard with ASCII art integration"""
     
     # Main metrics table
@@ -327,11 +283,15 @@ def generate_layout(progress_ui, ascii_art=None, current_task=""):
     table.add_row("✅ Successfully Completed", f"[bold green]{metrics['completed']}[/bold green]")
     table.add_row("❌ Failed / Skipped", f"[bold red]{metrics['failed']}[/bold red]")
     
+    # Phase info
+    if phase_name:
+        table.add_row("Current Phase", f"[bold yellow]{phase_name}[/bold yellow]")
+    
     # Failed items list (if any)
     failed_items = state.get_failed_items()
     if failed_items:
         fail_table = Table(box=box.MINIMAL, expand=True)
-        fail_table.add_column("Failed Items", style="red")
+        fail_table.add_column("⚠️ Failed Items", style="red")
         for key in list(failed_items.keys())[:5]:
             fail_table.add_row(f"  • {key}")
         if len(failed_items) > 5:
@@ -342,12 +302,15 @@ def generate_layout(progress_ui, ascii_art=None, current_task=""):
     
     # Current task info
     task_panel = Panel(
-        f"[bold yellow]Current Task:[/bold yellow] {current_task}",
+        f"[bold yellow]Current Task:[/bold yellow] {current_task or 'Waiting...'}",
         border_style="yellow",
         box=box.ROUNDED
     )
     
-    # ASCII art panel
+    # Combine components
+    components = [table, fail_table, task_panel]
+    
+    # Add ASCII art panel if available
     if ascii_art:
         art_panel = Panel(
             Align.center(ascii_art),
@@ -355,11 +318,12 @@ def generate_layout(progress_ui, ascii_art=None, current_task=""):
             border_style="magenta",
             box=box.HEAVY
         )
-        return Group(table, fail_table, task_panel, art_panel, progress_ui)
-    else:
-        # Progress bar panel (fallback)
-        prog_panel = Panel(progress_ui, title="🚀 Download & Build Progress", border_style="blue", box=box.ROUNDED)
-        return Group(table, fail_table, task_panel, prog_panel)
+        components.append(art_panel)
+    
+    # Add progress bar
+    components.append(progress_ui)
+    
+    return Group(*components)
 
 # ======================== CORE LOGIC ========================
 def run_cmd(cmd, max_retries=3, timeout=600, cwd=None):
@@ -458,9 +422,7 @@ def main(interactive, skip_ascii):
               'packages': PYTHON_PACKAGES,
               'cuda': CUDA_PACKAGES,
               'models': list(MODELS.keys()),
-              'projects': [p['name'] for p in SAMPLE_PROJECTS],
-              'retries': 3,
-              'parallel': False}
+              'projects': [p['name'] for p in SAMPLE_PROJECTS]}
     
     if interactive:
         config = interactive_selection()
@@ -494,7 +456,7 @@ def main(interactive, skip_ascii):
             progress_ui.advance(phase_task)
             return
             
-        progress_ui.update(current_item_task, description=f"[bold yellow]Current Task:[/] {key}")
+        progress_ui.update(current_item_task, description=f"[bold yellow]{key}")
         
         try:
             success, details = func(*args, **kwargs)
@@ -511,55 +473,78 @@ def main(interactive, skip_ascii):
             
         progress_ui.advance(overall_task)
         progress_ui.advance(phase_task)
-        
-        # Check for user modification request (simplified - would need key listener)
-        if metrics["failed"] > 3:
-            console.print("\n[bold yellow]Multiple failures detected![/bold yellow]")
-            if questionary.confirm("Show logs and modify?", default=False).ask():
-                modify_installation()
 
-    # Main execution loop
-    with Live(generate_layout(progress_ui, ascii_art.get_art() if not skip_ascii else None), 
+    # Main execution loop with Live display
+    with Live(generate_layout(progress_ui, 
+                             ascii_art.get_art() if not skip_ascii else None,
+                             "Waiting to start...",
+                             "Initializing"),
               refresh_per_second=10, 
-              get_renderable=lambda: generate_layout(
-                  progress_ui, 
-                  ascii_art.get_art() if not skip_ascii else None,
-                  str(progress_ui.tasks[current_item_task].description) if current_item_task in progress_ui.tasks else ""
-              )):
+              screen=True) as live:
         
         # Phase 1: Docker
         if config['docker']:
-            progress_ui.update(phase_task, description="[bold magenta]Phase 1/5: Docker Images", total=len(config['docker']), completed=0)
-            for img in config['docker']:
+            phase_name = "Phase 1/5: Docker Images"
+            progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", total=len(config['docker']), completed=0)
+            for idx, img in enumerate(config['docker']):
+                # Update live display with current task
+                live.update(generate_layout(progress_ui, 
+                                           ascii_art.get_art() if not skip_ascii else None,
+                                           f"docker: {img}",
+                                           phase_name))
                 execute_with_ui(f"docker_{img}", "Docker", pull_docker, img)
         
         # Phase 2: Python Libs
         if config['packages']:
-            progress_ui.update(phase_task, description="[bold magenta]Phase 2/5: Python Libs", total=len(config['packages']), completed=0)
+            phase_name = "Phase 2/5: Python Libs"
+            progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", total=len(config['packages']), completed=0)
             for pkg in config['packages']:
+                live.update(generate_layout(progress_ui, 
+                                           ascii_art.get_art() if not skip_ascii else None,
+                                           f"pip: {pkg}",
+                                           phase_name))
                 execute_with_ui(f"pip_{pkg}", "Python_Libs", download_pip, pkg, cu124=False)
         
         # Phase 3: CUDA
         if config['cuda']:
-            progress_ui.update(phase_task, description="[bold magenta]Phase 3/5: CUDA Acceleration", total=len(config['cuda']), completed=0)
+            phase_name = "Phase 3/5: CUDA Acceleration"
+            progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", total=len(config['cuda']), completed=0)
             for pkg in config['cuda']:
+                live.update(generate_layout(progress_ui, 
+                                           ascii_art.get_art() if not skip_ascii else None,
+                                           f"cuda: {pkg}",
+                                           phase_name))
                 execute_with_ui(f"pip_cu124_{pkg}", "Python_Libs_CUDA", download_pip, pkg, cu124=True)
         
         # Phase 4: Models
         if config['models']:
-            progress_ui.update(phase_task, description="[bold magenta]Phase 4/5: HuggingFace Models", total=len(config['models']), completed=0)
+            phase_name = "Phase 4/5: HuggingFace Models"
+            progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", total=len(config['models']), completed=0)
             for repo in config['models']:
+                live.update(generate_layout(progress_ui, 
+                                           ascii_art.get_art() if not skip_ascii else None,
+                                           f"model: {repo}",
+                                           phase_name))
                 execute_with_ui(f"model_{repo}", "Models", download_hf_model, repo)
         
         # Phase 5: Projects
         if config['projects']:
-            progress_ui.update(phase_task, description="[bold magenta]Phase 5/5: Baking GitHub Projects", total=len(config['projects']), completed=0)
+            phase_name = "Phase 5/5: Baking GitHub Projects"
+            progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", total=len(config['projects']), completed=0)
             for proj_name in config['projects']:
                 proj = next(p for p in SAMPLE_PROJECTS if p['name'] == proj_name)
+                live.update(generate_layout(progress_ui, 
+                                           ascii_art.get_art() if not skip_ascii else None,
+                                           f"project: {proj_name}",
+                                           phase_name))
                 execute_with_ui(f"project_{proj['name']}", "Sample_Projects", setup_project, proj)
 
-        progress_ui.update(current_item_task, description="[bold green]✅ All phases completed!")
-        time.sleep(2)  # Let user see completion
+        # Final update - all done
+        live.update(generate_layout(progress_ui, 
+                                   ascii_art.get_art() if not skip_ascii else None,
+                                   "✅ All phases completed!",
+                                   "Complete"))
+        time.sleep(3)  # Let user see completion
 
     # Cleanup
     if not skip_ascii:
