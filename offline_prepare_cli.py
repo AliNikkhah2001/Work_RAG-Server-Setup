@@ -33,7 +33,8 @@ os.environ.update({
     "HTTPS_PROXY": PROXY_URL,
     "http_proxy": PROXY_URL,
     "https_proxy": PROXY_URL,
-    "HF_XET_HIGH_PERFORMANCE": "1"
+    "HF_XET_HIGH_PERFORMANCE": "1",
+    "UV_HTTP_TIMEOUT": "600"  # Increase uv timeout
 })
 
 # Ensure directories
@@ -63,7 +64,7 @@ def setup_logging():
 logger = setup_logging()
 
 # ========================= UTILITIES =========================
-def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
+def run_cmd(cmd, max_retries=3, timeout=900, cwd=None, env=None):
     for attempt in range(1, max_retries + 1):
         try:
             run_env = os.environ.copy()
@@ -86,7 +87,7 @@ def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
         except Exception as e:
             logger.error(f"Fatal error: {e}")
         if attempt < max_retries:
-            wait = 5 * attempt
+            wait = 10 * attempt
             logger.info(f"Retrying in {wait}s (attempt {attempt+1}/{max_retries})")
             time.sleep(wait)
     return False, "Max retries exceeded"
@@ -230,19 +231,19 @@ state = State()
 DOCKER_IMAGES = [
     ("ghcr.io/open-webui/open-webui:main", "Open WebUI"),
     ("vllm/vllm-openai:latest", "vLLM"),
-    ("nvidia/cuda:12.8.0-runtime-ubuntu22.04", "CUDA 12.8 Runtime"),  # Fixed
+    ("nvidia/cuda:12.8.0-runtime-ubuntu22.04", "CUDA 12.8 Runtime"),
     ("pgvector/pgvector:pg16", "pgvector"),
     ("milvusdb/milvus:latest", "Milvus"),
     ("qdrant/qdrant:latest", "Qdrant"),
     ("redis:7-alpine", "Redis"),
 ]
 
-# FIXED: Correct PyTorch versions available on cu124
+# FIXED: Correct PyTorch versions
 CUDA_PACKAGES = [
-    "torch==2.4.0",              # Latest stable on cu124
-    "torchvision==0.19.0",       # Matches torch 2.4.0
-    "torchaudio==2.4.0",         # Matches torch 2.4.0
-    "xformers==0.0.27.post2",    # Compatible with torch 2.4.0
+    "torch==2.4.0",
+    "torchvision==0.19.0",
+    "torchaudio==2.4.0",
+    "xformers==0.0.27.post2",
     "flash-attn==2.6.3",
     "vllm==0.6.1.post1",
     "triton==3.0.0",
@@ -287,13 +288,44 @@ def install_python_package(pkg, cuda=False):
     logger.info(f"Installing {pkg} (CUDA: {cuda})")
     uv = get_venv_uv()
     cmd = [uv, "pip", "install", pkg]
+    
+    # Always use CUDA index for CUDA packages
     if cuda:
         cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
+    
+    # Special handling for specific packages
+    if pkg.startswith("triton"):
+        cmd.append("--no-cache-dir")
+    
     if pkg.startswith("flash-attn"):
         cmd.append("--no-build-isolation")
-    success, _ = run_cmd(cmd, max_retries=3, timeout=600)
+    
+    # For vllm, ensure we use the CUDA index
+    if pkg.startswith("vllm"):
+        cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
+        # Try with extra index URL as fallback
+        cmd.extend(["--extra-index-url", "https://pypi.org/simple"])
+    
+    success, _ = run_cmd(cmd, max_retries=4, timeout=900)  # Longer timeout
     if success:
         return True, "Install OK"
+    
+    # Fallback to pip if uv fails
+    logger.info(f"Falling back to pip for {pkg}")
+    pip = get_venv_pip()
+    cmd_pip = [pip, "install", pkg]
+    if cuda:
+        cmd_pip.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
+    if pkg.startswith("triton"):
+        cmd_pip.append("--no-cache-dir")
+    if pkg.startswith("flash-attn"):
+        cmd_pip.append("--no-build-isolation")
+    if pkg.startswith("vllm"):
+        cmd_pip.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
+    success, _ = run_cmd(cmd_pip, max_retries=3, timeout=900)
+    if success:
+        return True, "Install OK with pip"
+    
     return False, "Install failed"
 
 def download_hf_model(repo_id):
