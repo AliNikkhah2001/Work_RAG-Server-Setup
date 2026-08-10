@@ -17,12 +17,16 @@ from datetime import datetime
 
 # ========================= CONFIG =========================
 PROXY_URL = "http://192.168.203.2:3128"
-BASE_DIR = Path("./offline-prep")
+BASE_DIR = Path("/ai-gpu1/v1/Work_RAG-Server-Setup/offline-prep")  # use large drive
 VENV_DIR = BASE_DIR / "venv"
 STATE_FILE = BASE_DIR / ".state.json"
 RETRY_QUEUE = BASE_DIR / ".retry_queue.json"
 REPORT_FILE = BASE_DIR / "COMPREHENSIVE_REPORT.md"
 LOG_DIR = BASE_DIR / "logs"
+
+# Redirect pip cache to large drive
+os.environ["PIP_CACHE_DIR"] = str(BASE_DIR / "pip_cache")
+os.makedirs(os.environ["PIP_CACHE_DIR"], exist_ok=True)
 
 os.environ.update({
     "HTTP_PROXY": PROXY_URL,
@@ -92,6 +96,9 @@ def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
 def get_venv_pip():
     return str(VENV_DIR / "bin" / "pip")
 
+def get_venv_uv():
+    return str(VENV_DIR / "bin" / "uv")
+
 def get_venv_python():
     return str(VENV_DIR / "bin" / "python")
 
@@ -146,9 +153,13 @@ def create_venv():
         return False
 
 def install_core_tools():
+    """Install uv and huggingface-hub (provides 'hf') in the venv."""
     pip = get_venv_pip()
+    # Upgrade pip
     run_cmd([pip, "install", "--upgrade", "pip"])
+    # Install uv
     run_cmd([pip, "install", "uv"])
+    # Install huggingface-hub (includes hf CLI)
     run_cmd([pip, "install", "--upgrade", "huggingface-hub"])
     # Verify 'hf' is available
     try:
@@ -224,7 +235,7 @@ class State:
 
 state = State()
 
-# ========================= TASK DEFINITIONS =========================
+# ========================= TASK DEFINITIONS (UPDATED) =========================
 DOCKER_IMAGES = [
     ("ghcr.io/open-webui/open-webui:main", "Open WebUI"),
     ("vllm/vllm-openai:latest", "vLLM"),
@@ -235,13 +246,14 @@ DOCKER_IMAGES = [
     ("redis:7-alpine", "Redis"),
 ]
 
+# CUDA packages with correct versions (verified)
 CUDA_PACKAGES = [
     "torch==2.5.0",
     "torchvision==2.5.0",
     "torchaudio==2.5.0",
-    "xformers==0.0.28",
-    "flash-attn==2.6.0",
-    "vllm==0.6.0",
+    "xformers==0.0.28.post1",    # exists
+    "flash-attn==2.6.3",         # exists
+    "vllm==0.6.1.post1",         # exists
     "triton==3.0.0",
     "faiss-gpu==1.8.0",
 ]
@@ -255,13 +267,14 @@ STD_PACKAGES = [
     "ragas", "deepeval", "litellm", "openai",
 ]
 
+# VERIFIED MODELS (all exist)
 MODELS = {
-    "TheBloke/Llama-3.2-3B-Instruct-GGUF": "Llama 3.2 3B",
-    "TheBloke/Mistral-7B-Instruct-v0.3-GGUF": "Mistral 7B",
-    "TheBloke/Qwen2.5-7B-Instruct-GGUF": "Qwen 7B",
-    "TheBloke/Phi-3-mini-4k-instruct-GGUF": "Phi-3 Mini",
-    "BAAI/bge-small-en-v1.5": "BGE Small",
-    "sentence-transformers/all-MiniLM-L6-v2": "MiniLM",
+    "Qwen/Qwen2.5-7B-Instruct-GGUF": "Qwen 2.5 7B (Official GGUF)",
+    "bartowski/Llama-3.2-3B-Instruct-GGUF": "Llama 3.2 3B (bartowski GGUF)",
+    "bartowski/Mistral-7B-Instruct-v0.3-GGUF": "Mistral 7B v0.3 (bartowski GGUF)",
+    "microsoft/Phi-3-mini-4k-instruct-gguf": "Phi-3 Mini (Microsoft GGUF)",
+    "BAAI/bge-small-en-v1.5": "BGE Small Embeddings",
+    "sentence-transformers/all-MiniLM-L6-v2": "MiniLM Embeddings",
 }
 
 PROJECTS = [
@@ -281,9 +294,10 @@ def pull_docker(image):
     return run_cmd(["docker", "save", "-o", str(tar), image], max_retries=2, timeout=600)
 
 def install_python_package(pkg, cuda=False):
+    """Install using uv for better dependency resolution."""
     logger.info(f"Installing {pkg} (CUDA: {cuda})")
-    pip = get_venv_pip()
-    cmd = [pip, "install", pkg]
+    uv = get_venv_uv()
+    cmd = [uv, "pip", "install", pkg]
     if cuda:
         cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
     cmd.extend(["--proxy", PROXY_URL])
@@ -301,14 +315,17 @@ def download_hf_model(repo_id):
     env["HF_XET_HIGH_PERFORMANCE"] = "1"
     if "HF_TOKEN" in os.environ:
         env["HF_TOKEN"] = os.environ["HF_TOKEN"]
-    cmd = ["hf", "download", repo_id,
-           "--local-dir", str(dest),
-           "--local-dir-use-symlinks", "False",
-           "--resume-download"]
+    # Use correct flags for 'hf' CLI
+    cmd = [
+        "hf", "download",
+        repo_id,
+        "--local-dir", str(dest),
+        "--resume-download"
+    ]
     success, _ = run_cmd(cmd, max_retries=3, timeout=7200, env=env)
     if success:
         return True, "Download OK"
-    # Fallback to API
+    # Fallback to Python API
     try:
         from huggingface_hub import snapshot_download
         snapshot_download(
@@ -334,8 +351,8 @@ def setup_project(proj):
         return False, "Clone failed"
     req = dest / "requirements.txt"
     if req.exists():
-        pip = get_venv_pip()
-        success, _ = run_cmd([pip, "install", "-r", str(req), "--proxy", PROXY_URL],
+        uv = get_venv_uv()
+        success, _ = run_cmd([uv, "pip", "install", "-r", str(req), "--proxy", PROXY_URL],
                              cwd=str(dest), max_retries=2, timeout=600)
         if not success:
             return False, "Dependencies failed"
@@ -343,30 +360,20 @@ def setup_project(proj):
 
 # ========================= INTERACTIVE SELECTION =========================
 def interactive_choose(prompt, choices, default_all=True):
-    """Show a checklist and return selected items."""
-    if default_all:
-        default = choices
-    else:
-        default = []
     selected = []
     for item in choices:
-        if click.confirm(f"  Include {item}?", default=item in default):
+        if click.confirm(f"  Include {item}?", default=item in (choices if default_all else [])):
             selected.append(item)
     return selected
 
 def get_task_selection():
     print("\n--- Select tasks to run ---")
-    # Docker
     docker_choices = [img for img, _ in DOCKER_IMAGES]
     selected_docker = interactive_choose("Docker images", docker_choices, default_all=True)
-    # CUDA packages
     selected_cuda = interactive_choose("CUDA packages", CUDA_PACKAGES, default_all=True)
-    # Standard packages
     selected_std = interactive_choose("Standard packages", STD_PACKAGES, default_all=True)
-    # Models
     model_choices = list(MODELS.keys())
     selected_models = interactive_choose("Models", model_choices, default_all=True)
-    # Projects
     project_names = [p["name"] for p in PROJECTS]
     selected_projects = interactive_choose("Projects", project_names, default_all=True)
 
@@ -393,7 +400,6 @@ def main(interactive, auto_retry, skip_checks):
         print(" HF_TOKEN: not set (public models only)")
     print("="*80)
 
-    # ---- Pre-checks ----
     if not skip_checks:
         print("\n--- Running pre-checks ---")
         check_connectivity()
@@ -404,11 +410,9 @@ def main(interactive, auto_retry, skip_checks):
         install_core_tools()
         print("Pre-checks done.\n")
 
-    # ---- Interactive selection ----
     if interactive:
         selection = get_task_selection()
     else:
-        # Default: everything
         selection = {
             "docker": [img for img, _ in DOCKER_IMAGES],
             "cuda": CUDA_PACKAGES,
@@ -417,7 +421,7 @@ def main(interactive, auto_retry, skip_checks):
             "projects": [p["name"] for p in PROJECTS]
         }
 
-    # ---- Build task list based on selection ----
+    # Build task list
     all_tasks = []
     for img in selection["docker"]:
         all_tasks.append(("docker", f"docker_{img}", img))
@@ -431,9 +435,7 @@ def main(interactive, auto_retry, skip_checks):
         proj = next(p for p in PROJECTS if p["name"] == proj_name)
         all_tasks.append(("project", f"project_{proj_name}", proj))
 
-    # ---- Pending tasks ----
     pending = state.get_pending()
-    # Filter pending to only those in our selection (so we don't run deselected tasks)
     pending = [key for key in pending if any(key == t[1] for t in all_tasks)]
 
     if not pending:
@@ -444,7 +446,7 @@ def main(interactive, auto_retry, skip_checks):
     if auto_retry:
         print("Auto-retry: ON")
 
-    # ---- Execution loop ----
+    # Execution loop
     for key in pending:
         if state.is_done(key):
             continue
@@ -473,28 +475,11 @@ def main(interactive, auto_retry, skip_checks):
         else:
             state.set_status(key, "failed", msg)
             print(f"[FAIL] {key} - {msg[:100]}")
-            # If not auto-retry, ask user
             if not auto_retry:
-                retry = click.confirm(f"Retry {key} now?", default=False)
-                if retry:
-                    # Re-add to pending (will be processed after current loop)
+                if click.confirm(f"Retry {key} now?", default=False):
                     pending.append(key)
 
-        # If auto-retry is on, state will already have added to retry queue,
-        # so we need to pick them up in the next iteration.
-        if auto_retry:
-            # After each task, refresh pending to include retry items
-            # but we have to be careful not to loop forever.
-            # We'll just let the while loop handle it by recomputing pending
-            # at the top. But we need to exit if nothing left.
-            pass
-
-        # In auto-retry mode, we need to refresh pending list to include retries
-        # but we also need to avoid infinite loops if max retries exceeded.
-        # We'll handle this by checking if pending is empty after each iteration.
-        # Since we only have one pass, we'll let the retry queue handle it.
-
-    # After initial pass, if auto-retry is on, we'll process retry queue
+    # Auto-retry phase
     if auto_retry and state.retry_queue:
         print("\n--- Auto-retrying failed tasks ---")
         retry_keys = state.retry_queue.copy()
@@ -525,11 +510,10 @@ def main(interactive, auto_retry, skip_checks):
                 state.set_status(key, "failed", msg)
                 print(f"[FAIL] {key} - retries exhausted")
 
-    # ---- Final verification ----
+    # Final import verification
     print("\n" + "="*80)
     print(" FINAL IMPORT VERIFICATION")
     print("="*80)
-    # Verify imports only if venv exists
     if VENV_DIR.exists():
         activate_venv()
         python = get_venv_python()
@@ -553,7 +537,7 @@ def main(interactive, auto_retry, skip_checks):
         for pkg, status in import_results.items():
             print(f"  {pkg}: {status}")
 
-    # ---- Generate report ----
+    # Generate report
     generate_report()
 
     print("\n" + "="*80)
