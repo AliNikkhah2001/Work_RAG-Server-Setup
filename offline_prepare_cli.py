@@ -69,7 +69,6 @@ def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
             run_env = os.environ.copy()
             if env:
                 run_env.update(env)
-            # Proxy is set via environment variables
             proc = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -227,22 +226,23 @@ class State:
 
 state = State()
 
-# ========================= TASK DEFINITIONS =========================
+# ========================= TASK DEFINITIONS (FIXED) =========================
 DOCKER_IMAGES = [
     ("ghcr.io/open-webui/open-webui:main", "Open WebUI"),
     ("vllm/vllm-openai:latest", "vLLM"),
-    ("nvidia/cuda:13.0-runtime-ubuntu22.04", "CUDA 13.0"),
+    ("nvidia/cuda:12.8.0-runtime-ubuntu22.04", "CUDA 12.8 Runtime"),  # Fixed
     ("pgvector/pgvector:pg16", "pgvector"),
     ("milvusdb/milvus:latest", "Milvus"),
     ("qdrant/qdrant:latest", "Qdrant"),
     ("redis:7-alpine", "Redis"),
 ]
 
+# FIXED: Correct PyTorch versions available on cu124
 CUDA_PACKAGES = [
-    "torch==2.5.0",
-    "torchvision==2.5.0",
-    "torchaudio==2.5.0",
-    "xformers==0.0.28.post1",
+    "torch==2.4.0",              # Latest stable on cu124
+    "torchvision==0.19.0",       # Matches torch 2.4.0
+    "torchaudio==2.4.0",         # Matches torch 2.4.0
+    "xformers==0.0.27.post2",    # Compatible with torch 2.4.0
     "flash-attn==2.6.3",
     "vllm==0.6.1.post1",
     "triton==3.0.0",
@@ -284,13 +284,11 @@ def pull_docker(image):
     return run_cmd(["docker", "save", "-o", str(tar), image], max_retries=2, timeout=600)
 
 def install_python_package(pkg, cuda=False):
-    """Install using uv - proxy is handled via environment variables."""
     logger.info(f"Installing {pkg} (CUDA: {cuda})")
     uv = get_venv_uv()
     cmd = [uv, "pip", "install", pkg]
     if cuda:
         cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
-    # --proxy is NOT supported by uv; uses env vars instead
     if pkg.startswith("flash-attn"):
         cmd.append("--no-build-isolation")
     success, _ = run_cmd(cmd, max_retries=3, timeout=600)
@@ -306,7 +304,6 @@ def download_hf_model(repo_id):
     if "HF_TOKEN" in os.environ:
         env["HF_TOKEN"] = os.environ["HF_TOKEN"]
     
-    # Use correct options for 'hf' CLI
     cmd = [
         "hf", "download",
         repo_id,
@@ -316,7 +313,6 @@ def download_hf_model(repo_id):
     if success:
         return True, "Download OK"
     
-    # Fallback to Python API
     logger.info("Falling back to Python API...")
     try:
         from huggingface_hub import snapshot_download
