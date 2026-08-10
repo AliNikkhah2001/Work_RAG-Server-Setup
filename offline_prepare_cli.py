@@ -69,8 +69,7 @@ def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
             run_env = os.environ.copy()
             if env:
                 run_env.update(env)
-            run_env["HTTP_PROXY"] = PROXY_URL
-            run_env["HTTPS_PROXY"] = PROXY_URL
+            # Proxy is set via environment variables
             proc = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -285,12 +284,13 @@ def pull_docker(image):
     return run_cmd(["docker", "save", "-o", str(tar), image], max_retries=2, timeout=600)
 
 def install_python_package(pkg, cuda=False):
+    """Install using uv - proxy is handled via environment variables."""
     logger.info(f"Installing {pkg} (CUDA: {cuda})")
     uv = get_venv_uv()
     cmd = [uv, "pip", "install", pkg]
     if cuda:
         cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
-    cmd.extend(["--proxy", PROXY_URL])
+    # --proxy is NOT supported by uv; uses env vars instead
     if pkg.startswith("flash-attn"):
         cmd.append("--no-build-isolation")
     success, _ = run_cmd(cmd, max_retries=3, timeout=600)
@@ -306,7 +306,7 @@ def download_hf_model(repo_id):
     if "HF_TOKEN" in os.environ:
         env["HF_TOKEN"] = os.environ["HF_TOKEN"]
     
-    # Use CORRECT options for 'hf' CLI
+    # Use correct options for 'hf' CLI
     cmd = [
         "hf", "download",
         repo_id,
@@ -316,7 +316,7 @@ def download_hf_model(repo_id):
     if success:
         return True, "Download OK"
     
-    # Fallback to Python API (supports resume)
+    # Fallback to Python API
     logger.info("Falling back to Python API...")
     try:
         from huggingface_hub import snapshot_download
@@ -344,7 +344,7 @@ def setup_project(proj):
     req = dest / "requirements.txt"
     if req.exists():
         uv = get_venv_uv()
-        success, _ = run_cmd([uv, "pip", "install", "-r", str(req), "--proxy", PROXY_URL],
+        success, _ = run_cmd([uv, "pip", "install", "-r", str(req)],
                              cwd=str(dest), max_retries=2, timeout=600)
         if not success:
             return False, "Dependencies failed"
