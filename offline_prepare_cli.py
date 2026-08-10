@@ -10,7 +10,6 @@ import logging
 import traceback
 import shutil
 import urllib.request
-import click
 import importlib
 from pathlib import Path
 from datetime import datetime
@@ -34,7 +33,8 @@ os.environ.update({
     "http_proxy": PROXY_URL,
     "https_proxy": PROXY_URL,
     "HF_XET_HIGH_PERFORMANCE": "1",
-    "UV_HTTP_TIMEOUT": "600"  # Increase uv timeout
+    "UV_HTTP_TIMEOUT": "600",
+    "PYTHONUNBUFFERED": "1"  # Force Python to not buffer output
 })
 
 # Ensure directories
@@ -52,7 +52,7 @@ def setup_logging():
         format=log_format,
         handlers=[
             logging.FileHandler(LOG_DIR / "main.log"),
-            logging.StreamHandler()
+            logging.StreamHandler(sys.stdout)
         ]
     )
     error_handler = logging.FileHandler(LOG_DIR / "errors.log")
@@ -64,7 +64,8 @@ def setup_logging():
 logger = setup_logging()
 
 # ========================= UTILITIES =========================
-def run_cmd(cmd, max_retries=3, timeout=900, cwd=None, env=None):
+def run_cmd(cmd, max_retries=5, timeout=900, cwd=None, env=None):
+    """Run command with retries - fully automated"""
     for attempt in range(1, max_retries + 1):
         try:
             run_env = os.environ.copy()
@@ -81,16 +82,30 @@ def run_cmd(cmd, max_retries=3, timeout=900, cwd=None, env=None):
             if proc.returncode == 0:
                 logger.info(f"Command succeeded: {' '.join(cmd[:2])}")
                 return True, proc.stdout
-            logger.warning(f"Attempt {attempt} failed: {proc.stderr.strip()[:200]}")
+            logger.warning(f"Attempt {attempt}/{max_retries} failed: {proc.stderr.strip()[:200]}")
+            if "No space left" in proc.stderr:
+                logger.error("Disk space error! Cleaning up...")
+                cleanup_disk_space()
         except subprocess.TimeoutExpired:
             logger.warning(f"Timeout on attempt {attempt}")
         except Exception as e:
             logger.error(f"Fatal error: {e}")
         if attempt < max_retries:
-            wait = 10 * attempt
+            wait = 15 * attempt  # Longer wait between retries
             logger.info(f"Retrying in {wait}s (attempt {attempt+1}/{max_retries})")
             time.sleep(wait)
     return False, "Max retries exceeded"
+
+def cleanup_disk_space():
+    """Try to free up disk space automatically"""
+    try:
+        # Clean pip cache
+        subprocess.run(["pip", "cache", "purge"], capture_output=True)
+        # Clean uv cache
+        subprocess.run(["uv", "cache", "clean"], capture_output=True)
+        logger.info("Cache cleaned")
+    except:
+        pass
 
 def get_venv_pip():
     return str(VENV_DIR / "bin" / "pip")
@@ -167,7 +182,7 @@ def install_core_tools():
 # ========================= STATE =========================
 class State:
     def __init__(self):
-        self.data = {"items": {}, "max_retries": 3}
+        self.data = {"items": {}, "max_retries": 5}  # Increased retries
         if STATE_FILE.exists():
             try:
                 with open(STATE_FILE) as f:
@@ -194,7 +209,7 @@ class State:
     def set_status(self, key, status, details=""):
         item = self.data["items"].get(key, {})
         item["status"] = status
-        item["details"] = details
+        item["details"] = details[:500]  # Truncate long messages
         item["updated"] = datetime.now().isoformat()
         item["retries"] = item.get("retries", 0)
         if status == "failed":
@@ -227,7 +242,7 @@ class State:
 
 state = State()
 
-# ========================= TASK DEFINITIONS (FIXED) =========================
+# ========================= TASK DEFINITIONS =========================
 DOCKER_IMAGES = [
     ("ghcr.io/open-webui/open-webui:main", "Open WebUI"),
     ("vllm/vllm-openai:latest", "vLLM"),
@@ -238,7 +253,6 @@ DOCKER_IMAGES = [
     ("redis:7-alpine", "Redis"),
 ]
 
-# FIXED: Correct PyTorch versions
 CUDA_PACKAGES = [
     "torch==2.4.0",
     "torchvision==0.19.0",
@@ -278,39 +292,33 @@ PROJECTS = [
 # ========================= TASK EXECUTORS =========================
 def pull_docker(image):
     logger.info(f"Pulling {image}")
-    success, _ = run_cmd(["docker", "pull", image], max_retries=3, timeout=1200)
+    success, _ = run_cmd(["docker", "pull", image], max_retries=5, timeout=1200)
     if not success:
         return False, "Docker pull failed"
     tar = BASE_DIR / "docker-images" / f"{image.replace('/', '_').replace(':', '_')}.tar"
-    return run_cmd(["docker", "save", "-o", str(tar), image], max_retries=2, timeout=600)
+    return run_cmd(["docker", "save", "-o", str(tar), image], max_retries=3, timeout=600)
 
 def install_python_package(pkg, cuda=False):
     logger.info(f"Installing {pkg} (CUDA: {cuda})")
     uv = get_venv_uv()
-    cmd = [uv, "pip", "install", pkg]
     
-    # Always use CUDA index for CUDA packages
+    # Try uv first
+    cmd = [uv, "pip", "install", pkg]
     if cuda:
         cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
-    
-    # Special handling for specific packages
     if pkg.startswith("triton"):
         cmd.append("--no-cache-dir")
-    
     if pkg.startswith("flash-attn"):
         cmd.append("--no-build-isolation")
-    
-    # For vllm, ensure we use the CUDA index
     if pkg.startswith("vllm"):
         cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
-        # Try with extra index URL as fallback
         cmd.extend(["--extra-index-url", "https://pypi.org/simple"])
     
-    success, _ = run_cmd(cmd, max_retries=4, timeout=900)  # Longer timeout
+    success, _ = run_cmd(cmd, max_retries=3, timeout=900)
     if success:
-        return True, "Install OK"
+        return True, "Install OK with uv"
     
-    # Fallback to pip if uv fails
+    # Fallback to pip
     logger.info(f"Falling back to pip for {pkg}")
     pip = get_venv_pip()
     cmd_pip = [pip, "install", pkg]
@@ -322,7 +330,8 @@ def install_python_package(pkg, cuda=False):
         cmd_pip.append("--no-build-isolation")
     if pkg.startswith("vllm"):
         cmd_pip.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
-    success, _ = run_cmd(cmd_pip, max_retries=3, timeout=900)
+    
+    success, _ = run_cmd(cmd_pip, max_retries=5, timeout=900)
     if success:
         return True, "Install OK with pip"
     
@@ -341,10 +350,11 @@ def download_hf_model(repo_id):
         repo_id,
         "--local-dir", str(dest)
     ]
-    success, _ = run_cmd(cmd, max_retries=3, timeout=7200, env=env)
+    success, _ = run_cmd(cmd, max_retries=5, timeout=7200, env=env)
     if success:
         return True, "Download OK"
     
+    # Fallback to Python API
     logger.info("Falling back to Python API...")
     try:
         from huggingface_hub import snapshot_download
@@ -366,81 +376,51 @@ def setup_project(proj):
     dest = BASE_DIR / "sample-projects" / name
     if dest.exists():
         shutil.rmtree(dest)
-    success, _ = run_cmd(["git", "clone", url, str(dest)], max_retries=3, timeout=300)
+    success, _ = run_cmd(["git", "clone", url, str(dest)], max_retries=5, timeout=300)
     if not success:
         return False, "Clone failed"
     req = dest / "requirements.txt"
     if req.exists():
         uv = get_venv_uv()
         success, _ = run_cmd([uv, "pip", "install", "-r", str(req)],
-                             cwd=str(dest), max_retries=2, timeout=600)
+                             cwd=str(dest), max_retries=3, timeout=600)
         if not success:
             return False, "Dependencies failed"
     return True, "Project ready"
 
-# ========================= INTERACTIVE SELECTION =========================
-def interactive_choose(prompt, choices, default_all=True):
-    selected = []
-    for item in choices:
-        if click.confirm(f"  Include {item}?", default=item in (choices if default_all else [])):
-            selected.append(item)
-    return selected
+# ========================= MAIN =========================
+def main():
+    print("\n" + "="*80)
+    print(" H200 Offline Preparation Tool (AUTOMATED MODE)")
+    print(f" Proxy: {PROXY_URL}")
+    print(f" Start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("="*80)
+    
+    # Set max retries to 5 for automation
+    state.data["max_retries"] = 5
+    state.save()
 
-def get_task_selection():
-    print("\n--- Select tasks to run ---")
-    docker_choices = [img for img, _ in DOCKER_IMAGES]
-    selected_docker = interactive_choose("Docker images", docker_choices, default_all=True)
-    selected_cuda = interactive_choose("CUDA packages", CUDA_PACKAGES, default_all=True)
-    selected_std = interactive_choose("Standard packages", STD_PACKAGES, default_all=True)
-    model_choices = list(MODELS.keys())
-    selected_models = interactive_choose("Models", model_choices, default_all=True)
-    project_names = [p["name"] for p in PROJECTS]
-    selected_projects = interactive_choose("Projects", project_names, default_all=True)
+    # ---- Pre-checks ----
+    print("\n--- Running pre-checks ---")
+    check_connectivity()
+    check_tools()
+    if not create_venv():
+        logger.error("Failed to create venv. Exiting.")
+        return
+    activate_venv()
+    install_core_tools()
+    print("Pre-checks done.\n")
 
-    return {
-        "docker": selected_docker,
-        "cuda": selected_cuda,
-        "std": selected_std,
-        "models": selected_models,
-        "projects": selected_projects
+    # ---- All tasks selected automatically ----
+    selection = {
+        "docker": [img for img, _ in DOCKER_IMAGES],
+        "cuda": CUDA_PACKAGES,
+        "std": STD_PACKAGES,
+        "models": list(MODELS.keys()),
+        "projects": [p["name"] for p in PROJECTS]
     }
 
-# ========================= MAIN =========================
-@click.command()
-@click.option("--interactive", is_flag=True, help="Select tasks interactively")
-@click.option("--auto-retry", is_flag=True, help="Auto-retry failed tasks")
-@click.option("--skip-checks", is_flag=True, help="Skip pre-checks")
-def main(interactive, auto_retry, skip_checks):
-    print("\n" + "="*80)
-    print(" H200 Offline Preparation Tool")
-    print(f" Proxy: {PROXY_URL}")
-    if "HF_TOKEN" in os.environ:
-        print(" HF_TOKEN: found")
-    else:
-        print(" HF_TOKEN: not set (public models only)")
-    print("="*80)
-
-    if not skip_checks:
-        print("\n--- Running pre-checks ---")
-        check_connectivity()
-        check_tools()
-        if not create_venv():
-            return
-        activate_venv()
-        install_core_tools()
-        print("Pre-checks done.\n")
-
-    if interactive:
-        selection = get_task_selection()
-    else:
-        selection = {
-            "docker": [img for img, _ in DOCKER_IMAGES],
-            "cuda": CUDA_PACKAGES,
-            "std": STD_PACKAGES,
-            "models": list(MODELS.keys()),
-            "projects": [p["name"] for p in PROJECTS]
-        }
-
+    # Build task list
     all_tasks = []
     for img in selection["docker"]:
         all_tasks.append(("docker", f"docker_{img}", img))
@@ -454,59 +434,26 @@ def main(interactive, auto_retry, skip_checks):
         proj = next(p for p in PROJECTS if p["name"] == proj_name)
         all_tasks.append(("project", f"project_{proj_name}", proj))
 
-    pending = state.get_pending()
-    pending = [key for key in pending if any(key == t[1] for t in all_tasks)]
+    # ---- Main execution loop with auto-retry ----
+    max_rounds = 10  # Prevent infinite loops
+    for round_num in range(max_rounds):
+        pending = state.get_pending()
+        pending = [key for key in pending if any(key == t[1] for t in all_tasks)]
 
-    if not pending:
-        print("\nAll selected tasks are already completed.")
-        return
+        if not pending:
+            print("\nAll tasks completed successfully!")
+            break
 
-    print(f"\nTasks to process: {len(pending)}")
-    if auto_retry:
-        print("Auto-retry: ON")
+        print(f"\n=== Round {round_num + 1}/{max_rounds}: {len(pending)} tasks pending ===")
 
-    for key in pending:
-        if state.is_done(key):
-            continue
-        task = next((t for t in all_tasks if t[1] == key), None)
-        if not task:
-            continue
-
-        print(f"\n[PROCESSING] {key}")
-        try:
-            if task[0] == "docker":
-                ok, msg = pull_docker(task[2])
-            elif task[0] in ("pip_cuda", "pip_std"):
-                ok, msg = install_python_package(task[2], task[3])
-            elif task[0] == "model":
-                ok, msg = download_hf_model(task[2])
-            elif task[0] == "project":
-                ok, msg = setup_project(task[2])
-            else:
-                continue
-        except Exception as e:
-            ok, msg = False, str(e)
-
-        if ok:
-            state.set_status(key, "completed", msg)
-            print(f"[OK] {key}")
-        else:
-            state.set_status(key, "failed", msg)
-            print(f"[FAIL] {key} - {msg[:100]}")
-            if not auto_retry:
-                if click.confirm(f"Retry {key} now?", default=False):
-                    pending.append(key)
-
-    if auto_retry and state.retry_queue:
-        print("\n--- Auto-retrying failed tasks ---")
-        retry_keys = state.retry_queue.copy()
-        for key in retry_keys:
+        for key in pending:
             if state.is_done(key):
                 continue
             task = next((t for t in all_tasks if t[1] == key), None)
             if not task:
                 continue
-            print(f"\n[RETRY] {key}")
+
+            print(f"\n[PROCESSING] {key}")
             try:
                 if task[0] == "docker":
                     ok, msg = pull_docker(task[2])
@@ -520,13 +467,27 @@ def main(interactive, auto_retry, skip_checks):
                     continue
             except Exception as e:
                 ok, msg = False, str(e)
+
             if ok:
                 state.set_status(key, "completed", msg)
                 print(f"[OK] {key}")
             else:
                 state.set_status(key, "failed", msg)
-                print(f"[FAIL] {key} - retries exhausted")
+                print(f"[FAIL] {key} - {msg[:100]}")
+                # It will be retried in the next round
 
+        # Check if we need to continue
+        if round_num == max_rounds - 1:
+            print("\nWARNING: Max rounds reached. Some tasks may still be pending.")
+            break
+
+        # Wait before next round
+        if state.retry_queue:
+            wait_time = 60  # Wait 1 minute before retrying
+            print(f"\nWaiting {wait_time}s before retrying failed tasks...")
+            time.sleep(wait_time)
+
+    # ---- Final import verification ----
     print("\n" + "="*80)
     print(" FINAL IMPORT VERIFICATION")
     print("="*80)
@@ -553,10 +514,11 @@ def main(interactive, auto_retry, skip_checks):
         for pkg, status in import_results.items():
             print(f"  {pkg}: {status}")
 
+    # ---- Generate final report ----
     generate_report()
 
     print("\n" + "="*80)
-    print(" SUMMARY")
+    print(" FINAL SUMMARY")
     print("="*80)
     total = len(state.data["items"])
     done = sum(1 for v in state.data["items"].values() if v["status"] == "completed")
@@ -565,10 +527,11 @@ def main(interactive, auto_retry, skip_checks):
     print(f"Completed: {done}")
     print(f"Failed: {failed}")
     if state.retry_queue:
-        print(f"Retry queue: {len(state.retry_queue)}")
-        print("Run with --auto-retry to retry them.")
+        print(f"Retry queue: {len(state.retry_queue)} tasks remaining")
+        print(f"These tasks exceeded max retries ({state.data['max_retries']})")
     print(f"Report: {REPORT_FILE}")
     print(f"Logs: {LOG_DIR}")
+    print(f"End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 def generate_report():
     with open(REPORT_FILE, "w") as f:
