@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import datetime
 import click
 
-# Rich UI Imports for the CLI Dashboard
+# Rich UI Imports
 from rich.live import Live
 from rich.progress import (
     Progress, SpinnerColumn, BarColumn, TextColumn, 
@@ -24,10 +24,7 @@ from rich.panel import Panel
 from rich.console import Group, Console
 from rich import box
 from rich.align import Align
-from rich.prompt import Confirm, Prompt, IntPrompt
-from rich.text import Text
-from rich.layout import Layout
-from rich.columns import Columns
+from rich.prompt import Confirm, IntPrompt
 
 # ======================== CONFIGURATION ========================
 BASE_DIR = Path("./offline-prep")
@@ -37,17 +34,26 @@ REPORT_FILE = BASE_DIR / "COMPREHENSIVE_REPORT.md"
 RETRY_QUEUE = BASE_DIR / ".retry_queue.json"
 LOG_FILE = BASE_DIR / "download.log"
 
+# Proxy configuration (UPDATE WITH YOUR PROXY)
+PROXY_URL = "http://192.168.203.2:3128"
+PROXY_SETTINGS = {
+    "http": PROXY_URL,
+    "https": PROXY_URL
+}
+
 DIRS = {
     "docker": BASE_DIR / "docker-images",
     "python": BASE_DIR / "python-packages",
     "python_cu124": BASE_DIR / "python-packages-cu124",
-    "models_hf": BASE_DIR / "models" / "huggingface"
+    "models_hf": BASE_DIR / "models" / "huggingface",
+    "models_gguf": BASE_DIR / "models" / "gguf",
+    "inference": BASE_DIR / "inference-engines"
 }
 
 for d in DIRS.values(): d.mkdir(parents=True, exist_ok=True)
 PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Logs go ONLY to file to prevent corrupting the beautiful Rich UI dashboard
+# Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -56,94 +62,112 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 console = Console()
 
-# ======================== THE 2026 ENTERPRISE ECOSYSTEM ========================
+# ======================== H200 OPTIMIZED ECOSYSTEM ========================
 
 DOCKER_IMAGES = [
     ("ghcr.io/open-webui/open-webui:main", "Open WebUI"),
     ("vllm/vllm-openai:latest", "vLLM Inference Server"),
+    ("nvidia/cuda:12.4.1-runtime-ubuntu22.04", "CUDA 12.4 Runtime"),
     ("pgvector/pgvector:pg16", "PostgreSQL+pgvector"),
     ("milvusdb/milvus:latest", "Milvus Vector DB"),
     ("qdrant/qdrant:latest", "Qdrant Vector DB"),
     ("redis:7-alpine", "Redis"),
-    ("grafana/grafana-oss:latest", "Grafana Monitoring"),
 ]
 
 PYTHON_PACKAGES = [
-    # Core APIs
-    "fastapi", "pydantic", "uvicorn", 
-    # State-of-the-Art Document Parsing
-    "docling", "docling-parse", "unstructured", "magic-pdf", "marker-pdf",
-    # Agent & RAG Frameworks
-    "langchain", "langgraph", "llama-index", "smolagents", "lightrag-hku", "llama-stack",
+    # Core
+    "fastapi", "pydantic", "uvicorn", "httpx", "aiohttp",
+    # Document Processing  
+    "docling", "unstructured", "pypdf", "pdfplumber", "markdown",
+    # RAG Frameworks
+    "langchain", "langgraph", "llama-index", "chromadb",
     # Vector DB Clients
-    "pymilvus", "qdrant-client", "chromadb", 
-    # Evals & Middleware
-    "ragas", "deepeval", "nemo-guardrails", "litellm", "openai", "sentence-transformers"
+    "pymilvus", "qdrant-client", "redis",
+    # Evals & Monitoring
+    "ragas", "deepeval", "litellm", "openai",
+    # Utilities
+    "sentence-transformers", "transformers", "accelerate",
+    "bitsandbytes", "scipy", "numpy", "pandas"
 ]
 
+# H200 OPTIMIZED CUDA PACKAGES
 CUDA_PACKAGES = [
-    "torch", "torchvision", "xformers", "vllm", "sglang", "flash-attn", "unsloth"
+    "torch==2.3.0",
+    "torchvision==0.18.0", 
+    "xformers==0.0.26",
+    "flash-attn==2.5.9",
+    "vllm==0.5.0",
+    "triton==2.3.0",
 ]
 
+# H200 MODELS - Using GGUF format (no token needed for most)
 MODELS = {
-    "meta-llama/Llama-3.1-70B-Instruct": "Llama 70B Instruct (Native FP16)",
-    "Qwen/Qwen2.5-72B-Instruct": "Qwen 72B Instruct FP16",
-    "BAAI/bge-m3": "BGE M3 Multilingual Embeddings",
-    "meta-llama/Prompt-Guard-86M": "Llama Prompt Guard"
+    # GGUF Models (Open access, no token needed)
+    "TheBloke/Llama-3.2-3B-Instruct-GGUF": "Llama 3.2 3B (Q4_K_M)",
+    "TheBloke/Mistral-7B-Instruct-v0.3-GGUF": "Mistral 7B (Q4_K_M)",
+    "TheBloke/Qwen2.5-7B-Instruct-GGUF": "Qwen 7B (Q4_K_M)",
+    "TheBloke/Phi-3-mini-4k-instruct-GGUF": "Phi-3 Mini (Q4_K_M)",
+    # Embedding Models
+    "BAAI/bge-small-en-v1.5": "BGE Small Embeddings",
+    "sentence-transformers/all-MiniLM-L6-v2": "MiniLM Embeddings",
 }
+
+# Inference Engines for H200
+INFERENCE_ENGINES = [
+    {
+        "name": "vLLM",
+        "repo": "vllm-project/vllm",
+        "cmd": "pip install vllm --index-url https://download.pytorch.org/whl/cu124"
+    },
+    {
+        "name": "llama.cpp",
+        "repo": "ggerganov/llama.cpp",
+        "cmd": "make LLAMA_CUDA=1 -j"
+    },
+    {
+        "name": "ExLlamaV2",
+        "repo": "turboderp/exllamav2",
+        "cmd": "pip install exllamav2"
+    }
+]
 
 SAMPLE_PROJECTS = [
     {"name": "dify", "url": "https://github.com/langgenius/dify.git"},
     {"name": "anything-llm", "url": "https://github.com/mintplex-labs/anything-llm.git"},
     {"name": "ragflow", "url": "https://github.com/infiniflow/ragflow.git"},
     {"name": "lightrag", "url": "https://github.com/hkuds/lightrag.git"},
-    {"name": "guardrail-system-rag", "url": "https://github.com/lamhotsiagian/guardrail-system-rag.git"},
-    {"name": "prod-rag-systems", "url": "https://github.com/vishalanandl177/production-rag-systems-engineering.git"}
 ]
 
-# ======================== MATRIX STYLE ASCII ART (SMALLER) ========================
+# ======================== MATRIX STYLE ASCII ART ========================
 class MatrixASCII:
-    """Matrix-style animated ASCII art (compact version)"""
-    
     def __init__(self):
         self.running = False
         self.thread = None
         self.current_art = ""
         self.lock = threading.Lock()
-        self.width = 40  # Smaller width
-        self.height = 5  # Smaller height
+        self.width = 40
+        self.height = 5
         
-        # Matrix characters
-        self.chars = [
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-            'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-            'U', 'V', 'W', 'X', 'Y', 'Z'
-        ]
+        self.chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+                     'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+                     'U', 'V', 'W', 'X', 'Y', 'Z']
         
-        # Color codes
         self.colors = {
             'green': '\033[92m',
-            'light_green': '\033[92m',
             'dark_green': '\033[32m',
             'bright_green': '\033[96m',
-            'white': '\033[97m',
-            'yellow': '\033[93m',
             'bold': '\033[1m',
             'dim': '\033[2m',
             'end': '\033[0m'
         }
         
-        # Matrix columns
         self.columns = []
         self.init_columns()
-        
-        # Log tail
         self.log_lines = []
         self.log_lock = threading.Lock()
         
     def init_columns(self):
-        """Initialize matrix columns with random speeds"""
         self.columns = []
         for i in range(self.width):
             self.columns.append({
@@ -155,39 +179,29 @@ class MatrixASCII:
             })
     
     def generate_art(self):
-        """Generate a compact Matrix-style frame"""
-        # Update columns
         matrix = [[' ' for _ in range(self.width)] for _ in range(self.height)]
         
         for col in self.columns:
-            # Move column down
             col['y'] = (col['y'] + col['speed']) % (self.height + col['length'])
             
-            # Draw column
             for i in range(col['length']):
                 y_pos = (col['y'] - i) % self.height
                 if 0 <= y_pos < self.height:
                     if i == 0:
-                        # Head of the column (bright)
                         matrix[y_pos][col['x']] = f"{self.colors['bright_green']}{random.choice(self.chars)}{self.colors['end']}"
                     elif i < col['length'] // 2:
-                        # Body (green)
                         matrix[y_pos][col['x']] = f"{self.colors['green']}{random.choice(self.chars)}{self.colors['end']}"
                     else:
-                        # Tail (dim)
                         matrix[y_pos][col['x']] = f"{self.colors['dim']}{self.colors['dark_green']}{random.choice(self.chars)}{self.colors['end']}"
             
-            # Randomly change character
             if random.random() < 0.3:
                 col['char'] = random.choice(self.chars)
         
-        # Build the ASCII art string
         art_lines = []
         for row in matrix:
             line = ''.join(row)
             art_lines.append(line)
         
-        # Simple compact border
         art = f"{self.colors['green']}╔{'═' * (self.width + 2)}╗{self.colors['end']}\n"
         for line in art_lines:
             art += f"{self.colors['green']}║{self.colors['end']}{line}{self.colors['green']}║{self.colors['end']}\n"
@@ -196,17 +210,14 @@ class MatrixASCII:
         return art
     
     def _run(self):
-        """Background thread that continuously updates Matrix art"""
         while self.running:
             with self.lock:
                 self.current_art = self.generate_art()
-                # Update log tail
                 with self.log_lock:
                     self.update_log_tail()
             time.sleep(random.uniform(0.05, 0.15))
     
     def update_log_tail(self):
-        """Read last few lines from log file"""
         try:
             with open(LOG_FILE, 'r') as f:
                 lines = f.readlines()
@@ -215,12 +226,9 @@ class MatrixASCII:
             self.log_lines = ["[INFO] Waiting for logs..."]
     
     def get_log_tail(self):
-        """Get formatted log tail (last 5 lines for compact display)"""
         with self.log_lock:
             if not self.log_lines:
                 return "[INFO] No logs yet..."
-            
-            # Format and colorize logs - show last 5 lines only
             formatted = []
             for line in self.log_lines[-5:]:
                 line = line.strip()
@@ -237,24 +245,21 @@ class MatrixASCII:
             return '\n'.join(formatted)
     
     def start(self):
-        """Start the Matrix thread"""
         if not self.running:
             self.running = True
             self.thread = threading.Thread(target=self._run, daemon=True)
             self.thread.start()
     
     def stop(self):
-        """Stop the Matrix thread"""
         self.running = False
         if self.thread:
             self.thread.join(timeout=1)
     
     def get_art(self):
-        """Get the current Matrix art frame"""
         with self.lock:
             return self.current_art
 
-# ======================== STATE & METRICS ========================
+# ======================== STATE MANAGER ========================
 class StateManager:
     def __init__(self):
         self.state = {"items": {}, "retry_count": 0, "max_retries": 3}
@@ -296,17 +301,6 @@ class StateManager:
     def get_failed_items(self):
         return {k: v for k, v in self.state["items"].items() if v.get("status") == "failed"}
     
-    def get_pending_items(self):
-        all_items = set()
-        for img, _ in DOCKER_IMAGES: all_items.add(f"docker_{img}")
-        for pkg in PYTHON_PACKAGES: all_items.add(f"pip_{pkg}")
-        for pkg in CUDA_PACKAGES: all_items.add(f"pip_cu124_{pkg}")
-        for repo in MODELS.keys(): all_items.add(f"model_{repo}")
-        for proj in SAMPLE_PROJECTS: all_items.add(f"project_{proj['name']}")
-        
-        completed = set(self.state["items"].keys())
-        return list(all_items - completed)
-    
     def get_retry_queue(self):
         retry_items = []
         for key in self.retry_queue:
@@ -322,7 +316,6 @@ metrics = {"completed": 0, "failed": 0, "total": 0}
 
 # ======================== INTERACTIVE SELECTION ========================
 def interactive_selection():
-    """Allow user to select/modify packages before installation"""
     console.print("\n[bold cyan]🔧 INTERACTIVE CONFIGURATION[/bold cyan]\n")
     
     total = len(state.state["items"])
@@ -346,13 +339,47 @@ def interactive_selection():
     state.state["max_retries"] = max_retries
     state.save()
     
+    # Check if tools are installed
+    check_required_tools()
+    
     return {'max_retries': max_retries}
 
-# ======================== ENHANCED UI DASHBOARD ========================
-def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name="", retry_count=0, log_tail=""):
-    """Generates the split live-dashboard with compact Matrix art and log tail"""
+def check_required_tools():
+    """Check and install required tools"""
+    console.print("\n[bold cyan]🔧 Checking required tools...[/bold cyan]")
     
-    # Main metrics table (left side)
+    # Check pip
+    try:
+        subprocess.run(["pip", "--version"], capture_output=True, check=True)
+        console.print("[green]✓ pip found[/green]")
+    except:
+        console.print("[red]✗ pip not found. Please install pip[/red]")
+    
+    # Check huggingface-cli
+    try:
+        subprocess.run(["huggingface-cli", "--version"], capture_output=True, check=True)
+        console.print("[green]✓ huggingface-cli found[/green]")
+    except:
+        console.print("[yellow]⚠️ huggingface-cli not found. Installing...[/yellow]")
+        subprocess.run(["pip", "install", "huggingface-hub"], check=True)
+        console.print("[green]✓ huggingface-cli installed[/green]")
+    
+    # Check docker
+    try:
+        subprocess.run(["docker", "--version"], capture_output=True, check=True)
+        console.print("[green]✓ docker found[/green]")
+    except:
+        console.print("[red]✗ docker not found. Please install docker[/red]")
+    
+    # Check git
+    try:
+        subprocess.run(["git", "--version"], capture_output=True, check=True)
+        console.print("[green]✓ git found[/green]")
+    except:
+        console.print("[red]✗ git not found. Please install git[/red]")
+
+# ======================== UI LAYOUT ========================
+def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name="", retry_count=0, log_tail=""):
     table = Table(title="📊 Live Installation Summary", box=box.ROUNDED, expand=True)
     table.add_column("Metric", style="cyan", justify="left")
     table.add_column("Count", style="magenta", justify="right")
@@ -369,7 +396,6 @@ def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name=""
     if phase_name:
         table.add_row("Current Phase", f"[bold yellow]{phase_name}[/bold yellow]")
     
-    # Failed items list (right side, compact)
     failed_items = state.get_failed_items()
     if failed_items:
         fail_text = "\n".join([f"  • {key[:35]} (retries: {v.get('retries', 0)})" 
@@ -380,7 +406,6 @@ def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name=""
     else:
         fail_panel = Panel("[green]✓ No failures[/green]", title="✅ Status", border_style="green", box=box.ROUNDED)
     
-    # Current task info
     task_panel = Panel(
         f"[bold yellow]{current_task or 'Waiting...'}[/bold yellow]",
         title="Current Task",
@@ -388,45 +413,45 @@ def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name=""
         box=box.ROUNDED
     )
     
-    # Matrix art panel (compact)
     art_panel = Panel(
         Align.center(matrix_art or "[dim]Initializing Matrix...[/dim]"),
-        title="🖥️ Matrix Downloader",
+        title="🖥️ H200 Matrix Downloader",
         border_style="green",
         box=box.HEAVY,
-        height=9  # Fixed height
+        height=9
     )
     
-    # Log tail panel (always visible at bottom)
     log_panel = Panel(
         log_tail or "[dim]Waiting for logs...[/dim]",
         title="📋 Live Log Tail",
         border_style="blue",
         box=box.ROUNDED,
-        height=6  # Fixed height
+        height=6
     )
     
-    # Combine components in a vertical layout
-    # Top: Metrics and Status (2 columns)
-    top_row = Group(table, fail_panel)  # This creates a horizontal grouping
-    
-    # Middle: Task + Matrix
+    top_row = Group(table, fail_panel)
     middle_row = Group(task_panel, art_panel)
-    
-    # Bottom: Log tail
     bottom_row = log_panel
-    
-    # Progress at the very bottom
     progress_row = progress_ui
     
-    # Combine everything
     return Group(top_row, middle_row, bottom_row, progress_row)
 
 # ======================== CORE LOGIC ========================
-def run_cmd(cmd, max_retries=3, timeout=600, cwd=None):
+def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
+    """Run command with proxy support"""
     for attempt in range(1, max_retries + 1):
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd)
+            run_env = os.environ.copy()
+            if env:
+                run_env.update(env)
+            
+            # Add proxy
+            run_env['HTTP_PROXY'] = PROXY_URL
+            run_env['HTTPS_PROXY'] = PROXY_URL
+            run_env['http_proxy'] = PROXY_URL
+            run_env['https_proxy'] = PROXY_URL
+            
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd, env=run_env)
             if proc.returncode == 0: 
                 logger.info(f"Command succeeded: {' '.join(cmd[:2])}")
                 return True, proc.stdout
@@ -451,26 +476,73 @@ def pull_docker(image):
 def download_pip(pkg, cu124=False):
     logger.info(f"Downloading Python package: {pkg} (CUDA: {cu124})")
     dest = DIRS["python_cu124"] if cu124 else DIRS["python"]
-    cmd = ["uv", "pip", "download", pkg, "-d", str(dest)]
-    if cu124: cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
     
-    success, _ = run_cmd(cmd, max_retries=2)
-    if success: return True, "uv success"
+    cmd = ["pip", "download", pkg, "-d", str(dest), "--no-deps"]
+    if cu124:
+        cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
     
-    fallback = ["pip", "download", pkg, "-d", str(dest)]
-    if cu124: fallback.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
-    return run_cmd(fallback, max_retries=2)
+    success, err = run_cmd(cmd, max_retries=3, timeout=600)
+    if success:
+        return True, "pip download success"
+    return False, err
 
 def download_hf_model(repo_id):
+    """Download HuggingFace model with or without token"""
     logger.info(f"Downloading HuggingFace model: {repo_id}")
     dest_path = DIRS["models_hf"] / repo_id.replace("/", "_")
-    cmd = ["huggingface-cli", "download", repo_id, "--local-dir", str(dest_path), "--local-dir-use-symlinks", "False", "--resume-download"]
-    return run_cmd(cmd, max_retries=5, timeout=7200)
-
-def test_venv_imports(venv_python, packages):
-    test_script = "; ".join([f"import {pkg.replace('-', '_')}" for pkg in packages[:3]])
-    success, _ = run_cmd([venv_python, "-c", test_script], timeout=60)
-    return success
+    
+    # Check if it's a gated model
+    is_gated = "meta-llama" in repo_id or "gated" in repo_id.lower()
+    
+    if is_gated:
+        logger.warning(f"⚠️ {repo_id} is a gated model. You need to:")
+        logger.warning("1. Accept terms at: https://huggingface.co/{repo_id}")
+        logger.warning("2. Set HF_TOKEN environment variable")
+        logger.warning("Trying with anonymous access anyway...")
+    
+    # Try with huggingface-cli
+    cmd = [
+        "huggingface-cli", "download", 
+        repo_id, 
+        "--local-dir", str(dest_path),
+        "--local-dir-use-symlinks", "False",
+        "--resume-download"
+    ]
+    
+    # Use token if available
+    env = os.environ.copy()
+    if 'HF_TOKEN' in os.environ:
+        env['HF_TOKEN'] = os.environ['HF_TOKEN']
+        logger.info("Using HF_TOKEN from environment")
+    
+    env['HF_HUB_ENABLE_HF_TRANSFER'] = '1'
+    
+    success, err = run_cmd(cmd, max_retries=3, timeout=7200, env=env)
+    if success:
+        return True, "Model downloaded successfully"
+    
+    # If huggingface-cli fails, try with Python API (more reliable)
+    logger.info("Trying Python API fallback...")
+    try:
+        from huggingface_hub import snapshot_download
+        import os as os_module
+        
+        # Set proxy for Python
+        os_module.environ['HTTP_PROXY'] = PROXY_URL
+        os_module.environ['HTTPS_PROXY'] = PROXY_URL
+        
+        snapshot_download(
+            repo_id=repo_id,
+            local_dir=str(dest_path),
+            local_dir_use_symlinks=False,
+            resume_download=True,
+            token=os.environ.get('HF_TOKEN', None),
+            proxies={"http": PROXY_URL, "https": PROXY_URL}
+        )
+        return True, "Model downloaded via Python API"
+    except Exception as e:
+        logger.error(f"Python API fallback failed: {str(e)}")
+        return False, f"All download methods failed: {err}"
 
 def setup_project(project):
     name, url = project["name"], project["url"]
@@ -480,29 +552,14 @@ def setup_project(project):
     if not dest.exists():
         succ, err = run_cmd(["git", "clone", url, str(dest)], timeout=300)
         if not succ: return False, f"Clone failed: {err}"
-        
-    venv_dir = dest / ".venv"
-    if not venv_dir.exists(): run_cmd(["uv", "venv", str(venv_dir)], cwd=str(dest))
-    venv_python = str(venv_dir / "bin" / "python")
     
-    req_file, pyproj = dest / "requirements.txt", dest / "pyproject.toml"
-    
+    req_file = dest / "requirements.txt"
     if req_file.exists():
-        succ, err = run_cmd(["uv", "pip", "install", "-p", venv_python, "-r", "requirements.txt"], cwd=str(dest), timeout=600)
+        succ, err = run_cmd(["pip", "install", "-r", str(req_file)], cwd=str(dest), timeout=600)
         if not succ: return False, f"Install failed: {err}"
-        
-        with open(req_file, "r") as f:
-            pkgs = [line.split("==")[0].strip() for line in f if line.strip() and not line.startswith(("#", "-"))]
-        if pkgs and test_venv_imports(venv_python, pkgs):
-            return True, "Cloned, installed, and load-tested successfully."
-        return True, "Cloned and installed, but load test failed or was skipped."
-        
-    elif pyproj.exists():
-        succ, err = run_cmd(["uv", "sync"], cwd=str(dest), timeout=600)
-        if not succ: return False, f"uv sync failed: {err}"
-        return True, "Cloned and synced via pyproject.toml"
-        
-    return True, "Cloned, but no Python dependencies found."
+        return True, "Cloned and installed dependencies"
+    
+    return True, "Cloned successfully"
 
 def generate_report():
     with open(REPORT_FILE, "w") as f:
@@ -523,23 +580,23 @@ def generate_report():
                 retries = data.get("retries", 0)
                 f.write(f"- **{key}** (retries: {retries}): {data['details'][:200]}\n")
         
-        f.write("\n### Pending Items:\n")
-        pending = state.get_pending_items()
-        if pending:
-            for item in pending:
-                f.write(f"- {item}\n")
-        else:
-            f.write("- None (all tasks completed or in retry queue)\n")
-        
-        f.write("\nCheck `download.log` for full console outputs.\n")
+        f.write("\n### H200 Optimization Recommendations:\n")
+        f.write("1. Use vLLM with FP8 quantization for best performance\n")
+        f.write("2. Use GGUF models (Q4_K_M) for memory-efficient inference\n")
+        f.write("3. Enable flash-attention-2 for faster inference\n")
+        f.write("4. Use batch inference for higher throughput\n")
+        f.write("5. Consider using TensorRT-LLM for production deployment\n")
 
 # ======================== MAIN ORCHESTRATOR ========================
 @click.command()
 @click.option('--interactive', is_flag=True, help='Interactive selection of components')
 @click.option('--skip-matrix', is_flag=True, help='Skip Matrix ASCII animation')
-@click.option('--auto-retry', is_flag=True, help='Automatically retry failed tasks without prompting')
+@click.option('--auto-retry', is_flag=True, help='Automatically retry failed tasks')
 def main(interactive, skip_matrix, auto_retry):
-    # Interactive configuration
+    console.print("[bold cyan]🚀 H200 Offline Preparation Tool[/bold cyan]")
+    console.print("[yellow]Optimized for NVIDIA H200 GPUs[/yellow]")
+    console.print("[dim]Using proxy: {}[/dim]\n".format(PROXY_URL))
+    
     if interactive:
         config = interactive_selection()
         max_retries = config.get('max_retries', 3)
@@ -547,6 +604,13 @@ def main(interactive, skip_matrix, auto_retry):
         state.save()
     else:
         max_retries = state.state.get("max_retries", 3)
+    
+    # Check for HuggingFace token
+    if 'HF_TOKEN' in os.environ:
+        console.print("[green]✓ HF_TOKEN found in environment[/green]")
+    else:
+        console.print("[yellow]⚠️ No HF_TOKEN found. Public models only.[/yellow]")
+        console.print("[dim]For gated models (like Llama 3.1), set: export HF_TOKEN=your_token[/dim]")
     
     # Start Matrix thread
     matrix = MatrixASCII()
@@ -576,14 +640,13 @@ def main(interactive, skip_matrix, auto_retry):
     for proj in SAMPLE_PROJECTS:
         all_tasks.append(("project", f"project_{proj['name']}", proj))
     
-    # Filter tasks - only pending or retry
+    # Filter tasks
     pending_tasks = []
     for task_tuple in all_tasks:
         key = task_tuple[1]
         if not state.is_completed(key):
             pending_tasks.append(task_tuple)
     
-    # Add retry queue tasks
     retry_items = state.get_retry_queue()
     for key in retry_items:
         for task_tuple in all_tasks:
@@ -592,16 +655,6 @@ def main(interactive, skip_matrix, auto_retry):
                 break
     
     metrics["total"] = len(pending_tasks)
-    
-    if metrics["total"] == 0 and retry_items:
-        console.print("[yellow]All tasks completed, but some failed items in retry queue[/yellow]")
-        if Confirm.ask("[cyan]Retry failed tasks?[/cyan]", default=True):
-            for key in retry_items:
-                for task_tuple in all_tasks:
-                    if task_tuple[1] == key:
-                        pending_tasks.append(task_tuple)
-                        break
-            metrics["total"] = len(pending_tasks)
     
     if metrics["total"] == 0:
         console.print("[green]All tasks completed successfully! 🎉[/green]")
@@ -634,8 +687,7 @@ def main(interactive, skip_matrix, auto_retry):
             
         progress_ui.advance(overall_task)
         progress_ui.advance(phase_task)
-
-    # Main execution loop
+    
     try:
         with Live(generate_layout(progress_ui, 
                                  matrix.get_art() if not skip_matrix else None,
@@ -656,7 +708,7 @@ def main(interactive, skip_matrix, auto_retry):
                     continue
                 
                 if task_type == "docker":
-                    phase_name = f"Docker Images"
+                    phase_name = "Docker Images"
                     progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", 
                                      total=len([t for t in all_tasks if t[0]=='docker']), completed=0)
                     img = task_tuple[2]
@@ -709,7 +761,6 @@ def main(interactive, skip_matrix, auto_retry):
                                                matrix.get_log_tail() if not skip_matrix else ""))
                     execute_with_ui(key, "Sample_Projects", setup_project, proj)
                 
-                # Auto-retry logic
                 if auto_retry and state.get_retry_queue():
                     for retry_key in state.get_retry_queue():
                         for task in all_tasks:
@@ -717,7 +768,6 @@ def main(interactive, skip_matrix, auto_retry):
                                 pending_tasks.append(task)
                                 break
             
-            # Final update
             live.update(generate_layout(progress_ui, 
                                        matrix.get_art() if not skip_matrix else None,
                                        "✅ All phases completed!",
@@ -728,7 +778,7 @@ def main(interactive, skip_matrix, auto_retry):
     
     except KeyboardInterrupt:
         console.print("\n[bold yellow]⚠️ Installation interrupted by user[/bold yellow]")
-        console.print("[cyan]State saved. You can resume later with: python3 enhanced_installer.py --interactive[/cyan]")
+        console.print("[cyan]State saved. Resume with: python3 enhanced_installer.py --interactive[/cyan]")
         
     finally:
         if not skip_matrix:
@@ -740,17 +790,21 @@ def main(interactive, skip_matrix, auto_retry):
         total = len(state.state["items"])
         completed = sum(1 for v in state.state["items"].values() if v.get("status") == "completed")
         failed = sum(1 for v in state.state["items"].values() if v.get("status") == "failed")
-        retry_count = len(state.get_retry_queue())
         
         console.print("\n[bold cyan]=== FINAL SUMMARY ===[/bold cyan]")
         console.print(f"Total tasks attempted: {total}")
         console.print(f"[green]✅ Completed: {completed}[/green]")
         console.print(f"[red]❌ Failed: {failed}[/red]")
-        console.print(f"[yellow]🔄 In retry queue: {retry_count}[/yellow]")
         
         if failed > 0:
             console.print("\n[bold yellow]💡 To retry failed tasks:[/bold yellow]")
             console.print("  python3 enhanced_installer.py --interactive --auto-retry")
+        
+        console.print("\n[bold cyan]💡 H200 Optimization Tips:[/bold cyan]")
+        console.print("1. Use vLLM with FP8 quantization for best performance")
+        console.print("2. Use GGUF models (Q4_K_M) for memory-efficient inference")
+        console.print("3. Enable flash-attention-2 for faster inference")
+        console.print("4. Consider using TensorRT-LLM for production deployment")
 
 if __name__ == "__main__":
     main()
