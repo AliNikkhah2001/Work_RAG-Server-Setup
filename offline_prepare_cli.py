@@ -17,7 +17,7 @@ from datetime import datetime
 
 # ========================= CONFIG =========================
 PROXY_URL = "http://192.168.203.2:3128"
-BASE_DIR = Path("/ai-gpu1/v1/Work_RAG-Server-Setup/offline-prep")  # use large drive
+BASE_DIR = Path("/ai-gpu1/v1/Work_RAG-Server-Setup/offline-prep")
 VENV_DIR = BASE_DIR / "venv"
 STATE_FILE = BASE_DIR / ".state.json"
 RETRY_QUEUE = BASE_DIR / ".retry_queue.json"
@@ -153,15 +153,10 @@ def create_venv():
         return False
 
 def install_core_tools():
-    """Install uv and huggingface-hub (provides 'hf') in the venv."""
     pip = get_venv_pip()
-    # Upgrade pip
     run_cmd([pip, "install", "--upgrade", "pip"])
-    # Install uv
     run_cmd([pip, "install", "uv"])
-    # Install huggingface-hub (includes hf CLI)
     run_cmd([pip, "install", "--upgrade", "huggingface-hub"])
-    # Verify 'hf' is available
     try:
         subprocess.run(["hf", "--help"], check=True, capture_output=True)
         logger.info("hf CLI installed")
@@ -214,7 +209,6 @@ class State:
         self.save()
 
     def get_pending(self):
-        # Rebuild from scratch: all tasks minus completed
         all_keys = set()
         for img, _ in DOCKER_IMAGES:
             all_keys.add(f"docker_{img}")
@@ -227,7 +221,6 @@ class State:
 
         done = set(self.data["items"].keys())
         pending = all_keys - done
-        # Add retry queue items if not already pending
         for key in self.retry_queue:
             if key not in pending:
                 pending.add(key)
@@ -235,7 +228,7 @@ class State:
 
 state = State()
 
-# ========================= TASK DEFINITIONS (UPDATED) =========================
+# ========================= TASK DEFINITIONS =========================
 DOCKER_IMAGES = [
     ("ghcr.io/open-webui/open-webui:main", "Open WebUI"),
     ("vllm/vllm-openai:latest", "vLLM"),
@@ -246,14 +239,13 @@ DOCKER_IMAGES = [
     ("redis:7-alpine", "Redis"),
 ]
 
-# CUDA packages with correct versions (verified)
 CUDA_PACKAGES = [
     "torch==2.5.0",
     "torchvision==2.5.0",
     "torchaudio==2.5.0",
-    "xformers==0.0.28.post1",    # exists
-    "flash-attn==2.6.3",         # exists
-    "vllm==0.6.1.post1",         # exists
+    "xformers==0.0.28.post1",
+    "flash-attn==2.6.3",
+    "vllm==0.6.1.post1",
     "triton==3.0.0",
     "faiss-gpu==1.8.0",
 ]
@@ -267,7 +259,6 @@ STD_PACKAGES = [
     "ragas", "deepeval", "litellm", "openai",
 ]
 
-# VERIFIED MODELS (all exist)
 MODELS = {
     "Qwen/Qwen2.5-7B-Instruct-GGUF": "Qwen 2.5 7B (Official GGUF)",
     "bartowski/Llama-3.2-3B-Instruct-GGUF": "Llama 3.2 3B (bartowski GGUF)",
@@ -294,7 +285,6 @@ def pull_docker(image):
     return run_cmd(["docker", "save", "-o", str(tar), image], max_retries=2, timeout=600)
 
 def install_python_package(pkg, cuda=False):
-    """Install using uv for better dependency resolution."""
     logger.info(f"Installing {pkg} (CUDA: {cuda})")
     uv = get_venv_uv()
     cmd = [uv, "pip", "install", pkg]
@@ -315,17 +305,19 @@ def download_hf_model(repo_id):
     env["HF_XET_HIGH_PERFORMANCE"] = "1"
     if "HF_TOKEN" in os.environ:
         env["HF_TOKEN"] = os.environ["HF_TOKEN"]
-    # Use correct flags for 'hf' CLI
+    
+    # Use CORRECT options for 'hf' CLI
     cmd = [
         "hf", "download",
         repo_id,
-        "--local-dir", str(dest),
-        "--resume-download"
+        "--local-dir", str(dest)
     ]
     success, _ = run_cmd(cmd, max_retries=3, timeout=7200, env=env)
     if success:
         return True, "Download OK"
-    # Fallback to Python API
+    
+    # Fallback to Python API (supports resume)
+    logger.info("Falling back to Python API...")
     try:
         from huggingface_hub import snapshot_download
         snapshot_download(
@@ -421,7 +413,6 @@ def main(interactive, auto_retry, skip_checks):
             "projects": [p["name"] for p in PROJECTS]
         }
 
-    # Build task list
     all_tasks = []
     for img in selection["docker"]:
         all_tasks.append(("docker", f"docker_{img}", img))
@@ -446,7 +437,6 @@ def main(interactive, auto_retry, skip_checks):
     if auto_retry:
         print("Auto-retry: ON")
 
-    # Execution loop
     for key in pending:
         if state.is_done(key):
             continue
@@ -479,7 +469,6 @@ def main(interactive, auto_retry, skip_checks):
                 if click.confirm(f"Retry {key} now?", default=False):
                     pending.append(key)
 
-    # Auto-retry phase
     if auto_retry and state.retry_queue:
         print("\n--- Auto-retrying failed tasks ---")
         retry_keys = state.retry_queue.copy()
@@ -510,7 +499,6 @@ def main(interactive, auto_retry, skip_checks):
                 state.set_status(key, "failed", msg)
                 print(f"[FAIL] {key} - retries exhausted")
 
-    # Final import verification
     print("\n" + "="*80)
     print(" FINAL IMPORT VERIFICATION")
     print("="*80)
@@ -537,7 +525,6 @@ def main(interactive, auto_retry, skip_checks):
         for pkg, status in import_results.items():
             print(f"  {pkg}: {status}")
 
-    # Generate report
     generate_report()
 
     print("\n" + "="*80)
