@@ -9,6 +9,7 @@ import subprocess
 import logging
 import threading
 import random
+import traceback
 from pathlib import Path
 from datetime import datetime
 import click
@@ -33,13 +34,12 @@ PROJECTS_DIR = BASE_DIR / "sample-projects"
 REPORT_FILE = BASE_DIR / "COMPREHENSIVE_REPORT.md"
 RETRY_QUEUE = BASE_DIR / ".retry_queue.json"
 LOG_FILE = BASE_DIR / "download.log"
+ERROR_LOG = BASE_DIR / "errors.log"
+FAILED_TASKS_LOG = BASE_DIR / "failed_tasks.log"
+DEBUG_LOG = BASE_DIR / "debug.log"
 
-# Proxy configuration (UPDATE WITH YOUR PROXY)
+# Proxy configuration
 PROXY_URL = "http://192.168.203.2:3128"
-PROXY_SETTINGS = {
-    "http": PROXY_URL,
-    "https": PROXY_URL
-}
 
 DIRS = {
     "docker": BASE_DIR / "docker-images",
@@ -47,20 +47,230 @@ DIRS = {
     "python_cu124": BASE_DIR / "python-packages-cu124",
     "models_hf": BASE_DIR / "models" / "huggingface",
     "models_gguf": BASE_DIR / "models" / "gguf",
-    "inference": BASE_DIR / "inference-engines"
+    "inference": BASE_DIR / "inference-engines",
+    "bin": BASE_DIR / "bin",
+    "logs": BASE_DIR / "logs"  # New logs directory
 }
 
 for d in DIRS.values(): d.mkdir(parents=True, exist_ok=True)
 PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler(LOG_FILE)]
-)
-logger = logging.getLogger(__name__)
+# Add bin to PATH
+os.environ["PATH"] = f"{DIRS['bin']}:{os.environ.get('PATH', '')}"
+
+# ======================== COMPREHENSIVE LOGGING SETUP ========================
+class ComprehensiveLogger:
+    """Handle all logging with multiple log files"""
+    
+    def __init__(self):
+        self.base_dir = BASE_DIR
+        self.setup_logging()
+        
+    def setup_logging(self):
+        """Setup multiple log handlers"""
+        
+        # Main logger - INFO level
+        main_logger = logging.getLogger('main')
+        main_logger.setLevel(logging.INFO)
+        main_handler = logging.FileHandler(LOG_FILE)
+        main_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        main_logger.addHandler(main_handler)
+        
+        # Error logger - ERROR level only
+        error_logger = logging.getLogger('error')
+        error_logger.setLevel(logging.ERROR)
+        error_handler = logging.FileHandler(ERROR_LOG)
+        error_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s\n%(exc_info)s\n'))
+        error_logger.addHandler(error_handler)
+        
+        # Debug logger - DEBUG level
+        debug_logger = logging.getLogger('debug')
+        debug_logger.setLevel(logging.DEBUG)
+        debug_handler = logging.FileHandler(DEBUG_LOG)
+        debug_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        debug_logger.addHandler(debug_handler)
+        
+        # Failed tasks logger
+        failed_logger = logging.getLogger('failed')
+        failed_logger.setLevel(logging.INFO)
+        failed_handler = logging.FileHandler(FAILED_TASKS_LOG)
+        failed_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        failed_logger.addHandler(failed_handler)
+        
+        self.main_logger = main_logger
+        self.error_logger = error_logger
+        self.debug_logger = debug_logger
+        self.failed_logger = failed_logger
+        
+        # Also log to console
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        self.main_logger.addHandler(console_handler)
+    
+    def log_info(self, msg):
+        self.main_logger.info(msg)
+        self.debug_logger.info(msg)
+    
+    def log_warning(self, msg):
+        self.main_logger.warning(msg)
+        self.debug_logger.warning(msg)
+    
+    def log_error(self, msg, exc_info=None):
+        self.main_logger.error(msg)
+        self.error_logger.error(msg, exc_info=exc_info)
+        self.debug_logger.error(msg, exc_info=exc_info)
+        self.failed_logger.error(msg)
+        if exc_info:
+            self.failed_logger.error(f"Traceback: {exc_info}")
+    
+    def log_debug(self, msg):
+        self.debug_logger.debug(msg)
+    
+    def log_failed_task(self, task_name, error_msg, retries=0):
+        """Log failed task with full details"""
+        timestamp = datetime.now().isoformat()
+        entry = f"""
+{'='*80}
+FAILED TASK: {task_name}
+Timestamp: {timestamp}
+Retries: {retries}
+Error: {error_msg}
+{'='*80}
+"""
+        self.failed_logger.info(entry)
+        self.error_logger.error(entry)
+        
+        # Also append to a structured JSON log for easy parsing
+        failed_file = self.base_dir / "failed_tasks.json"
+        try:
+            if failed_file.exists():
+                with open(failed_file, 'r') as f:
+                    data = json.load(f)
+            else:
+                data = {"failed_tasks": []}
+            
+            data["failed_tasks"].append({
+                "task": task_name,
+                "timestamp": timestamp,
+                "retries": retries,
+                "error": error_msg,
+                "full_trace": traceback.format_exc()
+            })
+            
+            with open(failed_file, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            self.log_error(f"Failed to write failed_tasks.json: {e}")
+
+logger = ComprehensiveLogger()
 console = Console()
+
+# ======================== TOOL CHECK AND INSTALL ========================
+def install_uv():
+    """Install uv package manager"""
+    console.print("[bold cyan]📦 Installing uv package manager...[/bold cyan]")
+    logger.log_info("Checking/Installing uv")
+    
+    try:
+        result = subprocess.run(["uv", "--version"], capture_output=True, check=True)
+        logger.log_info(f"uv already installed: {result.stdout.strip()}")
+        console.print("[green]✓ uv already installed[/green]")
+        return True
+    except:
+        pass
+    
+    try:
+        logger.log_info("Installing uv via pip")
+        console.print("[yellow]Installing uv via pip...[/yellow]")
+        subprocess.run(
+            ["pip", "install", "uv", "--target", str(DIRS["bin"]), "--upgrade"],
+            check=True,
+            env={**os.environ, "HTTP_PROXY": PROXY_URL, "HTTPS_PROXY": PROXY_URL}
+        )
+        
+        try:
+            result = subprocess.run(["uv", "--version"], capture_output=True, check=True)
+            logger.log_info(f"uv installed successfully: {result.stdout.strip()}")
+            console.print("[green]✓ uv installed successfully[/green]")
+            return True
+        except Exception as e:
+            logger.log_error(f"uv installation verification failed: {e}", traceback.format_exc())
+            console.print("[red]✗ uv installation failed[/red]")
+            return False
+            
+    except Exception as e:
+        logger.log_error(f"Failed to install uv: {e}", traceback.format_exc())
+        console.print(f"[red]✗ Failed to install uv: {e}[/red]")
+        return False
+
+def check_required_tools():
+    """Check and install required tools with detailed logging"""
+    console.print("\n[bold cyan]🔧 Checking required tools...[/bold cyan]")
+    logger.log_info("Checking required tools")
+    
+    tools_status = {}
+    
+    # Check uv
+    tools_status['uv'] = install_uv()
+    
+    # Check pip
+    try:
+        result = subprocess.run(["pip", "--version"], capture_output=True, check=True)
+        logger.log_info(f"pip found: {result.stdout.strip()}")
+        console.print("[green]✓ pip found[/green]")
+        tools_status['pip'] = True
+    except Exception as e:
+        logger.log_error("pip not found", traceback.format_exc())
+        console.print("[red]✗ pip not found[/red]")
+        tools_status['pip'] = False
+    
+    # Check huggingface-cli
+    try:
+        result = subprocess.run(["huggingface-cli", "--version"], capture_output=True, check=True)
+        logger.log_info(f"huggingface-cli found: {result.stdout.strip()}")
+        console.print("[green]✓ huggingface-cli found[/green]")
+        tools_status['huggingface'] = True
+    except:
+        logger.log_info("huggingface-cli not found, installing...")
+        console.print("[yellow]⚠️ huggingface-cli not found. Installing...[/yellow]")
+        try:
+            result = subprocess.run(
+                ["pip", "install", "huggingface-hub"],
+                check=True,
+                capture_output=True,
+                env={**os.environ, "HTTP_PROXY": PROXY_URL, "HTTPS_PROXY": PROXY_URL}
+            )
+            logger.log_info(f"huggingface-cli installed: {result.stdout}")
+            console.print("[green]✓ huggingface-cli installed[/green]")
+            tools_status['huggingface'] = True
+        except Exception as e:
+            logger.log_error(f"Failed to install huggingface-cli: {e}", traceback.format_exc())
+            console.print("[red]✗ Failed to install huggingface-cli[/red]")
+            tools_status['huggingface'] = False
+    
+    # Check docker
+    try:
+        result = subprocess.run(["docker", "--version"], capture_output=True, check=True)
+        logger.log_info(f"docker found: {result.stdout.strip()}")
+        console.print("[green]✓ docker found[/green]")
+        tools_status['docker'] = True
+    except Exception as e:
+        logger.log_error("docker not found", traceback.format_exc())
+        console.print("[red]✗ docker not found[/red]")
+        tools_status['docker'] = False
+    
+    # Check git
+    try:
+        result = subprocess.run(["git", "--version"], capture_output=True, check=True)
+        logger.log_info(f"git found: {result.stdout.strip()}")
+        console.print("[green]✓ git found[/green]")
+        tools_status['git'] = True
+    except Exception as e:
+        logger.log_error("git not found", traceback.format_exc())
+        console.print("[red]✗ git not found[/red]")
+        tools_status['git'] = False
+    
+    return tools_status
 
 # ======================== H200 OPTIMIZED ECOSYSTEM ========================
 
@@ -74,62 +284,59 @@ DOCKER_IMAGES = [
     ("redis:7-alpine", "Redis"),
 ]
 
+# PYTHON PACKAGES - CUDA ENABLED VERSIONS
 PYTHON_PACKAGES = [
-    # Core
+    # Core with CUDA
+    "torch==2.3.0+cu124",
+    "torchvision==0.18.0+cu124",
+    "torchaudio==2.3.0+cu124",
+    
+    # CUDA-accelerated libraries
+    "xformers==0.0.26+cu124",
+    "flash-attn==2.5.9+cu124",
+    "triton==2.3.0+cu124",
+    
+    # Inference engines (CUDA)
+    "vllm==0.5.0+cu124",
+    "sglang==0.2.0+cu124",
+    "tensorrt-llm==0.11.0+cu124",
+    
+    # RAG & ML with CUDA support
+    "transformers==4.40.0",
+    "accelerate==0.30.0",
+    "bitsandbytes==0.43.0",
+    "sentence-transformers==2.7.0",
+    "faiss-gpu==1.8.0",
+    "cupy-cuda12x==13.0.0",
+    
+    # Standard libs
     "fastapi", "pydantic", "uvicorn", "httpx", "aiohttp",
-    # Document Processing  
     "docling", "unstructured", "pypdf", "pdfplumber", "markdown",
-    # RAG Frameworks
     "langchain", "langgraph", "llama-index", "chromadb",
-    # Vector DB Clients
     "pymilvus", "qdrant-client", "redis",
-    # Evals & Monitoring
     "ragas", "deepeval", "litellm", "openai",
-    # Utilities
-    "sentence-transformers", "transformers", "accelerate",
-    "bitsandbytes", "scipy", "numpy", "pandas"
+    "scipy", "numpy", "pandas",
 ]
 
-# H200 OPTIMIZED CUDA PACKAGES
-CUDA_PACKAGES = [
-    "torch==2.3.0",
-    "torchvision==0.18.0", 
-    "xformers==0.0.26",
-    "flash-attn==2.5.9",
-    "vllm==0.5.0",
-    "triton==2.3.0",
+# CUDA PACKAGES - Additional CUDA-only packages
+CUDA_EXTRA_PACKAGES = [
+    "cuda-python==12.4.0",
+    "pycuda==2024.1",
+    "numba==0.59.0",
+    "cudf==24.4.0",
+    "cuml==24.4.0",
+    "cugraph==24.4.0",
 ]
 
-# H200 MODELS - Using GGUF format (no token needed for most)
+# H200 MODELS
 MODELS = {
-    # GGUF Models (Open access, no token needed)
     "TheBloke/Llama-3.2-3B-Instruct-GGUF": "Llama 3.2 3B (Q4_K_M)",
     "TheBloke/Mistral-7B-Instruct-v0.3-GGUF": "Mistral 7B (Q4_K_M)",
     "TheBloke/Qwen2.5-7B-Instruct-GGUF": "Qwen 7B (Q4_K_M)",
     "TheBloke/Phi-3-mini-4k-instruct-GGUF": "Phi-3 Mini (Q4_K_M)",
-    # Embedding Models
     "BAAI/bge-small-en-v1.5": "BGE Small Embeddings",
     "sentence-transformers/all-MiniLM-L6-v2": "MiniLM Embeddings",
 }
-
-# Inference Engines for H200
-INFERENCE_ENGINES = [
-    {
-        "name": "vLLM",
-        "repo": "vllm-project/vllm",
-        "cmd": "pip install vllm --index-url https://download.pytorch.org/whl/cu124"
-    },
-    {
-        "name": "llama.cpp",
-        "repo": "ggerganov/llama.cpp",
-        "cmd": "make LLAMA_CUDA=1 -j"
-    },
-    {
-        "name": "ExLlamaV2",
-        "repo": "turboderp/exllamav2",
-        "cmd": "pip install exllamav2"
-    }
-]
 
 SAMPLE_PROJECTS = [
     {"name": "dify", "url": "https://github.com/langgenius/dify.git"},
@@ -290,9 +497,12 @@ class StateManager:
             if self.state["items"][key]["retries"] <= self.state.get("max_retries", 3):
                 if key not in self.retry_queue:
                     self.retry_queue.append(key)
+            # Log failed task
+            logger.log_failed_task(key, details, self.state["items"][key]["retries"])
         elif status == "completed":
             if key in self.retry_queue:
                 self.retry_queue.remove(key)
+            logger.log_info(f"Task completed: {key}")
         self.save()
 
     def is_completed(self, key):
@@ -339,44 +549,20 @@ def interactive_selection():
     state.state["max_retries"] = max_retries
     state.save()
     
-    # Check if tools are installed
-    check_required_tools()
+    tools_status = check_required_tools()
     
-    return {'max_retries': max_retries}
-
-def check_required_tools():
-    """Check and install required tools"""
-    console.print("\n[bold cyan]🔧 Checking required tools...[/bold cyan]")
+    console.print("\n[bold cyan]📋 Tool Status:[/bold cyan]")
+    for tool, status in tools_status.items():
+        icon = "✅" if status else "❌"
+        console.print(f"  {icon} {tool}")
     
-    # Check pip
-    try:
-        subprocess.run(["pip", "--version"], capture_output=True, check=True)
-        console.print("[green]✓ pip found[/green]")
-    except:
-        console.print("[red]✗ pip not found. Please install pip[/red]")
+    if not tools_status.get('uv', False):
+        console.print("\n[bold red]⚠️ uv is required![/bold red]")
+        console.print("[yellow]Install manually: pip install uv[/yellow]")
+        if not Confirm.ask("[cyan]Continue without uv? (will use pip)[/cyan]", default=False):
+            sys.exit(1)
     
-    # Check huggingface-cli
-    try:
-        subprocess.run(["huggingface-cli", "--version"], capture_output=True, check=True)
-        console.print("[green]✓ huggingface-cli found[/green]")
-    except:
-        console.print("[yellow]⚠️ huggingface-cli not found. Installing...[/yellow]")
-        subprocess.run(["pip", "install", "huggingface-hub"], check=True)
-        console.print("[green]✓ huggingface-cli installed[/green]")
-    
-    # Check docker
-    try:
-        subprocess.run(["docker", "--version"], capture_output=True, check=True)
-        console.print("[green]✓ docker found[/green]")
-    except:
-        console.print("[red]✗ docker not found. Please install docker[/red]")
-    
-    # Check git
-    try:
-        subprocess.run(["git", "--version"], capture_output=True, check=True)
-        console.print("[green]✓ git found[/green]")
-    except:
-        console.print("[red]✗ git not found. Please install git[/red]")
+    return {'max_retries': max_retries, 'tools_status': tools_status}
 
 # ======================== UI LAYOUT ========================
 def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name="", retry_count=0, log_tail=""):
@@ -415,7 +601,7 @@ def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name=""
     
     art_panel = Panel(
         Align.center(matrix_art or "[dim]Initializing Matrix...[/dim]"),
-        title="🖥️ H200 Matrix Downloader",
+        title="🖥️ H200 CUDA Matrix Downloader",
         border_style="green",
         box=box.HEAVY,
         height=9
@@ -438,7 +624,10 @@ def generate_layout(progress_ui, matrix_art=None, current_task="", phase_name=""
 
 # ======================== CORE LOGIC ========================
 def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
-    """Run command with proxy support"""
+    """Run command with proxy support and comprehensive logging"""
+    logger.log_debug(f"Running command: {' '.join(cmd)}")
+    logger.log_debug(f"Timeout: {timeout}s, Max retries: {max_retries}")
+    
     for attempt in range(1, max_retries + 1):
         try:
             run_env = os.environ.copy()
@@ -451,56 +640,104 @@ def run_cmd(cmd, max_retries=3, timeout=600, cwd=None, env=None):
             run_env['http_proxy'] = PROXY_URL
             run_env['https_proxy'] = PROXY_URL
             
+            # Add custom bin path for uv
+            run_env['PATH'] = f"{DIRS['bin']}:{run_env.get('PATH', '')}"
+            
+            logger.log_debug(f"Attempt {attempt}/{max_retries}")
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd, env=run_env)
-            if proc.returncode == 0: 
-                logger.info(f"Command succeeded: {' '.join(cmd[:2])}")
+            
+            if proc.returncode == 0:
+                logger.log_info(f"Command succeeded: {' '.join(cmd[:2])}")
+                logger.log_debug(f"Stdout: {proc.stdout[:500]}")
                 return True, proc.stdout
-            logger.warning(f"Attempt {attempt} failed: {proc.stderr.strip()[:200]}")
-        except subprocess.TimeoutExpired:
-            logger.warning(f"Timeout on attempt {attempt}")
+            else:
+                error_msg = proc.stderr.strip()[:1000]
+                logger.log_warning(f"Attempt {attempt} failed (exit code {proc.returncode}): {error_msg}")
+                logger.log_debug(f"Full stderr: {proc.stderr}")
+                
+                # Check if it's a network error
+                if "connection" in error_msg.lower() or "timeout" in error_msg.lower():
+                    logger.log_warning("Network error detected - retrying with longer timeout")
+                    timeout = timeout * 1.5
+                    
+        except subprocess.TimeoutExpired as e:
+            logger.log_warning(f"Timeout on attempt {attempt}")
+            logger.log_debug(f"Timeout details: {str(e)}")
         except Exception as e:
-            logger.warning(f"Fatal error on attempt {attempt}: {str(e)}")
-        if attempt < max_retries: 
-            time.sleep(5 * attempt)
-            logger.info(f"Retrying... (attempt {attempt+1}/{max_retries})")
+            logger.log_error(f"Fatal error on attempt {attempt}: {str(e)}", traceback.format_exc())
+            
+        if attempt < max_retries:
+            wait_time = 5 * attempt
+            logger.log_info(f"Retrying in {wait_time}s... (attempt {attempt+1}/{max_retries})")
+            time.sleep(wait_time)
+    
+    logger.log_error(f"Command failed after {max_retries} attempts: {' '.join(cmd)}")
     return False, "Max retries exceeded"
 
 def pull_docker(image):
-    logger.info(f"Pulling Docker image: {image}")
+    logger.log_info(f"Pulling Docker image: {image}")
     success, err = run_cmd(["docker", "pull", image], max_retries=3, timeout=1200)
-    if not success: return False, err
+    if not success: 
+        return False, err
+    
     tar_path = DIRS["docker"] / f"{image.replace('/', '_').replace(':', '_')}.tar"
-    logger.info(f"Saving Docker image to: {tar_path}")
+    logger.log_info(f"Saving Docker image to: {tar_path}")
     return run_cmd(["docker", "save", "-o", str(tar_path), image], max_retries=2, timeout=600)
 
 def download_pip(pkg, cu124=False):
-    logger.info(f"Downloading Python package: {pkg} (CUDA: {cu124})")
+    """Download Python packages with comprehensive logging"""
+    logger.log_info(f"Downloading package: {pkg} (CUDA: {cu124})")
     dest = DIRS["python_cu124"] if cu124 else DIRS["python"]
     
-    cmd = ["pip", "download", pkg, "-d", str(dest), "--no-deps"]
+    # For CUDA packages, use the CUDA index
     if cu124:
-        cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
+        # Try uv first
+        uv_cmd = ["uv", "pip", "download", pkg, "-d", str(dest), 
+                  "--index-url", "https://download.pytorch.org/whl/cu124",
+                  "--extra-index-url", "https://pypi.org/simple"]
+        
+        logger.log_debug(f"UV CUDA command: {' '.join(uv_cmd)}")
+        success, err = run_cmd(uv_cmd, max_retries=3, timeout=600)
+        if success:
+            logger.log_info(f"Downloaded {pkg} with uv (CUDA)")
+            return True, "uv CUDA download success"
+        
+        # Fallback to pip
+        pip_cmd = ["pip", "download", pkg, "-d", str(dest), 
+                   "--index-url", "https://download.pytorch.org/whl/cu124",
+                   "--extra-index-url", "https://pypi.org/simple",
+                   "--no-deps"]
+        
+        logger.log_debug(f"Pip CUDA command: {' '.join(pip_cmd)}")
+        success, err = run_cmd(pip_cmd, max_retries=3, timeout=600)
+        if success:
+            logger.log_info(f"Downloaded {pkg} with pip (CUDA)")
+            return True, "pip CUDA download success"
+        
+        return False, err
     
-    success, err = run_cmd(cmd, max_retries=3, timeout=600)
+    # Non-CUDA packages
+    uv_cmd = ["uv", "pip", "download", pkg, "-d", str(dest)]
+    logger.log_debug(f"UV command: {' '.join(uv_cmd)}")
+    success, err = run_cmd(uv_cmd, max_retries=3, timeout=600)
     if success:
+        logger.log_info(f"Downloaded {pkg} with uv")
+        return True, "uv download success"
+    
+    pip_cmd = ["pip", "download", pkg, "-d", str(dest), "--no-deps"]
+    logger.log_debug(f"Pip command: {' '.join(pip_cmd)}")
+    success, err = run_cmd(pip_cmd, max_retries=3, timeout=600)
+    if success:
+        logger.log_info(f"Downloaded {pkg} with pip")
         return True, "pip download success"
+    
     return False, err
 
 def download_hf_model(repo_id):
-    """Download HuggingFace model with or without token"""
-    logger.info(f"Downloading HuggingFace model: {repo_id}")
+    """Download HuggingFace model with comprehensive logging"""
+    logger.log_info(f"Downloading HuggingFace model: {repo_id}")
     dest_path = DIRS["models_hf"] / repo_id.replace("/", "_")
     
-    # Check if it's a gated model
-    is_gated = "meta-llama" in repo_id or "gated" in repo_id.lower()
-    
-    if is_gated:
-        logger.warning(f"⚠️ {repo_id} is a gated model. You need to:")
-        logger.warning("1. Accept terms at: https://huggingface.co/{repo_id}")
-        logger.warning("2. Set HF_TOKEN environment variable")
-        logger.warning("Trying with anonymous access anyway...")
-    
-    # Try with huggingface-cli
     cmd = [
         "huggingface-cli", "download", 
         repo_id, 
@@ -509,28 +746,30 @@ def download_hf_model(repo_id):
         "--resume-download"
     ]
     
-    # Use token if available
+    logger.log_debug(f"HF download command: {' '.join(cmd)}")
+    
     env = os.environ.copy()
     if 'HF_TOKEN' in os.environ:
         env['HF_TOKEN'] = os.environ['HF_TOKEN']
-        logger.info("Using HF_TOKEN from environment")
+        logger.log_info("Using HF_TOKEN from environment")
     
     env['HF_HUB_ENABLE_HF_TRANSFER'] = '1'
     
     success, err = run_cmd(cmd, max_retries=3, timeout=7200, env=env)
     if success:
+        logger.log_info(f"Model downloaded successfully: {repo_id}")
         return True, "Model downloaded successfully"
     
-    # If huggingface-cli fails, try with Python API (more reliable)
-    logger.info("Trying Python API fallback...")
+    # Try Python API fallback
+    logger.log_info("Trying Python API fallback...")
     try:
         from huggingface_hub import snapshot_download
         import os as os_module
         
-        # Set proxy for Python
         os_module.environ['HTTP_PROXY'] = PROXY_URL
         os_module.environ['HTTPS_PROXY'] = PROXY_URL
         
+        logger.log_debug(f"Attempting snapshot_download for {repo_id}")
         snapshot_download(
             repo_id=repo_id,
             local_dir=str(dest_path),
@@ -539,29 +778,41 @@ def download_hf_model(repo_id):
             token=os.environ.get('HF_TOKEN', None),
             proxies={"http": PROXY_URL, "https": PROXY_URL}
         )
+        logger.log_info(f"Model downloaded via Python API: {repo_id}")
         return True, "Model downloaded via Python API"
     except Exception as e:
-        logger.error(f"Python API fallback failed: {str(e)}")
+        logger.log_error(f"Python API fallback failed: {str(e)}", traceback.format_exc())
         return False, f"All download methods failed: {err}"
 
 def setup_project(project):
     name, url = project["name"], project["url"]
-    logger.info(f"Setting up project: {name}")
+    logger.log_info(f"Setting up project: {name}")
     dest = PROJECTS_DIR / name
     
     if not dest.exists():
+        logger.log_info(f"Cloning project: {name}")
         succ, err = run_cmd(["git", "clone", url, str(dest)], timeout=300)
-        if not succ: return False, f"Clone failed: {err}"
+        if not succ: 
+            return False, f"Clone failed: {err}"
     
     req_file = dest / "requirements.txt"
     if req_file.exists():
+        logger.log_info(f"Installing requirements for {name}")
+        uv_succ, _ = run_cmd(["uv", "pip", "install", "-r", str(req_file)], cwd=str(dest), timeout=600)
+        if uv_succ:
+            logger.log_info(f"Installed {name} with uv")
+            return True, "Cloned and installed with uv"
+        
+        logger.log_info(f"Falling back to pip for {name}")
         succ, err = run_cmd(["pip", "install", "-r", str(req_file)], cwd=str(dest), timeout=600)
-        if not succ: return False, f"Install failed: {err}"
-        return True, "Cloned and installed dependencies"
+        if not succ: 
+            return False, f"Install failed: {err}"
+        return True, "Cloned and installed with pip"
     
     return True, "Cloned successfully"
 
 def generate_report():
+    """Generate comprehensive report with all logs"""
     with open(REPORT_FILE, "w") as f:
         f.write("# 🚀 H200 Offline Preparation Report\n")
         f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
@@ -578,14 +829,36 @@ def generate_report():
         for key, data in state.state["items"].items():
             if data["status"] == "failed":
                 retries = data.get("retries", 0)
-                f.write(f"- **{key}** (retries: {retries}): {data['details'][:200]}\n")
+                f.write(f"- **{key}** (retries: {retries}): {data['details'][:500]}\n")
         
-        f.write("\n### H200 Optimization Recommendations:\n")
-        f.write("1. Use vLLM with FP8 quantization for best performance\n")
-        f.write("2. Use GGUF models (Q4_K_M) for memory-efficient inference\n")
+        # Include failed tasks JSON
+        failed_file = BASE_DIR / "failed_tasks.json"
+        if failed_file.exists():
+            f.write("\n### Detailed Failed Tasks Log:\n")
+            with open(failed_file, 'r') as ff:
+                f.write("```json\n")
+                f.write(ff.read())
+                f.write("\n```\n")
+        
+        # Include error log
+        if ERROR_LOG.exists():
+            f.write("\n### Error Log (last 50 lines):\n")
+            f.write("```\n")
+            with open(ERROR_LOG, 'r') as ff:
+                lines = ff.readlines()
+                f.write(''.join(lines[-50:]))
+            f.write("```\n")
+        
+        f.write("\n### H200 CUDA Optimization Recommendations:\n")
+        f.write("1. All CUDA packages installed from pytorch/cu124 index\n")
+        f.write("2. Use vLLM with FP8 quantization for best performance\n")
         f.write("3. Enable flash-attention-2 for faster inference\n")
         f.write("4. Use batch inference for higher throughput\n")
-        f.write("5. Consider using TensorRT-LLM for production deployment\n")
+        f.write("5. Check error logs for failed tasks:\n")
+        f.write(f"   - Main log: {LOG_FILE}\n")
+        f.write(f"   - Error log: {ERROR_LOG}\n")
+        f.write(f"   - Failed tasks: {FAILED_TASKS_LOG}\n")
+        f.write(f"   - Debug log: {DEBUG_LOG}\n")
 
 # ======================== MAIN ORCHESTRATOR ========================
 @click.command()
@@ -593,9 +866,15 @@ def generate_report():
 @click.option('--skip-matrix', is_flag=True, help='Skip Matrix ASCII animation')
 @click.option('--auto-retry', is_flag=True, help='Automatically retry failed tasks')
 def main(interactive, skip_matrix, auto_retry):
-    console.print("[bold cyan]🚀 H200 Offline Preparation Tool[/bold cyan]")
-    console.print("[yellow]Optimized for NVIDIA H200 GPUs[/yellow]")
-    console.print("[dim]Using proxy: {}[/dim]\n".format(PROXY_URL))
+    console.print("[bold cyan]🚀 H200 CUDA Offline Preparation Tool[/bold cyan]")
+    console.print("[yellow]Optimized for NVIDIA H200 GPUs - All CUDA Enabled[/yellow]")
+    console.print(f"[dim]Using proxy: {PROXY_URL}[/dim]\n")
+    console.print("[dim]Logs saved to: offline-prep/logs/[/dim]\n")
+    
+    if 'HF_TOKEN' in os.environ:
+        console.print("[green]✓ HF_TOKEN found in environment[/green]")
+    else:
+        console.print("[yellow]⚠️ No HF_TOKEN found. Public models only.[/yellow]")
     
     if interactive:
         config = interactive_selection()
@@ -604,13 +883,7 @@ def main(interactive, skip_matrix, auto_retry):
         state.save()
     else:
         max_retries = state.state.get("max_retries", 3)
-    
-    # Check for HuggingFace token
-    if 'HF_TOKEN' in os.environ:
-        console.print("[green]✓ HF_TOKEN found in environment[/green]")
-    else:
-        console.print("[yellow]⚠️ No HF_TOKEN found. Public models only.[/yellow]")
-        console.print("[dim]For gated models (like Llama 3.1), set: export HF_TOKEN=your_token[/dim]")
+        check_required_tools()
     
     # Start Matrix thread
     matrix = MatrixASCII()
@@ -631,12 +904,17 @@ def main(interactive, skip_matrix, auto_retry):
     all_tasks = []
     for img, _ in DOCKER_IMAGES:
         all_tasks.append(("docker", f"docker_{img}", img))
+    
     for pkg in PYTHON_PACKAGES:
-        all_tasks.append(("pip", f"pip_{pkg}", pkg, False))
-    for pkg in CUDA_PACKAGES:
-        all_tasks.append(("pip_cuda", f"pip_cu124_{pkg}", pkg, True))
+        is_cuda = any(x in pkg.lower() for x in ['cu124', 'cuda', 'gpu', 'cupy', 'faiss-gpu'])
+        all_tasks.append(("pip", f"pip_{pkg}", pkg, is_cuda))
+    
+    for pkg in CUDA_EXTRA_PACKAGES:
+        all_tasks.append(("pip_cuda", f"pip_cuda_{pkg}", pkg, True))
+    
     for repo in MODELS.keys():
         all_tasks.append(("model", f"model_{repo}", repo))
+    
     for proj in SAMPLE_PROJECTS:
         all_tasks.append(("project", f"project_{proj['name']}", proj))
     
@@ -680,8 +958,10 @@ def main(interactive, skip_matrix, auto_retry):
             else:
                 state.set_item(key, "failed", category, details)
                 metrics["failed"] += 1
+                logger.log_error(f"Task {key} failed: {details}")
         except Exception as e:
-            logger.error(f"Crash on {key}: {str(e)}")
+            error_msg = f"{str(e)}\n{traceback.format_exc()}"
+            logger.log_error(f"Crash on {key}: {error_msg}")
             state.set_item(key, "failed", category, f"Crash: {str(e)}")
             metrics["failed"] += 1
             
@@ -721,19 +1001,19 @@ def main(interactive, skip_matrix, auto_retry):
                     execute_with_ui(key, "Docker", pull_docker, img)
                     
                 elif task_type in ["pip", "pip_cuda"]:
-                    phase_name = "CUDA Packages" if task_type == "pip_cuda" else "Python Packages"
+                    is_cuda = task_tuple[3] if len(task_tuple) > 3 else False
+                    phase_name = "CUDA Packages" if is_cuda else "Python Packages"
                     progress_ui.update(phase_task, description=f"[bold magenta]{phase_name}", 
-                                     total=len([t for t in all_tasks if t[0]==task_type]), completed=0)
+                                     total=len([t for t in all_tasks if t[0]==task_type and (t[3] if len(t)>3 else False) == is_cuda]), completed=0)
                     pkg = task_tuple[2]
-                    cu124 = task_tuple[3] if len(task_tuple) > 3 else False
                     live.update(generate_layout(progress_ui, 
                                                matrix.get_art() if not skip_matrix else None,
-                                               f"{'cuda' if cu124 else 'pip'}: {pkg}",
+                                               f"{'cuda' if is_cuda else 'pip'}: {pkg}",
                                                phase_name,
                                                len(state.get_retry_queue()),
                                                matrix.get_log_tail() if not skip_matrix else ""))
-                    execute_with_ui(key, "Python_Libs" if not cu124 else "Python_Libs_CUDA", 
-                                  download_pip, pkg, cu124)
+                    execute_with_ui(key, "Python_CUDA" if is_cuda else "Python_Libs", 
+                                  download_pip, pkg, is_cuda)
                     
                 elif task_type == "model":
                     phase_name = "HuggingFace Models"
@@ -779,6 +1059,7 @@ def main(interactive, skip_matrix, auto_retry):
     except KeyboardInterrupt:
         console.print("\n[bold yellow]⚠️ Installation interrupted by user[/bold yellow]")
         console.print("[cyan]State saved. Resume with: python3 enhanced_installer.py --interactive[/cyan]")
+        logger.log_info("Installation interrupted by user")
         
     finally:
         if not skip_matrix:
@@ -797,14 +1078,18 @@ def main(interactive, skip_matrix, auto_retry):
         console.print(f"[red]❌ Failed: {failed}[/red]")
         
         if failed > 0:
+            console.print("\n[bold yellow]💡 Failed tasks logged in:[/bold yellow]")
+            console.print(f"  - {ERROR_LOG}")
+            console.print(f"  - {FAILED_TASKS_LOG}")
+            console.print(f"  - {BASE_DIR}/failed_tasks.json")
             console.print("\n[bold yellow]💡 To retry failed tasks:[/bold yellow]")
             console.print("  python3 enhanced_installer.py --interactive --auto-retry")
         
-        console.print("\n[bold cyan]💡 H200 Optimization Tips:[/bold cyan]")
-        console.print("1. Use vLLM with FP8 quantization for best performance")
-        console.print("2. Use GGUF models (Q4_K_M) for memory-efficient inference")
-        console.print("3. Enable flash-attention-2 for faster inference")
-        console.print("4. Consider using TensorRT-LLM for production deployment")
+        console.print("\n[bold cyan]💡 Log files location:[/bold cyan]")
+        console.print(f"  - Main log: {LOG_FILE}")
+        console.print(f"  - Error log: {ERROR_LOG}")
+        console.print(f"  - Debug log: {DEBUG_LOG}")
+        console.print(f"  - Failed tasks: {FAILED_TASKS_LOG}")
 
 if __name__ == "__main__":
     main()
