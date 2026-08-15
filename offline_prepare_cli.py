@@ -16,7 +16,7 @@ from datetime import datetime
 
 # ========================= CONFIG =========================
 PROXY_URL = "http://192.168.203.2:3128"
-BASE_DIR = Path("/ai-gpu1/v1/Work_RAG-Server-Setup/offline-prep")
+BASE_DIR = Path(__file__).resolve().parent / "offline-prep"
 VENV_DIR = BASE_DIR / "venv"
 STATE_FILE = BASE_DIR / ".state.json"
 RETRY_QUEUE = BASE_DIR / ".retry_queue.json"

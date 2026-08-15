@@ -1,0 +1,26 @@
+# ===== Large working data (never commit) =====
+# offline-prep/ holds models, docker tars, wheels, venv, logs, and CLI state.
+# The curated reports live in docs/ instead.
+offline-prep/
+dify/
+.deepeval/
+
+# ===== Runtime / build artifacts =====
+logs/
+pip-*/
+pip_cache/
+tmp*
+*.log
+*.tar
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+prep_venv/
+venv/
+.venv/
+
+# ===== OS / editor =====
+.DS_Store
+*.swp

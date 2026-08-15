@@ -1,0 +1,44 @@
+# Reference compose file for the RAG data plane (vector DBs + Open WebUI).
+# Mirrors the currently-running `-test` containers (docker inspect verified 2026-08-15).
+# NOT yet applied via compose — existing containers were started individually.
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis-test
+    ports: ["16379:6379"]
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant-test
+    ports: ["16333:6333", "16334:6334"]
+
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: pgvector-test
+    environment:
+      POSTGRES_PASSWORD: testpass
+    ports: ["15432:5432"]
+
+  milvus:
+    image: milvusdb/milvus:latest
+    container_name: milvus-test
+    environment:
+      ETCD_USE_EMBED: "true"
+      MINIO_USE_EMBED: "true"
+      COMMON_STORAGETYPE: local
+      DEPLOY_MODE: STANDALONE
+    ports: ["19530:19530", "19091:9091"]
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: webui-test
+    environment:
+      WEBUI_AUTH: "false"
+      USE_OLLAMA_DOCKER: "false"
+      USE_CUDA_DOCKER: "false"
+      USE_EMBEDDING_MODEL_DOCKER: sentence-transformers/all-MiniLM-L6-v2
+      RAG_EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      SCARF_NO_ANALYTICS: "true"
+      DO_NOT_TRACK: "true"
+    ports: ["13000:8080"]
