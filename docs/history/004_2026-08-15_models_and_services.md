@@ -33,3 +33,31 @@
 
 - `docs/findings.md` updated: scipy fix, XET, running services, vLLM GGUF requirement, local paths fixed.
 - `docs/history/003` covers the P0 path fixes.
+
+## Session continuation — tooling, data plane, downloads (same day)
+
+### Current status
+
+- Background model downloads still running (`scripts/download_models.py`, pid alive): Llama-3.2-3B Q4_K_M ~58% as of last check; Mistral-7B Q4_K_M resuming from a **3.22 GB partial cached on Aug 10** (~74% already on disk), so both should finish within ~1 h total. Qwen 7B already 100%.
+- Progress dashboard live: `scripts/progress_report.py` (ASCII bars for downloads + service health + plan %) — reads the largest `.incomplete` per model dir and the newest `dl_models_*.log`. Tested with `--once`.
+- **Data plane provisioned**: `deploy/setup_data_plane.py` created `rag_docs` collection/table in all three stores (Milvus dim-384 IVF_FLAT/COSINE, Qdrant cosine, pgvector `vector(384)` extension+table). Installed `psycopg2-binary 2.9.12` into the master venv for pgvector.
+- **Open WebUI rewired**: container recreated (stateless, no volumes) via `deploy/recreate_webui.sh` with `OPENAI_API_BASE_URL=http://host.docker.internal:8080/v1` (llama.cpp) + `--add-host host.docker.internal:host-gateway`. Health `200`, `Up (healthy)`.
+- LightRAG runner written: `scripts/services/lightrag_run.sh` (env: `LLM_BINDING=openai` → `:8080/v1`, `EMBEDDING_BINDING=openai` → `:8001/v1`, model `qwen2.5:7b`, storage under `lightrag/rag_storage`, server on `:9621`). Deps not yet installed — queued until downloads finish (avoid bandwidth contention).
+
+### New/changed files
+
+- `scripts/progress_report.py` — dashboard (parses plan.md `[x]`/`[ ]`)
+- `deploy/setup_data_plane.py` — Milvus/Qdrant/pgvector collection creation (idempotent)
+- `deploy/recreate_webui.sh` — recreate webui-test bound to local OpenAI endpoints
+- `scripts/services/lightrag_run.sh` — LightRAG API server launcher
+- `docs/plan.md` — machine-parseable deliverable checklist (dashboard reads it)
+- `.gitignore` — `deploy/data_plane_status.json`
+
+### Committed
+
+- `f8e3766 Add progress dashboard, data-plane setup, and lightrag/webui run scripts`
+
+### Next
+
+- Wait for Llama/Mistral Q4_K_M (job → Mistral after Llama, resumes the Aug 10 partial).
+- Then: vLLM + llama.cpp serving Qwen on :8000/:8080, lightrag deps install + run, end-to-end ingest→retrieve test.
