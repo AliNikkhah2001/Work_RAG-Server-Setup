@@ -22,8 +22,8 @@ Update these as work completes.
 - [x] llama.cpp chat server smoke-tested (`:8080`, Mistral IQ2_M)
 - [x] Embeddings endpoint live (`:8001`, bge-small, dim 384)
 - [x] vLLM GGUF flags verified; launcher script written
-- [ ] vLLM serving Qwen2.5-7B on H200 (tokens/sec logged)
-- [ ] llama.cpp serving Qwen2.5-7B Q4_K_M on `:8080`
+- [x] vLLM serving Qwen2.5-7B on H200 (tokens/sec logged) — 53.6 tok/s
+- [x] llama.cpp serving Qwen2.5-7B Q4_K_M on `:8080`
 
 ## P3 — RAG data plane
 - [x] Vector DBs + Open WebUI containers running

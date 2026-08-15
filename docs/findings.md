@@ -56,4 +56,10 @@ Verified as of 2026-08-15. Update this file when new facts are learned; keep it 
 - `:8001` — embeddings (bge-small, dim 384) via `scripts/services/embed_server.py`
 - `:8080` — llama.cpp OpenAI-compatible chat (`scripts/services/llama_chat_server.py`, model via `--model`)
 - `:8000` — vLLM API server (`scripts/services/vllm_server.sh <model.gguf>`); vLLM requires a **single-file** GGUF (its loader reads one file; split/multi-part GGUFs are not supported)
-- vLLM GGUF invocation: `--load-format gguf --quantization gguf` (verified in 0.6.1.post1 `EngineArgs`)
+
+## vLLM + GGUF quirks (2026-08-15)
+
+- **Vocab-size assert in GGUF load (`vocab_parallel_embedding` AssertionError)**: bartowski Qwen2.5 GGUF files embed a **padded vocab** (`token_embd.weight` rows = 152064) while the config that vLLM derives (from GGUF metadata via transformers' `gguf_file` kwarg — a local `config.json` next to the GGUF is *ignored*) says `vocab_size = 151936`. Fix applied: relaxed the assert to `>=` in the venv at `vllm/model_executor/layers/vocab_parallel_embedding.py:381`; the existing `narrow()` truncates the trailing pad rows. Verify if vLLM is upgraded.
+- **GGUF model path must be a file, and its parent dir is searched for `config.json`** — but that config is only a fallback; transformers reads the config *from the GGUF* when `gguf_file` is passed. Working wrapper pattern: a dir containing `config.json` (Qwen2.5-7B arch, `vocab_size: 152064`) + a symlink `model.gguf` → the real file (`offline-prep/models/gguf-wrappers/qwen2.5-7b-q4km/`). Symlink must resolve correctly or `check_gguf_file` returns False → "Repo id must be in the form..." error.
+- **Guided-decoding backend (`outlines`) breaks on requests** unless a working `pyairports` is importable. The mirror only offers the empty stub `pyairports==0.0.1` (no `airports.py`), so it was replaced by a manual stub `site-packages/pyairports/airports.py` with `AIRPORT_LIST = []`. Symptoms: HTTP 500 `ModuleNotFoundError: No module named 'pyairports'`.
+- vLLM GGUF Q4_K_M 7B throughput on H200: **~54 tok/s** (`--enforce-eager`, `--gpu-memory-utilization 0.5`). GGUF path is not fully optimized in 0.6.1 (slower than fp16); CUDA graphs are disabled by `--enforce-eager`.

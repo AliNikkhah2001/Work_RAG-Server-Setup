@@ -61,3 +61,17 @@
 
 - Wait for Llama/Mistral Q4_K_M (job → Mistral after Llama, resumes the Aug 10 partial).
 - Then: vLLM + llama.cpp serving Qwen on :8000/:8080, lightrag deps install + run, end-to-end ingest→retrieve test.
+
+## Session verification round — full system audit (same day)
+
+### Verdicts
+
+- **Libraries**: master venv imports 20/20 (sseclient installed), all CUDA-exts import AND run on GPU (flash-attn 2.6.3 forward OK, bitsandbytes Linear4bit forward OK, vllm/sglang import OK). LightRAG venv is still empty (deps deferred until downloads finish).
+- **GPU stack**: 2x H200 NVL visible; torch 2.4.0+cu124 `cuda.is_available()=True`, matmul on GPU0 correct (fp32 err 4.9e-4). Driver 580.173.02 ↔ torch cu124 match OK; no errors.
+- **Docker/services**: 5 containers all up+healthy (webui :13000, milvus :19530, pgvector :15432, qdrant :16333, redis :16379). Interconnect test passed: redis ping, pgvector ext `vector 0.8.6` + `rag_docs` table, milvus/qdrant `rag_docs` collection.
+- **Gaps vs. expectation**: monitoring stack (grafana/prometheus/otel) NOT present; `pghistory` extension NOT installed; `vllm/vllm-openai` and `nvidia/cuda` docker images never pulled.
+- **Inference on API endpoints**:
+  - llama.cpp `:8080` now serves **Qwen2.5-7B Q4_K_M** (model-id `qwen2.5:7b`); `/v1/chat/completions` + streaming + `/v1/models` verified (reply `RAG-API-OK`).
+  - vLLM `:8000` serves same GGUF (model-id `qwen2.5:7b-vllm`); **53.6 tok/s** (512-token gen); needs the vocab-assert patch + pyairports stub (see findings).
+  - Embeddings `:8001` dim-384 verified.
+- **vLLM GGUF fixes applied to the venv** (documented in `docs/findings.md`): relaxed vocab assert in `vocab_parallel_embedding.py:381`; pyairports stub; wrapper model dir `offline-prep/models/gguf-wrappers/qwen2.5-7b-q4km/`.
