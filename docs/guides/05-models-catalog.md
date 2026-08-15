@@ -16,24 +16,28 @@ Location: `offline-prep/models/huggingface/<repo with / → _>/`; partials under
 | bge-small-en-v1.5 | safetensors | 383 MB | ✅ embeddings (`local-embed`, dim 384) |
 | all-MiniLM-L6-v2 | safetensors | 932 MB | ✅ embeddings |
 
-## 🔄 Downloading now (daemon `rag-dl`, in this order)
+## 🔄 Downloading now — daemon queue (strictly ONE FILE at a time, smallest-first)
 
 | Repo / file | Planned size | Current (approx) |
 |---|---|---|
-| `bartowski/Qwen2.5-72B-Instruct-GGUF` → `Q4_K_M` (single-file, vLLM+llama.cpp) | 47.4 GB | partial ~1.3 GB + Q8_0 resumed |
-| → `Q8_0` (2 parts, llama.cpp only) | 77.3 GB | partials up to ~4.4 GB |
-| `Qwen/Qwen3-30B-A3B-GGUF` → `Q4_K_M` | 18.6 GB | partial ~250 MB |
-| `bartowski/google_gemma-3-27b-it-GGUF` → `Q4_K_M` | 16.5 GB | partial ~80 MB — ⚠️ **gated: needs HF_TOKEN**, auto-skips if absent |
-| `bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF` → `Q4_K_M` | 30.2 GB | staged |
+| `bartowski/Mistral-7B-Instruct-v0.3-GGUF` → `-Q4_K_M.gguf` | 4.4 GB | partial ~3.5 GB (≈80%) — **first in queue** |
+| `bartowski/google_gemma-3-27b-it-GGUF` → `Q4_K_M` | 16.5 GB | ⚠️ gated: needs HF_TOKEN, else auto-skip |
+| `Qwen/Qwen3-30B-A3B-GGUF` → `Q4_K_M` | 18.6 GB | partial ~262 MB |
+| `bartowski/google_gemma-4-31b-it-GGUF` → `Q4_K_M` | 19.6 GB | ⚠️ gated: needs HF_TOKEN, else auto-skip |
+| `bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF` → `Q4_K_M` (Nemotron 3) | 30.2 GB | staged |
+| `bartowski/Qwen2.5-72B-Instruct-GGUF` → `Q8_0` part 2 | 37.3 GB | partials up to ~4.4 GB |
+| → `Q8_0` part 1 | 40.0 GB | (same target) |
+| → `Q4_K_M` (vLLM + llama.cpp) | 47.4 GB | resumed |
 | `bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF` → `Q4_K_M` (split) | 151 GB | staged |
-| `unsloth/MiniMax-M3-GGUF` → `UD-IQ4_XS` | 208 GB | queued |
 | `deepseek-ai/DeepSeek-V4-Flash` (FP4+FP8 safetensors) | 160 GB | queued |
-| `zai-org/GLM-5.2-FP8` (official FP8) | 755 GB | queued |
+| `unsloth/MiniMax-M3-GGUF` → `UD-IQ4_XS` | 208 GB | queued |
 | `unsloth/Kimi-K3-GGUF` → `UD-IQ1_S` | 594 GB | queued |
+| `zai-org/GLM-5.2-FP8` (official FP8) | 755 GB | queued |
 
-**Total queued ≈ 2.0 TB** (disk free: 5.5 T — fits). The corporate proxy sustains only
-≈230 KB/s, so the full queue is measured in **weeks**; resumption/appends happen every daemon
-pass automatically.
+> The daemon (`rag-dl`) pulls **exactly one file at a time** in this order and only starts the
+> next when the current file is complete or auth-blocked. Completed files are verified (≈0 time),
+> partials are resumed. **Total queued ≈ 2.1 TB** (disk free: 5.5 T — fits); corporate proxy
+> ≈230 KB/s ⇒ measured in weeks, but every model lands in usable form one-by-one.
 
 ## Model notes
 

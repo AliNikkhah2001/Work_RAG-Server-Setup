@@ -22,48 +22,43 @@ BASE = Path("/splunk-data/v1/Work_RAG-Server-Setup/offline-prep")
 MODELS_DIR = BASE / "models" / "huggingface"
 LOG_DIR = BASE / "logs"
 
+# NOTE: the daemon ("--daemon", systemd rag-dl.service) walks TARGETS strictly top-to-bottom,
+# ONE FILE at a time (each entry = a single logical file/quant), resuming any partials.
+# Entries are ordered SMALLEST-FIRST by target size so quick wins land first.
 TARGETS = [
-    ("bartowski/Qwen2.5-7B-Instruct-GGUF",
-     ["Qwen2.5-7B-Instruct-Q4_K_M.gguf"]),
+    # --- already complete on disk -> instantly verified/skipped ---
     ("bartowski/Llama-3.2-3B-Instruct-GGUF",
-     ["Llama-3.2-3B-Instruct-Q4_K_M.gguf"]),
-    ("bartowski/Mistral-7B-Instruct-v0.3-GGUF",
-     ["Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"]),
-    # Large Persian-capable models (Qwen2.5-72B is a strong multilingual model)
-    #   1) Q4_K_M single-file  ~49 GB  -> works in BOTH llama.cpp and vLLM
-    #   2) Q8_0 (2 parts)      ~93 GB  -> llama.cpp only (splits not supported by vLLM)
-    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
-     ["Qwen2.5-72B-Instruct-Q4_K_M.gguf",
-      "Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00001-of-00002.gguf",
-      "Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00002-of-00002.gguf"]),
+     ["Llama-3.2-3B-Instruct-Q4_K_M.gguf"]),                                    #  2.0 GB done
+    ("bartowski/Qwen2.5-7B-Instruct-GGUF",
+     ["Qwen2.5-7B-Instruct-Q4_K_M.gguf"]),                                       #  4.7 GB done
 
-    # === Added 2026-08-15: frontier MoE + multilingual catalog ===
-    # Qwen3-30B-A3B (MoE 30.5B/3.3B act, 18.6 GB Q4_K_M): strong multilingual;
-    #    runs in llama.cpp qwen3moe + vLLM. (user ref: "Qwen/Qwen3.8-27B")
-    ("Qwen/Qwen3-30B-A3B-GGUF",
-     ["Qwen3-30B-A3B-Q4_K_M.gguf"]),
-    # Gemma-3-27B it (multimodal-capable chat, 16.5 GB Q4_K_M) - GATED repo:
-    #    requires HF_TOKEN (huggingface login) or download returns 401.
+    # --- pending queue (smallest first) ---
+    ("bartowski/Mistral-7B-Instruct-v0.3-GGUF",
+     ["Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"]),                                  #  4.4 GB
     ("bartowski/google_gemma-3-27b-it-GGUF",
-     ["google_gemma-3-27b-it-Q4_K_M.gguf"]),
-    # NVIDIA Nemotron Super-49B (Llama-3.3 base, reasoning/RAG, 30.2 GB Q4_K_M)
+     ["google_gemma-3-27b-it-Q4_K_M.gguf"]),                                     # 16.5 GB (gated)
+    ("Qwen/Qwen3-30B-A3B-GGUF",
+     ["Qwen3-30B-A3B-Q4_K_M.gguf"]),                                             # 18.6 GB
+    ("bartowski/google_gemma-4-31b-it-GGUF",
+     ["google_gemma-4-31B-it-Q4_K_M.gguf"]),                                     # 19.6 GB (gated)
     ("bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF",
-     ["*Nemotron-Super-49B-v1-Q4_K_M.gguf"]),
-    # NVIDIA Nemotron Ultra-253B (Llama-3.1 base, 151 GB Q4_K_M, multi-part split)
+     ["*Nemotron-Super-49B-v1-Q4_K_M.gguf"]),                                    # 30.2 GB  (Nemotron 3 / Super)
+    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
+     ["Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00002-of-00002.gguf"]),  # 37.3 GB
+    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
+     ["Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00001-of-00002.gguf"]),  # 40.0 GB
+    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
+     ["Qwen2.5-72B-Instruct-Q4_K_M.gguf"]),                                      # 47.4 GB (vLLM+llama.cpp)
     ("bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF",
-     ["*Nemotron-Ultra-253B-v1-Q4_K_M*"]),
-    # MiniMax-M3 (MoE ~428B/23B act, 208 GB UD-IQ4_XS) - needs llama.cpp PR #24523 to run
-    ("unsloth/MiniMax-M3-GGUF",
-     ["UD-IQ4_XS/*"]),
-    # GLM-5.2 (MoE 744B/40B act, official FP8 755 GB) - needs vLLM >= 0.23 or recent llama.cpp
-    ("zai-org/GLM-5.2-FP8",
-     ["*.safetensors", "*.json", "*.py", "tokenizer*", "*.md", "*.txt"]),
-    # Kimi K3 (MoE 2.8T/104B act, 594 GB UD-IQ1_S) - needs unsloth llama.cpp fork (kimi-k3)
-    ("unsloth/Kimi-K3-GGUF",
-     ["UD-IQ1_S/*"]),
-    # DeepSeek-V4-Flash (MoE 284B/13B act, FP4+FP8 native, 160 GB safetensors) - serving needs new vLLM
+     ["*Nemotron-Ultra-253B-v1-Q4_K_M*"]),                                        # 151 GB (split quant)
     ("deepseek-ai/DeepSeek-V4-Flash",
-     ["model-*.safetensors", "*.json", "*.py", "tokenizer*", "*.md", "*.txt"]),
+     ["model-*.safetensors", "*.json", "*.py", "tokenizer*", "*.md", "*.txt"]),  # 160 GB (FP4/FP8)
+    ("unsloth/MiniMax-M3-GGUF",
+     ["UD-IQ4_XS/*"]),                                                           # 208 GB (llama.cpp PR#24523)
+    ("unsloth/Kimi-K3-GGUF",
+     ["UD-IQ1_S/*"]),                                                            # 594 GB (unsloth fork)
+    ("zai-org/GLM-5.2-FP8",
+     ["*.safetensors", "*.json", "*.py", "tokenizer*", "*.md", "*.txt"]),        # 755 GB (vLLM>=0.23)
 ]
 
 MAX_ATTEMPTS = 8

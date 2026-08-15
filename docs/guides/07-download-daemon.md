@@ -18,7 +18,10 @@ systemctl stop rag-dl            # pause downloads (safe anytime)
 
 ## How it works
 
-- Runner: `scripts/download_models.py --daemon` — concatenates all `TARGETS` sequentially.
+- Runner: `scripts/download_models.py --daemon` — concatenates all `TARGETS` **top-to-bottom,
+  one file at a time, smallest-first** (each TARGET entry = a single logical file/quant; splits of
+  one quant download together). The next file only starts when the current one is complete
+  (or auth-blocked).
 - **`--daemon` semantics:** infinite attempts per target + automatic **resume** of
   `.incomplete` chunks (huggingface_hub range-requests), a re-verify pass over the whole catalog
   after everything completes, and **auth-block detection** — gated repos (e.g.
