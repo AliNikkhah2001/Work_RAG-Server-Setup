@@ -14,8 +14,8 @@ Update these as work completes.
 
 ## P1 — Complete model set
 - [x] Qwen2.5-7B Q4_K_M downloaded (4.68 GB) + llama.cpp validated
-- [ ] Llama-3.2-3B Q4_K_M downloaded (2.02 GB) — **downloading**
-- [ ] Mistral-7B v0.3 Q4_K_M downloaded (4.37 GB)
+- [x] Llama-3.2-3B Q4_K_M downloaded (2.02 GB)
+- [ ] Mistral-7B v0.3 Q4_K_M downloaded (4.37 GB) — **downloading (73.6%, resuming Aug-10 partial)**
 - [ ] All weights integrity-checked and loadable
 
 ## P2 — Inference engines (llama.cpp + vLLM) + embeddings
