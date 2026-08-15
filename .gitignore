@@ -25,3 +25,7 @@ venv/
 .DS_Store
 *.swp
 deploy/data_plane_status.json
+
+# ===== Runtime DB/wal state (never commit) =====
+deploy/monitoring/prometheus-data/
+deploy/monitoring/grafana-data/

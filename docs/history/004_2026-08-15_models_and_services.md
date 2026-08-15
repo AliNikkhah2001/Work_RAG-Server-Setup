@@ -86,3 +86,16 @@
 - **Root disk**: still 100% (45G/48G, ~90M free) — freed ~1.1G (journal vacuum, apt clean, removed prometheus 2.53.0). docker data-root `/ai-gpu1/v1/docker-data` is the main consumer — relocation recommended.
 - **Persian-capable large models added** to `scripts/download_models.py` (with `--only` filter): `bartowski/Qwen2.5-72B-Instruct-GGUF` Q4_K_M single-file (49 GB, both engines) + Q8_0 2-part (93 GB, llama.cpp). Background session tmux `dl_big` (≈142 GB target). Qwen2.5-72B has strong Persian/multilingual performance.
 - git commits incl. `cee85ad` (monitoring), plus this round: report/gateway/downloader.
+
+## Session 3 (later): frontier MoE catalog, download daemon, disk relocation follow-up
+
+- **System verified for model-fit**: 2x H200 NVL 140GB (NVLink NV18), 1TB RAM (962GB free, single NUMA), 30 vCPU Xeon 8580 (VMware), /splunk-data 5.5T free, firewall inactive, driver 580.173.02 / CUDA 13.0.
+- **Inference engines installed**: vllm 0.6.1.post1, transformers 4.44.0, torch 2.4.0+cu124, sglang 0.3.0, llama-cpp-python 0.3.34, flash-attn 2.6.3, bitsandbytes 0.50.0. → Supports Llama/Qwen2.5/Qwen3(prob)/Gemma3/Mistral/Phi. Frontier MoEs (Kimi K3, MiniMax M3, GLM-5.2, DeepSeek-V4) need new vLLM (>=0.23) or llama.cpp forks (PR #24523 = MiniMax-M3; unsloth kimi-k3 branch). Model runs on 2xH200+1TB RAM:
+  - Qwen3-30B-A3B (18.6G Q4), Nemotron Super-49B (30G), Nemotron Ultra-253B (151G Q4) → run today with llama.cpp.
+  - MiniMax-M3 UD-IQ4_XS (208G) fits fully in VRAM (281G) — needs llama.cpp PR build.
+  - Kimi K3 UD-IQ1_S (594G) → mmap + MoE-in-RAM (286G VRAM + ~310G RAM offload).
+  - GLM-5.2 FP8 (755G) / DeepSeek-V4-Flash (160G FP4/8) → need engine upgrade.
+- **Download daemon**: `download_models.py` gained `--daemon` (infinite retry + auto-resume of .incomplete, auth-block detection for gated repos, re-verify passes). Registered as systemd unit **`rag-dl.service`** (Restart=always, RestartSec=20, proxies set, `HF_HUB_DISABLE_XET=1`, stdout/stderr → `offline-prep/logs/dl_daemon.out`). Replaced the ad-hoc tmux jobs (`dl_big`/`dl_moe`). Survives reboots + hard crashes.
+- **Catalog added to TARGETS** (in dependency-aware order): Qwen3-30B-A3B (18.6G), Gemma-3-27B (16.5G, gated→kept, no HF_TOKEN yet), Nemotron Super-49B (30.2G), Nemotron Ultra-253B (151G), MiniMax-M3 IQ4_XS (208G), GLM-5.2-FP8 (755G), Kimi K3 IQ1_S (594G), DeepSeek-V4-Flash (160G). 72B keeps priority position (partials: Q4 1.3G + Q8 4.4G chunks).
+- **docker verified live**: 9 containers Up (webui healthy); vllm serves `qwen2.5:7b-vllm` :8000, llama `qwen2.5:7b` :8080, webui :13000 200, qdrant `rag_docs` green (0 points, awaiting ingestion).
+- **Sample projects** (offline-prep/sample-projects/{dify 649M, anything-llm 166M, lightrag 148M, ragflow 266M}, upstream clones): insight = run each in its own venv/docker-compose, point OPENAI_BASE_URL at `http://192.168.96.82:8000/v1` (vllm) or `:8080/v1` (llama.cpp) with key `local`; ragflow/anything-llm have docker-compose for full stack; lightrag is a python package (pip install -e).

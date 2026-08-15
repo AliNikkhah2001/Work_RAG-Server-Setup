@@ -1,6 +1,10 @@
 # RAG Server — System Report & Runbook
 
-Date: 2026-08-15. Machine: `ai-gpu1`. Working dir: `/splunk-data/v1/Work_RAG-Server-Setup`
+> **Date:** 2026-08-15. Machine: `ai-gpu1`. Working dir: `/splunk-data/v1/Work_RAG-Server-Setup`
+>
+> **Multi-page guide:** see [`docs/README.md`](README.md) (index) and [`docs/guides/`](guides/)
+> for deep-dives on hardware, engines, models, the download daemon, sample projects and the
+> reboot runbook.
 
 ## 1. Environment
 
@@ -9,7 +13,7 @@ Date: 2026-08-15. Machine: `ai-gpu1`. Working dir: `/splunk-data/v1/Work_RAG-Ser
 - Network interfaces: `192.168.96.82` and `192.168.177.10` (docker bridges `172.17.0.1`, `172.18.0.1`).
 - Squid proxy (outbound): `http://192.168.203.2:3128` (configured for shell/apt/git/docker/pip/HF via `proxy_setup.sh`).
 - Firewall: ufw/iptables **inactive** (all ports open). Services bind `0.0.0.0` → reachable externally on both interface IPs.
-- ⚠️ **Root disk `/` is 100% full (45G/48G, ~90M free)**. Docker data-root sits on `/ai-gpu1/v1/docker-data` (old path, on root partition). All heavy data lives on `/splunk-data` (5.6T). **Do not pull large docker images** until docker data-root is relocated to `/splunk-data` or root is freed.
+- ✅ **Root disk `/` freed — now 22G/48G used (49%, 24G free)** (was 100%, ~90M free). Docker data-root relocated off root onto `/splunk-data/v1/docker-data`; containerd data-root moved to `/splunk-data/v1/containerd-data` (was the 13G symlink target `/ai-gpu1/v1/containerd-data` on root; stale dirs deleted). `/var/lib/containerd` is a symlink → `/splunk-data/v1/containerd-data`. All 9 containers now have `restart=unless-stopped`.
 
 ## 2. Every service & endpoint
 
@@ -76,6 +80,6 @@ Directory: `offline-prep/models/huggingface/<repo with / → _>/` and `.cache/hu
 
 ## 9. Known issues
 
-1. Root disk 100% — relocate docker data-root or free space before any large docker pull.
+1. ~~Root disk 100%~~ **DONE**: docker+containerd data-root relocated to `/splunk-data/v1`, root freed to 49% (~24G free).
 2. vLLM `pghistory`, `vllm/vllm-openai` & `nvidia/cuda` images, otel-collector OTLP instrumented apps: not present/needed yet.
 3. Shell `http_proxy` env makes local curl to host IP return squid 503 (use `--noproxy '*'`).
