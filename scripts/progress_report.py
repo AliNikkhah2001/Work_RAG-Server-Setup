@@ -43,6 +43,10 @@ SERVICES = [
     ("qdrant", 16333, "http://127.0.0.1:16333/healthz"),
     ("pgvector", 15432, None),
     ("redis", 16379, None),
+    ("grafana", 13001, "http://127.0.0.1:13001/api/health"),
+    ("prometheus", 19090, "http://127.0.0.1:19090/-/healthy"),
+    ("otel-collector", 14318, None),
+    ("gpu-exporter", 9101, "http://127.0.0.1:9101/metrics"),
 ]
 
 

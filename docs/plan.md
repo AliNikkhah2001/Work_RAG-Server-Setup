@@ -46,4 +46,5 @@ Update these as work completes.
 - [ ] Env/secrets management (no secrets in code)
 - [ ] GPU limits + monitoring
 - [x] Progress dashboard built (`scripts/progress_report.py`, cron-able)
+- [x] Monitoring stack up (prometheus :19090, grafana :13001, node-exporter, gpu-exporter :9101, otel-collector :14317)
 - [ ] Cold-restart verified + runbook doc

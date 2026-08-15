@@ -37,6 +37,18 @@ Verified as of 2026-08-15. Update this file when new facts are learned; keep it 
 - Working images (pulled Aug 10, loaded Aug 11): `ghcr.io/open-webui/open-webui:main`, `milvusdb/milvus:latest`, `pgvector/pgvector:pg16`, `qdrant/qdrant:latest`, `redis:7-alpine`. Saved tars in `offline-prep/docker-images/`. All 5 containers running (as of 2026-08-15); open-webui on :13000, pgvector :15432, qdrant :16333, redis :16379, milvus :19530.
 - `vllm/vllm-openai:latest` and `nvidia/cuda:12.8.0-runtime-ubuntu22.04` pulls have never succeeded through the proxy.
 
+## CRITICAL: root filesystem is 100% full + docker data-root on stale path (2026-08-15)
+
+- `/` (48G, `ubuntu--vg`) is **100% full**: 14G `docker data-root`, 12G `/var`, 12G `/usr`, 8.1G `/swap.img`.
+- **Docker data-root is `/ai-gpu1/v1/docker-data`** (`docker info` `DockerRootDir`) — the stale path from AGENTS.md, now a plain directory on the root partition. Docker named volumes (e.g. the original `grafana-data`) live there and hit `database or disk is full` (grafana sqlite). Mitigation used: **bind-mount all persistent monitoring data onto `/splunk-data`** (`deploy/monitoring/{prometheus,grafana}-data`, chmod 777 since prometheus/grafana run as non-root). Long-term: relocate docker data-root to `/splunk-data` (`dockerd --data-root` / daemon.json) or free space on `/`.
+
+## Monitoring stack (brought up 2026-08-15)
+
+- Images pulled through proxy (flaky, retry needed): `prom/prometheus:v2.52.0`, `grafana/grafana:11.2.0`, `prom/node-exporter:v1.8.1`, `otel/opentelemetry-collector-contrib:0.105.0`.
+- **prometheus 2.53.0 SIGBUS-crashes in docker** (`promql.NewActiveQueryTracker`, O_TMPFILE mmap → `fatal error: fault`). Pin **2.52.0**.
+- Running (`deploy/monitoring/docker-compose.yml`): prometheus :19090 (scrapes vllm :8000/metrics, gpu :9101, node-exporter :19100), grafana :13001 (provisioned Prometheus datasource via `grafana/provisioning/`), node-exporter :19100, otel-collector :14317/:14318 (OTLP gRPC/HTTP) + prometheus exporter :19092.
+- GPU metrics come from a host-side exporter `scripts/services/gpu_metrics_exporter.py` (:9101, reads `nvidia-smi`, no container/DCGM needed).
+
 ## Models (as of Aug 11)
 
 - Embeddings present: `BAAI/bge-small-en-v1.5`, `sentence-transformers/all-MiniLM-L6-v2` (`models/huggingface/`).
