@@ -29,3 +29,6 @@ deploy/data_plane_status.json
 # ===== Runtime DB/wal state (never commit) =====
 deploy/monitoring/prometheus-data/
 deploy/monitoring/grafana-data/
+
+deploy/gateway/.htpasswd.public
+deploy/gateway/.public_pass

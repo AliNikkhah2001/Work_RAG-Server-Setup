@@ -44,10 +44,12 @@ Edit `TARGETS` in `scripts/download_models.py`:
 
 ## Add `HF_TOKEN` when a gated repo is required
 
-```bash
-huggingface-cli login            # stores token; daemon picks it up on next pass
-# or:  environment=HF_TOKEN=hf_...  in /etc/systemd/system/rag-dl.service
-```
+Token is now configured (2026-08-15):
+- `offline-prep/.hf_token` contains `HF_TOKEN=hf_...` (mode 600, **not tracked in git**).
+- Drop-in `/etc/systemd/system/rag-dl.service.d/override.conf` adds
+  `EnvironmentFile=-/splunk-data/v1/Work_RAG-Server-Setup/offline-prep/.hf_token`.
+- Manual runs work too (raw token at `~/.cache/huggingface/token`). Change ⇒ edit the
+  `.hf_token` file and `systemctl restart rag-dl`.
 
 ## Bandwidth reality
 

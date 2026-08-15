@@ -39,7 +39,7 @@ TARGETS = [
      ["google_gemma-3-27b-it-Q4_K_M.gguf"]),                                     # 16.5 GB (gated)
     ("Qwen/Qwen3-30B-A3B-GGUF",
      ["Qwen3-30B-A3B-Q4_K_M.gguf"]),                                             # 18.6 GB
-    ("bartowski/google_gemma-4-31b-it-GGUF",
+    ("bartowski/google_gemma-4-31B-it-GGUF",
      ["google_gemma-4-31B-it-Q4_K_M.gguf"]),                                     # 19.6 GB (gated)
     ("bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF",
      ["*Nemotron-Super-49B-v1-Q4_K_M.gguf"]),                                    # 30.2 GB  (Nemotron 3 / Super)

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>RAG Server — Public Access</title>
+  <style>
+    body { font-family: ui-monospace, monospace; background: #0f1419; color: #e6edf3; padding: 2rem; }
+    h1 { border-bottom: 1px solid #30363d; padding-bottom: .5rem; }
+    table { border-collapse: collapse; width: 100%; max-width: 920px; }
+    th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid #21262d; }
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { background: #161b22; padding: .1rem .4rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>RAG Server Gateway — Public</h1>
+  <p>Exposed via Cloudflare quick tunnel (HTTP Basic Auth: see <code>deploy/gateway/.public_pass</code>).</p>
+  <table>
+    <tr><th>Service</th><th>Public path</th><th>Notes</th></tr>
+    <tr><td>vLLM OpenAI API</td><td><a href="/vllm/v1/models">/vllm/</a></td><td>Qwen2.5-7B Q4_K_M</td></tr>
+    <tr><td>llama.cpp OpenAI API</td><td><a href="/llama/v1/models">/llama/</a></td><td>Qwen2.5-7B Q4_K_M</td></tr>
+    <tr><td>Embeddings API</td><td><a href="/embeddings/">/embeddings/</a></td><td>bge-small, dim 384</td></tr>
+    <tr><td>Open WebUI (chatbot)</td><td><a href="/webui/">/webui/</a></td><td>connected to llama.cpp</td></tr>
+    <tr><td>Sample projects (source)</td><td><a href="/samples/">/samples/</a></td><td>dify / anything-llm / ragflow / lightrag</td></tr>
+    <tr><td>Documentation</td><td><a href="/docs/">/docs/</a></td><td>setup guides + history</td></tr>
+  </table>
+  <h2>GitHub</h2>
+  <p>Public repo: <a href="https://github.com/AliNikkhah2001/Work_RAG-Server-Setup">AliNikkhah2001/Work_RAG-Server-Setup</a></p>
+  <h2>Direct (corporate LAN only)</h2>
+  <p>Gateway <code>http://192.168.96.82:8088</code> · vLLM <code>http://192.168.96.82:8000/v1</code> ·
+     WebUI <code>http://192.168.96.82:13000</code></p>
+</body>
+</html>
