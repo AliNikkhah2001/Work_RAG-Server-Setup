@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>RAG Server Gateway</title>
+  <style>
+    body { font-family: ui-monospace, monospace; background: #0f1419; color: #e6edf3; padding: 2rem; }
+    h1 { border-bottom: 1px solid #30363d; padding-bottom: .5rem; }
+    table { border-collapse: collapse; width: 100%; max-width: 900px; }
+    th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid #21262d; }
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { background: #161b22; padding: .1rem .4rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>RAG Server Gateway</h1>
+  <p>Reachable at <code>http://192.168.96.82:8088</code> / <code>http://192.168.177.10:8088</code></p>
+  <table>
+    <tr><th>Service</th><th>Path</th><th>Notes</th></tr>
+    <tr><td>vLLM OpenAI API</td><td><a href="/vllm/v1/models">/vllm/</a></td><td>Qwen2.5-7B Q4_K_M</td></tr>
+    <tr><td>llama.cpp OpenAI API</td><td><a href="/llama/v1/models">/llama/</a></td><td>Qwen2.5-7B Q4_K_M</td></tr>
+    <tr><td>Embeddings API</td><td><a href="/embeddings/">/embeddings/</a></td><td>bge-small, dim 384</td></tr>
+    <tr><td>Open WebUI (chatbot)</td><td><a href="/webui/">/webui/</a></td><td>connected to llama.cpp</td></tr>
+    <tr><td>Grafana</td><td><a href="/grafana/">/grafana/</a></td><td>admin / admin</td></tr>
+    <tr><td>Prometheus</td><td><a href="/prometheus/">/prometheus/</a></td><td>scrapes vllm/gpu/node</td></tr>
+    <tr><td>Qdrant HTTP</td><td><a href="/qdrant/collections">/qdrant/</a></td><td></td></tr>
+    <tr><td>Milvus gRPC</td><td>/milvus/</td><td>grpc_pass proxy</td></tr>
+  </table>
+  <h2>Direct ports (also reachable)</h2>
+  <table>
+    <tr><th>Service</th><th>Address</th></tr>
+    <tr><td>Open WebUI</td><td><code>http://192.168.96.82:13000</code></td></tr>
+    <tr><td>Milvus</td><td><code>192.168.96.82:19530</code></td></tr>
+    <tr><td>Qdrant</td><td><code>192.168.96.82:16333</code></td></tr>
+    <tr><td>pgvector</td><td><code>192.168.96.82:15432</code></td></tr>
+    <tr><td>Redis</td><td><code>192.168.96.82:16379</code></td></tr>
+    <tr><td>otel-collector</td><td><code>192.168.96.82:14317</code> (gRPC) / <code>:14318</code> (HTTP)</td></tr>
+  </table>
+</body>
+</html>

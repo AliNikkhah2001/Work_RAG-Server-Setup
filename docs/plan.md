@@ -15,7 +15,8 @@ Update these as work completes.
 ## P1 — Complete model set
 - [x] Qwen2.5-7B Q4_K_M downloaded (4.68 GB) + llama.cpp validated
 - [x] Llama-3.2-3B Q4_K_M downloaded (2.02 GB)
-- [ ] Mistral-7B v0.3 Q4_K_M downloaded (4.37 GB) — **downloading (73.6%, resuming Aug-10 partial)**
+- [ ] Mistral-7B v0.3 Q4_K_M downloaded (4.37 GB) — **downloading (~79%, resuming Aug-10 partial)**
+- [ ] Qwen2.5-72B Q4_K_M (~49 GB) + Q8_0 (~93 GB) Persian-capable — **downloading (tmux `dl_big`)**
 - [ ] All weights integrity-checked and loadable
 
 ## P2 — Inference engines (llama.cpp + vLLM) + embeddings
@@ -42,9 +43,11 @@ Update these as work completes.
 - [ ] Results recorded in `docs/history/`
 
 ## P5 — Production hardening + runbook
+- [x] All services externally exposed via nginx gateway `:8088` (model APIs, webui, grafana, prometheus, qdrant) + direct ports; `docs/REPORT.md`
 - [ ] systemd/compose services with auto-restart
 - [ ] Env/secrets management (no secrets in code)
 - [ ] GPU limits + monitoring
 - [x] Progress dashboard built (`scripts/progress_report.py`, cron-able)
 - [x] Monitoring stack up (prometheus :19090, grafana :13001, node-exporter, gpu-exporter :9101, otel-collector :14317)
 - [ ] Cold-restart verified + runbook doc
+- [ ] Relocate docker data-root off `/ai-gpu1` (root disk 100% full)

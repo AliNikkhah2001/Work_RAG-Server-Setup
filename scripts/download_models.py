@@ -29,6 +29,13 @@ TARGETS = [
      ["Llama-3.2-3B-Instruct-Q4_K_M.gguf"]),
     ("bartowski/Mistral-7B-Instruct-v0.3-GGUF",
      ["Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"]),
+    # Large Persian-capable models (Qwen2.5-72B is a strong multilingual model)
+    #   1) Q4_K_M single-file  ~49 GB  -> works in BOTH llama.cpp and vLLM
+    #   2) Q8_0 (2 parts)      ~93 GB  -> llama.cpp only (splits not supported by vLLM)
+    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
+     ["Qwen2.5-72B-Instruct-Q4_K_M.gguf",
+      "Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00001-of-00002.gguf",
+      "Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00002-of-00002.gguf"]),
 ]
 
 MAX_ATTEMPTS = 8
@@ -36,6 +43,18 @@ RETRY_WAIT = 90
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--only", help="download only this repo id (by substring match)")
+    args = ap.parse_args()
+
+    targets = TARGETS
+    if args.only:
+        targets = [(r, p) for r, p in TARGETS if args.only in r]
+        if not targets:
+            print(f"No targets match {args.only}")
+            return
+
     log = logging.getLogger("dl")
     log.setLevel(logging.INFO)
     fh = logging.FileHandler(LOG_DIR / f"dl_models_{datetime.now():%Y%m%d_%H%M}.log")
@@ -44,7 +63,7 @@ def main():
 
     from huggingface_hub import snapshot_download
 
-    for repo, patterns in TARGETS:
+    for repo, patterns in targets:
         dest = MODELS_DIR / repo.replace("/", "_")
         dest.mkdir(parents=True, exist_ok=True)
         log.info(f"START {repo} -> {dest}  patterns={patterns}")

@@ -75,3 +75,14 @@
   - vLLM `:8000` serves same GGUF (model-id `qwen2.5:7b-vllm`); **53.6 tok/s** (512-token gen); needs the vocab-assert patch + pyairports stub (see findings).
   - Embeddings `:8001` dim-384 verified.
 - **vLLM GGUF fixes applied to the venv** (documented in `docs/findings.md`): relaxed vocab assert in `vocab_parallel_embedding.py:381`; pyairports stub; wrapper model dir `offline-prep/models/gguf-wrappers/qwen2.5-7b-q4km/`.
+
+## Session round 3 — report, exposure, Persian models (same day)
+
+### Done
+
+- **Comprehensive report**: `docs/REPORT.md` — all endpoints, images, venvs, model files, commands, known issues.
+- **Install-script audit** (`offline_prepare_cli.py`): all 35 std/CUDA packages import OK in master venv. Missing vs. script manifest: docker images `vllm/vllm-openai:latest` + `nvidia/cuda:12.8.0-runtime-ubuntu22.04` (proxy pulls fail + root disk can't fit them; vLLM runs natively → deferred, requires docker data-root relocation).
+- **External exposure**: all host services already bound `0.0.0.0`; firewall open. Added **nginx gateway `:8088`** (`/etc/nginx/sites-available/rag-gateway`) exposing index `/`, `/vllm/`, `/llama/`, `/embeddings/`, `/webui/` (websocket), `/grafana/`, `/prometheus/`, `/qdrant/`, `/milvus/` (grpc_pass). Verified end-to-end (chat via `/vllm/...`, subpath grafana/prometheus, both interface IPs 200). nginx logs moved to `deploy/gateway/logs/` (root disk). Grafana re-provisioned with `GF_SERVER_ROOT_URL=.../grafana` + `SERVE_FROM_SUB_PATH`; prometheus runs `--web.external-url=/prometheus`.
+- **Root disk**: still 100% (45G/48G, ~90M free) — freed ~1.1G (journal vacuum, apt clean, removed prometheus 2.53.0). docker data-root `/ai-gpu1/v1/docker-data` is the main consumer — relocation recommended.
+- **Persian-capable large models added** to `scripts/download_models.py` (with `--only` filter): `bartowski/Qwen2.5-72B-Instruct-GGUF` Q4_K_M single-file (49 GB, both engines) + Q8_0 2-part (93 GB, llama.cpp). Background session tmux `dl_big` (≈142 GB target). Qwen2.5-72B has strong Persian/multilingual performance.
+- git commits incl. `cee85ad` (monitoring), plus this round: report/gateway/downloader.

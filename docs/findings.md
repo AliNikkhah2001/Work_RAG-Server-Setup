@@ -49,6 +49,13 @@ Verified as of 2026-08-15. Update this file when new facts are learned; keep it 
 - Running (`deploy/monitoring/docker-compose.yml`): prometheus :19090 (scrapes vllm :8000/metrics, gpu :9101, node-exporter :19100), grafana :13001 (provisioned Prometheus datasource via `grafana/provisioning/`), node-exporter :19100, otel-collector :14317/:14318 (OTLP gRPC/HTTP) + prometheus exporter :19092.
 - GPU metrics come from a host-side exporter `scripts/services/gpu_metrics_exporter.py` (:9101, reads `nvidia-smi`, no container/DCGM needed).
 
+## External exposure (2026-08-15)
+
+- Host services bind `0.0.0.0`; ufw/iptables inactive. nginx gateway on **:8088** consolidates everything: `/vllm/`, `/llama/`, `/embeddings/`, `/webui/` (ws), `/grafana/`, `/prometheus/`, `/qdrant/`, `/milvus/` (grpc_pass), `/` index. Config `/etc/nginx/sites-available/rag-gateway`; logs moved to `deploy/gateway/logs/` (root disk).
+- **Gotcha**: the shell exports `http_proxy` → `curl http://<host-ip>:8088/...` locally goes through squid and returns `503 (Server: squid/6.6)`. Use `curl --noproxy '*'` for local tests.
+- Grafana sub-path via `GF_SERVER_ROOT_URL=http://192.168.96.82:8088/grafana` + `GF_SERVER_SERVE_FROM_SUB_PATH=true`; prometheus via `--web.external-url=/prometheus --web.route-prefix=/prometheus` (health now at `/prometheus/-/healthy`).
+- Models: `bartowski/Qwen2.5-72B-Instruct-GGUF` huge quants are **multi-part** (subfolder + `-00001-00002`): llama.cpp handles splits; vLLM 0.6.1 does **not**. Q4_K_M (~49 GB) is single-file → use it for vLLM.
+
 ## Models (as of Aug 11)
 
 - Embeddings present: `BAAI/bge-small-en-v1.5`, `sentence-transformers/all-MiniLM-L6-v2` (`models/huggingface/`).
