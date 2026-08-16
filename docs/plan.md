@@ -25,6 +25,8 @@ Update these as work completes.
 - [x] vLLM GGUF flags verified; launcher script written
 - [x] vLLM serving Qwen2.5-7B on H200 (tokens/sec logged) — 53.6 tok/s
 - [x] llama.cpp serving Qwen2.5-7B Q4_K_M on `:8080`
+- [x] Inference verified on all 5 complete GGUFs (Llama-3.2-3B, Qwen2.5-7B, Mistral-7B Q4, Phi-3 q4+fp16) — `scripts/verify_gguf_inference.py`
+- [ ] Inference verified on Gemma-3-27B, Qwen3-30B, Qwen2.5-72B (awaiting download)
 
 ## P3 — RAG data plane
 - [x] Vector DBs + Open WebUI containers running
@@ -32,6 +34,7 @@ Update these as work completes.
 - [x] Vector collection/schema setup (Milvus, Qdrant, pgvector) — `deploy/setup_data_plane.py`
 - [x] Open WebUI wired to local OpenAI endpoints — `deploy/recreate_webui.sh`
 - [ ] End-to-end ingest → retrieve works against a real vector DB
+- [ ] Model evals recorded (conventional + Persian) — 4 models done, big models pending
 
 ## P4 — Run + test sample repos (parallel)
 - [x] Shared RAG test harness written (`scripts/rag_test_harness.py`)

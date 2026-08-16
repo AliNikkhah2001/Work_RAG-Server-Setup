@@ -41,6 +41,8 @@ TARGETS = [
      ["Qwen3-30B-A3B-Q4_K_M.gguf"]),                                             # 18.6 GB
     ("bartowski/google_gemma-4-31B-it-GGUF",
      ["google_gemma-4-31B-it-Q4_K_M.gguf"]),                                     # 19.6 GB (gated)
+    ("bartowski/Qwen3.8-27B-GGUF",
+     ["Qwen3.8-27B-Q4_K_M.gguf"]),                                               # 17.8 GB (multimodal; bartowski quants incl. mmproj)
     ("bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF",
      ["*Nemotron-Super-49B-v1-Q4_K_M.gguf"]),                                    # 30.2 GB  (Nemotron 3 / Super)
     ("bartowski/Qwen2.5-72B-Instruct-GGUF",
@@ -63,6 +65,20 @@ TARGETS = [
 
 MAX_ATTEMPTS = 8
 RETRY_WAIT = 90
+BACKOFF_BASE = 90          # seconds before first brake
+BACKOFF_MULT = 2.0         # exponential multiplier
+BACKOFF_CAP = 3600         # max brake (1h) — never hammers the proxy forever
+BACKOFF_JITTER = 0.3       # ±30% jitter
+
+
+def backoff_wait(n_fail: int) -> float:
+    """Exponential backoff (brake) with jitter: as failures accumulate, wait
+    grows base*mult^(n_fail-1), capped, ±jitter. Never gives up."""
+    import random
+    base = BACKOFF_BASE * (BACKOFF_MULT ** (n_fail - 1))
+    base = min(base, BACKOFF_CAP)
+    jitter = random.uniform(1 - BACKOFF_JITTER, 1 + BACKOFF_JITTER)
+    return base * jitter
 
 
 def main():
@@ -98,6 +114,7 @@ def main():
             log.info(f"START {repo} -> {dest}  patterns={patterns}")
             ok = False
             attempt = 0
+            consec_fails = 0
             while max_attempts is None or attempt < max_attempts:
                 attempt += 1
                 try:
@@ -110,16 +127,24 @@ def main():
                     )
                     log.info(f"OK {repo} attempt={attempt}")
                     ok = True
+                    consec_fails = 0
                     break
                 except Exception as e:
                     msg = str(e)
-                    if any(k in msg.lower() for k in ("401", "403", "gated", "authentication")):
+                    # only genuine gating/401/403 → stop for this repo; do NOT treat
+                    # proxy noise (IncompleteRead, Tunnel 500/503, Kerio pages) as auth.
+                    if any(k in msg.lower() for k in ("401 client", "403 client",
+                                                      "cannot access gated", "gated repo",
+                                                      "not granted access", "access to model")):
                         log.error(f"AUTH-BLOCKED {repo} (token/log-gated, no HF_TOKEN): {msg[:160]}")
                         break  # do not infinite-loop on gated repos; needs HF_TOKEN
-                    log.warning(f"FAIL {repo} attempt={attempt}: {msg[:200]}")
+                    consec_fails += 1
+                    brake = backoff_wait(consec_fails)
+                    log.warning(f"FAIL {repo} attempt={attempt} consec={consec_fails} "
+                                f"brake={brake:.0f}s: {msg[:180]}")
                     if max_attempts is not None and attempt >= max_attempts:
                         break
-                    time.sleep(RETRY_WAIT)
+                    time.sleep(brake)
             if not ok and not args.daemon:
                 log.error(f"GIVEUP {repo} after {max_attempts} attempts")
             all_done = all_done and ok

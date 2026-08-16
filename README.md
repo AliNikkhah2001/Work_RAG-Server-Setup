@@ -115,13 +115,67 @@ All under `offline-prep/models/huggingface/` (git-ignored):
 | Model | Size | Status |
 |---|---|---|
 | `bartowski/Qwen2.5-7B-Instruct-GGUF` (Q4_K_M) | 4.7 GB | ✅ downloaded & validated (primary) |
-| `bartowski/Llama-3.2-3B-Instruct-GGUF` (Q4_K_M) | ~2 GB | ⏳ downloading |
-| `bartowski/Mistral-7B-Instruct-v0.3-GGUF` | ~60 GB (IQ1–IQ5/Q2/Q3 quants) | ✅ IQ quants present; Q4_K_M ⏳ pending |
+| `bartowski/Llama-3.2-3B-Instruct-GGUF` (Q4_K_M) | 2.0 GB | ✅ downloaded & evaluated |
+| `bartowski/Mistral-7B-Instruct-v0.3-GGUF` | 64 GB (IQ1–IQ5/Q2/Q3 + Q4_K_M) | ✅ Q4_K_M + all quants |
 | `microsoft/Phi-3-mini-4k-instruct-gguf` | 9.4 GB | ✅ q4 + fp16 |
+| `bartowski/google_gemma-4-31B-it-GGUF` (Q4_K_M) | 19.6 GB | ✅ downloaded & evaluated |
+| `bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF` (Q4_K_M) | 30.2 GB | ✅ downloaded & evaluated |
+| `bartowski/Qwen2.5-72B-Instruct-GGUF` (Q8_0 2/2 + part 1 partial) | ~40 GB | ⏳ part 1 resuming (34.4/40 GB) |
+| `bartowski/google_gemma-3-27b-it-GGUF` (Q4_K_M) | 16.5 GB | ⏳ resuming (12.7/16.5 GB) |
+| `bartowski/Qwen3.8-27B-GGUF` (Q4_K_M) | 17.8 GB | ⏳ downloading (dedicated daemon; multimodal) |
+| `Qwen/Qwen3-30B-A3B-GGUF` | 18.6 GB | ⏳ paused mid-download (11.5 GB) |
+| `bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF` | 151 GB | ⏳ queued / slow partials |
 | `BAAI/bge-small-en-v1.5` | 383 MB | ✅ embeddings (dim 384) |
 | `sentence-transformers/all-MiniLM-L6-v2` | 932 MB | ✅ embeddings |
+| `intfloat/multilingual-e5-small` | 1.2 GB | ✅ Persian-capable embeddings (dim 384) |
+| `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | 912 MB | ✅ Persian-capable embeddings (dim 384) |
+| `BAAI/bge-m3` | 2.2 GB | ✅ multilingual embeddings (dim 1024) |
 
-**Master venv key packages:** torch 2.4.0+cu124 · vllm 0.6.1.post1 (+flash-attn 2.6.1) · flash-attn 2.6.3 · llama-cpp-python 0.3.34 · sglang 0.3.0 · transformers 4.44.0 · faiss-gpu-cu12 1.14.1.post1 · bitsandbytes 0.50.0 · numpy 1.26.4 · scipy 1.13.1 · sentence-transformers 3.0.1 · ragas 0.4.3 · deepeval 4.1.7
+**Master venv key packages:** torch 2.4.0+cu124 · vllm 0.6.1.post1 (+flash-attn 2.6.1) · flash-attn 2.6.3 · llama-cpp-python 0.3.34 · sglang 0.3.0 · transformers 4.44.0 · faiss-gpu-cu12 1.14.1.post1 · bitsandbytes 0.50.0 · numpy 1.26.4 · scipy 1.13.1 · sentence-transformers 3.0.1 · ragas 0.4.3 · deepeval 4.1.7 · datasets 5.0.1 · matplotlib 3.11.1
+
+---
+
+## 4b. Model benchmark — Persian LLM evaluation
+
+Six complete GGUF models were benchmarked on **Persian** tasks via the [Persian eval harness](scripts/eval_persian.py) (chat completions, temp 0.0, `limit=50`, max_tokens 400, Persian text normalized for scoring). Tasks: Persian ARC-Easy (MC), Parsinlu multiple-choice, Persian math, sentiment, entailment, NER, and reading comprehension (ParsBench suite).
+
+### Mean accuracy (sorted)
+
+| Model | Mean | Persian ARC | Parsinlu MC | Math | Sentiment | Entail | NER | RC |
+|---|---|---|---|---|---|---|---|---|
+| **Gemma-4-31B Q4_K_M** | **0.663** | 0.960 | 0.700 | 0.640 | 0.820 | 0.160 | **1.000** | 0.360 |
+| Nemotron-Super-49B Q4_K_M | 0.494 | 0.920 | 0.320 | 0.500 | 0.680 | 0.220 | 0.460 | 0.360 |
+| Qwen2.5-7B Q4_K_M | 0.443 | 0.680 | 0.360 | 0.380 | 0.660 | 0.000 | 0.880 | 0.140 |
+| Llama-3.2-3B Q4_K_M | 0.326 | 0.560 | 0.300 | 0.140 | 0.580 | 0.240 | 0.000 | 0.460 |
+| Mistral-7B Q4_K_M | 0.186 | 0.360 | 0.240 | 0.060 | 0.300 | 0.180 | 0.020 | 0.140 |
+| Phi-3-mini q4 | 0.143 | 0.340 | 0.100 | 0.000 | 0.220 | 0.160 | 0.000 | 0.180 |
+
+**Key findings**
+- **Gemma-4-31B dominates** — 0.96 on Persian ARC, perfect 1.0 on NER, best on every task except entailment/RC (where 49B and 3B edge it out).
+- Nemotron-49B is the best strong 7B-scale alternative: strong ARC (0.92) and math (0.50).
+- Qwen2.5-7B is excellent at NER (0.88) but fails entailment entirely (0.000) — it emits label letters the scorer cannot map.
+- Small models (Llama-3.2-3B, Mistral, Phi-3) collapse on NER and math; Llama-3.2-3B is surprisingly best-in-class at reading comprehension (0.46).
+
+### Plots
+
+- [`docs/reports/persian_mean.png`](docs/reports/persian_mean.png) — mean accuracy per model
+- [`docs/reports/persian_by_task.png`](docs/reports/persian_by_task.png) — per-task accuracy by model
+- [`docs/reports/persian_eval_report.md`](docs/reports/persian_eval_report.md) — full report with per-example input/output samples
+
+![Mean accuracy](docs/reports/persian_mean.png)
+![Per-task accuracy](docs/reports/persian_by_task.png)
+
+### Reproduction
+
+```bash
+export HF_HUB_OFFLINE=1
+offline-prep/venv/bin/python3.12 scripts/eval_persian.py \
+    --model <path.gguf> --limit 50 --chat --max-tokens 400 \
+    --out evalp_<name>.json
+offline-prep/venv/bin/python3.12 scripts/gen_eval_report.py   # rebuild tables + plots
+```
+
+English + Persian conventional tasks (MMLU-3subj, GSM8K, fa_arc, fa_rc) are in [`logs/eval_*.json`](logs/) via [`scripts/eval_gguf.py`](scripts/eval_gguf.py). Persian eval datasets (ParsBench suite) are cached offline in `offline-prep/datasets` and were downloaded by [`scripts/download_persian_eval.py`](scripts/download_persian_eval.py).
 
 ---
 
@@ -135,6 +189,22 @@ All under `offline-prep/models/huggingface/` (git-ignored):
 | P3 | RAG data plane (vector DBs + Open WebUI + ingestion) | ⏳ | ingest → retrieve works end-to-end |
 | P4 | Run + test sample repos (lightrag → anything-llm → ragflow → dify, in parallel) | ⏳ | each passes the RAG test harness |
 | P5 | Production hardening + runbook | ⏳ | stack cold-restarts cleanly |
+
+### Model download status (live daemons, 2026-08-16)
+
+Downloads run as **systemd `rag-dl`** plus a dedicated 72B resume daemon; both never stop — failures trigger an **exponential backoff brake** (`BACKOFF_BASE=90s`, ×2, cap 3600s, ±30% jitter) and resume from the partial file.
+
+| Target | Size | Progress | Note |
+|---|---|---|---|
+| Qwen2.5-72B Q8_0 part 1 | ~40 GB | **34.4/40 GB (86%)** | resuming via daemon; ~0.2–2.5 GB per retry before proxy drops |
+| Gemma-3-27B Q4_K_M | 16.5 GB | **12.7/16.5 GB (77%)** | resumed from 6.5 GB this session |
+| **Qwen3.8-27B Q4_K_M** | 17.8 GB | **downloading (dedicated daemon, pid 750522)** | multimodal; bartowski GGUF, verified reachable |
+| Qwen3-30B-A3B | 18.6 GB | 11.5 GB (62%) | paused mid-download |
+| Nemotron-Ultra-253B Q4_K_M | 151 GB | ~1–1.3 GB partials | queued behind smaller files |
+| Qwen2.5-72B Q4_K_M | 47.4 GB | queued | after Q8_0 part 1 completes |
+| Gemma-3-27B Q8_0 / DeepSeek-V4-Flash / MiniMax-M3 / Kimi-K3 / GLM-5.2 | — | queued | — |
+
+Completed since last update: Llama-3.2-3B, Mistral Q4_K_M, **Gemma-4-31B**, **Nemotron-49B**, **Qwen2.5-72B Q8_0 part 2/2**. Complete log trail: `offline-prep/logs/dl_models_20260816_*.log`.
 
 ---
 
@@ -187,5 +257,6 @@ offline-prep/venv/bin/python3.12 scripts/rag_test_harness.py \
 - [`docs/findings.md`](docs/findings.md) — verified environment facts, gotchas, and service inventory.
 - [`AGENTS.md`](AGENTS.md) — instructions for agents working in this repo.
 - [`deploy/docker-compose.yml`](deploy/docker-compose.yml) — reference compose for the data plane.
+- [`docs/reports/`](docs/reports/) — Persian eval report + comparison plots.
 
 Generated artifacts (reports/logs/state) live under `offline-prep/` and are **not** tracked in git.
