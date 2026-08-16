@@ -8,7 +8,7 @@ set -euo pipefail
 #
 #   ./lightrag_run.sh [llm_port] [llm_model] [embed_port]
 
-HERE="$(cd "$(dirname "$0")/.." && pwd)"
+HERE="$(cd "$(dirname "$0")/../.." && pwd)"
 LLM_PORT="${1:-8080}"
 LLM_MODEL="${2:-qwen2.5:7b}"
 EMBED_PORT="${3:-8001}"
@@ -30,6 +30,8 @@ export EMBEDDING_BINDING=openai
 export EMBEDDING_BINDING_HOST="http://127.0.0.1:${EMBED_PORT}/v1"
 export EMBEDDING_BINDING_API_KEY=local
 export EMBEDDING_MODEL=local-embed
+export EMBEDDING_DIM=384
+export EMBEDDING_SEND_DIM=false
 export EMBEDDING_MAX_TOKEN_SIZE=512
 
 export RAG_STORAGE_DIR="${LIGHTRAG_DIR}/rag_storage"

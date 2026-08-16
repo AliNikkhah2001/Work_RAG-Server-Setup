@@ -45,14 +45,6 @@ TARGETS = [
      ["Qwen3.8-27B-Q4_K_M.gguf"]),                                               # 17.8 GB (multimodal; bartowski quants incl. mmproj)
     ("bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF",
      ["*Nemotron-Super-49B-v1-Q4_K_M.gguf"]),                                    # 30.2 GB  (Nemotron 3 / Super)
-    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
-     ["Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00002-of-00002.gguf"]),  # 37.3 GB
-    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
-     ["Qwen2.5-72B-Instruct-Q8_0/Qwen2.5-72B-Instruct-Q8_0-00001-of-00002.gguf"]),  # 40.0 GB
-    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
-     ["Qwen2.5-72B-Instruct-Q4_K_M.gguf"]),                                      # 47.4 GB (vLLM+llama.cpp)
-    ("bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF",
-     ["*Nemotron-Ultra-253B-v1-Q4_K_M*"]),                                        # 151 GB (split quant)
     ("deepseek-ai/DeepSeek-V4-Flash",
      ["model-*.safetensors", "*.json", "*.py", "tokenizer*", "*.md", "*.txt"]),  # 160 GB (FP4/FP8)
     ("unsloth/MiniMax-M3-GGUF",

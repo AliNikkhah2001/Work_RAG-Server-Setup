@@ -33,16 +33,21 @@ def _clean_message(msg: dict) -> str:
 async def chat(request: Request):
     body = await request.json()
     messages = body.get("messages", [])
-    prompt = "\n".join(f"<|im_start|>{m.get('role', 'user')}\n{_clean_message(m)}<|im_end|>\n"
-                       for m in messages) + "<|im_start|>assistant\n"
     max_tokens = body.get("max_tokens", 256)
     temperature = body.get("temperature", 0.7)
-    out = llm(prompt, max_tokens=max_tokens, temperature=temperature, stop=body.get("stop"))
+    out = llm.create_chat_completion(
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        stop=body.get("stop") or None,
+    )
     return {
         "id": "chatcmpl-local",
         "object": "chat.completion",
         "model": MODEL_ID,
-        "choices": [{"index": 0, "message": {"role": "assistant", "content": out["choices"][0]["text"]},
+        "choices": [{"index": 0,
+                     "message": {"role": "assistant",
+                                 "content": (out["choices"][0]["message"].get("content") or "")},
                      "finish_reason": "stop"}],
     }
 
@@ -53,12 +58,19 @@ async def complete(request: Request):
     prompt = body.get("prompt", "")
     max_tokens = body.get("max_tokens", 256)
     temperature = body.get("temperature", 0.7)
-    out = llm(prompt, max_tokens=max_tokens, temperature=temperature, stop=body.get("stop"))
+    out = llm.create_chat_completion(
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=max_tokens,
+        temperature=temperature,
+        stop=body.get("stop") or None,
+    )
     return {
         "id": "cmpl-local",
         "object": "text_completion",
         "model": MODEL_ID,
-        "choices": [{"index": 0, "text": out["choices"][0]["text"], "finish_reason": "stop"}],
+        "choices": [{"index": 0,
+                     "text": (out["choices"][0]["message"].get("content") or ""),
+                     "finish_reason": "stop"}],
     }
 
 

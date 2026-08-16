@@ -32,3 +32,6 @@ deploy/monitoring/grafana-data/
 
 deploy/gateway/.htpasswd.public
 deploy/gateway/.public_pass
+
+# ===== LightRAG runtime storage =====
+rag_storage/
