@@ -87,7 +87,8 @@ setsid bash scripts/services/autogit_daemon.sh
 
 ## Status of other work (background)
 
-- Model downloads: Gemma-4-31B, Gemma-3-27B, Qwen3.8-27B, Nemotron-49B, Qwen3-30B-A3B all complete+verified. DeepSeek-V4-Flash at 25/46 shards (~54%), main daemon pid 755520 retrying (proxy IncompleteRead >1GB; last brake ~2666s). Qwen2.5-72B + Nemotron-Ultra-253B removed from queue (partials on disk).
+- Model downloads: Gemma-4-31B, Gemma-3-27B, Qwen3.8-27B, Nemotron-49B, Qwen3-30B-A3B all complete+verified.
+- **POLICY (2026-08-17): models > 100 GB download size are excluded** from `scripts/download_models.py` TARGETS. Removed: DeepSeek-V4-Flash (~160 GB, partial 25/46 shards kept on disk, daemon stopped), MiniMax-M3 (~208 GB), Kimi-K3 (~594 GB), GLM-5.2-FP8 (~755 GB). README §4a has the full ≤100 GB table (name / where to get / format / link). No downloads currently in-flight.
 - anything-llm: frontend deps done (642 pkgs); server/collector npm installs failed on proxy ECONNREFUSED — need retry.
 - dify: core images pulled (api 4.15G, plugin-daemon 2.28G, web, sandbox, agent-backend, squid, postgres, redis); mysql:8.0 pull reported OK but image absent — re-pull needed.
 - LightRAG: fully validated e2e on Gemma-4-31B + multilingual-e5-small (EN+FA, 4 query modes).

@@ -125,12 +125,36 @@ All under `offline-prep/models/huggingface/` (git-ignored):
 | `Qwen/Qwen3-30B-A3B-GGUF` (Q4_K_M) | 18.6 GB | ✅ downloaded; re-evaluated after thinking-mode fix |
 | `bartowski/Qwen2.5-72B-Instruct-GGUF` (Q8_0 2/2 + part 1 partial) | ~73 GB | ⏸ removed from queue (partial on disk) |
 | `bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF` | 3.6 GB partial | ⏸ removed from queue (partial on disk) |
-| `deepseek-ai/DeepSeek-V4-Flash` (safetensors) | ~88 GB | ⏳ 25/46 shards (~54%), proxy-limited |
 | `BAAI/bge-small-en-v1.5` | 383 MB | ✅ embeddings (dim 384) |
 | `sentence-transformers/all-MiniLM-L6-v2` | 932 MB | ✅ embeddings |
 | `intfloat/multilingual-e5-small` | 1.2 GB | ✅ Persian-capable embeddings (dim 384) |
 | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | 912 MB | ✅ Persian-capable embeddings (dim 384) |
 | `BAAI/bge-m3` | 2.2 GB | ✅ multilingual embeddings (dim 1024) |
+
+### 4a. Download list — ≤ 100 GB (project policy 2026-08-17)
+
+Models over **100 GB download size are excluded** (stopped/removed from the download queue; partials on disk are kept, not deleted). The full download/queue table:
+
+| Name | Where to get | Model format | Link |
+|---|---|---|---|
+| **Gemma-4-31B-it** Q4_K_M | `bartowski/google_gemma-4-31B-it-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/google_gemma-4-31B-it-GGUF> |
+| **Gemma-3-27B-it** Q4_K_M | `bartowski/google_gemma-3-27b-it-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/google_gemma-3-27b-it-GGUF> |
+| **Qwen3.8-27B** Q4_K_M (multimodal) | `bartowski/Qwen3.8-27B-GGUF` | GGUF (+ mmproj) | <https://huggingface.co/bartowski/Qwen3.8-27B-GGUF> |
+| **Qwen3-30B-A3B** Q4_K_M (MoE) | `Qwen/Qwen3-30B-A3B-GGUF` | GGUF (single file) | <https://huggingface.co/Qwen/Qwen3-30B-A3B-GGUF> |
+| **Nemotron-Super-49B-v1** Q4_K_M | `bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF> |
+| **Qwen2.5-7B-Instruct** Q4_K_M | `bartowski/Qwen2.5-7B-Instruct-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF> |
+| **Llama-3.2-3B-Instruct** Q4_K_M | `bartowski/Llama-3.2-3B-Instruct-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF> |
+| **Mistral-7B-Instruct-v0.3** Q4_K_M | `bartowski/Mistral-7B-Instruct-v0.3-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF> |
+| **Phi-3-mini-4k-instruct** q4 | `microsoft/Phi-3-mini-4k-instruct-gguf` | GGUF (single file) | <https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf> |
+| ~~DeepSeek-V4-Flash~~ | ~~`deepseek-ai/DeepSeek-V4-Flash`~~ | ~~safetensors (FP4/FP8)~~ | ~~<https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash>~~ |
+| ~~MiniMax-M3~~ | ~~`unsloth/MiniMax-M3-GGUF`~~ | ~~GGUF UD-IQ4_XS~~ | ~~<https://huggingface.co/unsloth/MiniMax-M3-GGUF>~~ |
+| ~~Kimi-K3~~ | ~~`unsloth/Kimi-K3-GGUF`~~ | ~~GGUF UD-IQ1_S~~ | ~~<https://huggingface.co/unsloth/Kimi-K3-GGUF>~~ |
+| ~~GLM-5.2-FP8~~ | ~~`zai-org/GLM-5.2-FP8`~~ | ~~safetensors (FP8)~~ | ~~<https://huggingface.co/zai-org/GLM-5.2-FP8>~~ |
+
+**Policy notes**
+- Excluded models are **> 100 GB download size**: DeepSeek-V4-Flash (~160 GB), MiniMax-M3 (~208 GB), Kimi-K3 (~594 GB), GLM-5.2-FP8 (~755 GB). Struck through above for reference; their `download_models.py` targets were removed and the DeepSeek daemon stopped (25/46 shards partial kept on disk, ~54%).
+- Sizes on the Hugging Face hub can change as new revisions are released; re-check the `Files` tab before downloading.
+- All GGUF entries are quantized via llama.cpp and load directly in llama.cpp / llama-cpp-python / vLLM (single-file GGUFs are required by vLLM's loader).
 
 **Master venv key packages:** torch 2.4.0+cu124 · vllm 0.6.1.post1 (+flash-attn 2.6.1) · flash-attn 2.6.3 · llama-cpp-python 0.3.34 · sglang 0.3.0 · transformers 4.44.0 · faiss-gpu-cu12 1.14.1.post1 · bitsandbytes 0.50.0 · numpy 1.26.4 · scipy 1.13.1 · sentence-transformers 3.0.1 · ragas 0.4.3 · deepeval 4.1.7 · datasets 5.0.1 · matplotlib 3.11.1
 
@@ -285,13 +309,17 @@ A 6-document Persian retrieval benchmark (`scripts/test_embeddings.py`) checks t
 
 Downloads run as **systemd `rag-dl`** plus a dedicated Qwen3.8-27B daemon; both never stop — failures trigger an **exponential backoff brake** (`BACKOFF_BASE=90s`, ×2, cap 3600s, ±30% jitter) and resume from the partial file.
 
+**Policy (2026-08-17): models > 100 GB download size are excluded from the queue** (see §4a). The DeepSeek-V4-Flash daemon was stopped; its 25/46 shard partial stays on disk.
+
 | Target | Size | Progress | Note |
 |---|---|---|---|
-| **DeepSeek-V4-Flash** (safetensors) | ~88 GB | **25/46 shards (~54%)** | main daemon currently retrying; proxy resets >1 GB transfers |
+| DeepSeek-V4-Flash (safetensors) | ~160 GB | ⏸ **excluded (> 100 GB)** | partial 25/46 shards on disk (~54%), daemon stopped |
 | Qwen2.5-72B Q8_0 / Nemotron-Ultra-253B | — | removed from queue | partials left on disk (73 GB / 3.6 GB), not deleted |
-| MiniMax-M3 / Kimi-K3 / GLM-5.2 | — | queued | not started |
+| MiniMax-M3 / Kimi-K3 / GLM-5.2 | — | excluded (> 100 GB) | never started (§4a) |
 
-Completed & verified this round: **Gemma-4-31B**, **Gemma-3-27B**, **Qwen3.8-27B**, **Nemotron-49B**, **Qwen3-30B-A3B**, Qwen2.5-7B, Llama-3.2-3B, Mistral Q4_K_M, Phi-3 q4. Complete log trail: `offline-prep/logs/dl_models_*.log`.
+**No downloads are currently in-flight** — every model ≤ 100 GB is already complete & verified.
+
+Completed & verified: **Gemma-4-31B**, **Gemma-3-27B**, **Qwen3.8-27B**, **Nemotron-49B**, **Qwen3-30B-A3B**, Qwen2.5-7B, Llama-3.2-3B, Mistral Q4_K_M, Phi-3 q4. Complete log trail: `offline-prep/logs/dl_models_*.log`.
 
 ---
 
