@@ -280,7 +280,23 @@ The harness supports `--n-shots N` to prepend N exemplars per task (`make_fewsho
 - **NER needs strict JSON**: models that emit raw names or chatty prose score 0 on NER even when the entities are present; Gemma-4 (1.0) and Gemma-3 (0.98) emit the expected structure.
 - Good/bad answer samples per model per task are listed inline in the report (each task's example section shows the model output with a hit/miss marker).
 
-## 4c. Embedding model comparison (Persian retrieval)
+### 4c. Sample questions — tricky prompts, all models compared
+
+The full per-category walkthrough (7 tricky prompts where the 9 models disagree, each model's raw output, and the score it earned) is in [`docs/reports/persian_sample_questions.md`](docs/reports/persian_sample_questions.md). Headline takeaways:
+
+| Category | Question type | Outcome |
+|---|---|---|
+| **ARC** (science MC) | lab-safety: which last action? (gold `A`) | Gemma-4/3, Qwen3.8, Llama-3.2 hit; Nemotron/Qwen2.5/Qwen3-30B pick a "reasonable but wrong" option |
+| **Parsinlu MC** (grammar) | fill-blank, answer option **number** (gold `3`) | top models + Llama-3.2 hit; Qwen2.5/Mistral/Phi-3 answer `4` or full prose — format gap |
+| **Math** (sequence) | gold `8` | only **Gemma-4** and **Nemotron** emit an accepted final answer; Phi-3-mini degrades to gibberish |
+| **Sentiment** | "کلا ارزش یک‌بار امتحان کردن هم نداره" → `NEGATIVE` | Gemma-4/3, Qwen3.8, Llama-3.2 hit; Mistral says NEUTRAL, Qwen2.5 hedges (too long) |
+| **Entailment** | gold `n` (ناشناخته) | **every model misses it** — the hardest task (acc 0.00–0.26); Qwen3.8 alone picks the right class but wrong format |
+| **NER** | Persian tokens → tuples (بزرگراه نیاوران …) | Gemma-4/3 + Qwen2.5 emit tuples (hit); Qwen3 pair stuck in `thinking`/English; **2-shot fixes Qwen2.5's format** |
+| **Reading comp** | triangle has no diagonal → `مثلث` | top models + Llama-3.2 answer in one word; Mistral/Phi-3/Qwen3-30B paraphrase → exact-match miss |
+
+See the linked file for the exact prompts, gold answers, and all 10 model rows (Qwen2.5-7B 0-shot + 2-shot) with scores and raw outputs.
+
+## 4d. Embedding model comparison (Persian retrieval)
 
 A 6-document Persian retrieval benchmark (`scripts/test_embeddings.py`) checks top-1 retrieval for 6 queries across three locally-served embedders. All reach top-1 correctness; scores differ in **confidence margin** (cosine of the retrieved doc):
 
