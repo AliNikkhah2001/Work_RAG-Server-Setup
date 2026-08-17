@@ -32,6 +32,25 @@ TASKS = {
     "fa_rc": "Reading Comp.",
 }
 
+PLOT_EXPLAIN = {
+    "persian_mean.png": "Ranked mean accuracy across the 7 Persian tasks (vanilla prompts). "
+                        "Gemma-4-31B leads, small models collapse.",
+    "persian_by_task.png": "Per-task accuracy by model. Format-strict tasks (NER, entailment) "
+                           "spread models most; Gemma-4 is 1.0 on NER.",
+    "persian_scatter.png": "Model size on disk vs mean accuracy, bubble = parameter count. "
+                           "Size helps but is not sufficient (Qwen3-30B-A3B MoE trails dense models).",
+    "persian_radar.png": "Ability-group radar (Reasoning & Knowledge, Language Understanding, "
+                         "Information Extraction). Gemma models fill the largest polygon.",
+    "persian_radar_family.png": "Per-family radar profiles — Gemma vs Qwen vs Nemotron vs Llama "
+                                "vs Mistral vs Phi.",
+    "persian_speed.png": "Generation speed (tokens/sec) and latency per task. Phi-3-mini is "
+                         "fastest, Nemotron-49B slowest.",
+    "persian_spider.png": "Per-task 7-axis spider per model — a round spider is balanced; spikes "
+                          "show task-specific strength.",
+    "persian_improvement.png": "Vanilla vs improved prompting (4-component Persian templates): "
+                               "every model improves, most on format-strict tasks.",
+}
+
 PLOT_PAT = re.compile(r"!\[([^\]]*)\]\((docs/reports/[^)]+\.png)\)")
 PLOT_PAT2 = re.compile(r"([\w-]+\.png)")
 
@@ -53,6 +72,18 @@ def rewrite_plot_links(text):
         fname = Path(m.group(2)).name
         return f"![{alt}]({{{{ '/assets/plots/{fname}' | relative_url }}}})"
     return PLOT_PAT.sub(repl, text)
+
+
+def figures_page():
+    """Build the Figures body: embed every plot with an explanation."""
+    out = []
+    for name, explain in PLOT_EXPLAIN.items():
+        if not (SRC_REPORTS / name).exists():
+            continue
+        out.append(f"## {name}\n")
+        out.append(f"![{name}]({{{{ '/assets/plots/{name}' | relative_url }}}})\n")
+        out.append(f"{explain}\n")
+    return "\n".join(out)
 
 
 def split_eval_report():
@@ -85,20 +116,22 @@ def build():
     for order, (title, body) in enumerate(sections, start=1):
         slug = re.sub(r"[^\w\u0600-\u06FF]+", "-", title).strip("-").lower()
         slug = re.sub(r"-{2,}", "-", slug) or f"page-{order}"
+        if title == "Figures":
+            body = figures_page()
         (PAGES_DIR / f"{order:02d}-{slug}.md").write_text(page_md(title, body, order))
         print(f"page: {title!r}")
 
     # 2. sample questions (already a self-contained md)
     sq = (SRC_REPORTS / "persian_sample_questions.md").read_text()
-    (PAGES_DIR / "06-sample-questions.md").write_text(
-        front_matter("Sample questions — one tricky prompt per category", 6)
+    (PAGES_DIR / "07-sample-questions.md").write_text(
+        front_matter("Sample questions — one tricky prompt per category", 7)
         + rewrite_plot_links(sq) + "\n")
     print("page: Sample questions")
 
     # 3. prompt-engineering Q&A compare
     pc = (SRC_REPORTS / "persian_prompt_compare.md").read_text()
-    (PAGES_DIR / "07-prompt-engineering-qa.md").write_text(
-        front_matter("Prompt engineering — vanilla vs improved full Q&A", 7)
+    (PAGES_DIR / "08-prompt-engineering-qa.md").write_text(
+        front_matter("Prompt engineering — vanilla vs improved full Q&A", 8)
         + rewrite_plot_links(pc) + "\n")
     print("page: Prompt engineering Q&A")
 
@@ -106,8 +139,8 @@ def build():
     readme = README.read_text()
     m = re.search(r"## 4d\. Embedding model comparison.*?(?=\n## 5\.)", readme, re.S)
     if m:
-        (PAGES_DIR / "08-embeddings.md").write_text(
-            front_matter("Embedding model comparison (Persian retrieval)", 8)
+        (PAGES_DIR / "09-embeddings.md").write_text(
+            front_matter("Embedding model comparison (Persian retrieval)", 9)
             + rewrite_plot_links(m.group(0)) + "\n")
         print("page: Embeddings")
 
