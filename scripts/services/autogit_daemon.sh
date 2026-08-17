@@ -2,7 +2,7 @@
 set -u
 
 REPO_DIR="/splunk-data/v1/Work_RAG-Server-Setup"
-INTERVAL="${AUTOGIT_INTERVAL:-300}"
+INTERVAL="${AUTOGIT_INTERVAL:-1800}"
 LOG_DIR="$REPO_DIR/logs"
 
 mkdir -p "$LOG_DIR"
