@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Build the GitHub Pages multipage report site (docs-site/) from the dedicated
+report folders (docs/reports/, docs/history/, README.md).
+
+Sections are read dynamically from their source folders, then emitted as Jekyll
+collection pages under docs-site/_reports/ (one file per page). The Jekyll index
+page then lists every page from the collection automatically. Plots are copied
+from docs/reports/ into docs-site/assets/plots/.
+
+Run: offline-prep/venv/bin/python3.12 scripts/gen_pages.py
+"""
+import re
+import shutil
+from pathlib import Path
+
+BASE = Path(__file__).resolve().parent.parent
+SRC_REPORTS = BASE / "docs" / "reports"
+SRC_HISTORY = BASE / "docs" / "history"
+SITE = BASE / "docs-site"
+PAGES_DIR = SITE / "_reports"
+PLOTS_DIR = SITE / "assets" / "plots"
+README = BASE / "README.md"
+
+TASKS = {
+    "fa_arc": "Persian ARC (MC)",
+    "fa_mc": "Parsinlu MC",
+    "fa_math": "Math",
+    "fa_sentiment": "Sentiment",
+    "fa_entail": "Entailment",
+    "fa_ner": "NER",
+    "fa_rc": "Reading Comp.",
+}
+
+PLOT_PAT = re.compile(r"!\[([^\]]*)\]\((docs/reports/[^)]+\.png)\)")
+PLOT_PAT2 = re.compile(r"([\w-]+\.png)")
+
+
+def front_matter(title, order):
+    return (f"---\ntitle: \"{title}\"\nnav_order: {order}\n---\n\n")
+
+
+def copy_plots():
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+    for p in SRC_REPORTS.glob("*.png"):
+        shutil.copy2(p, PLOTS_DIR / p.name)
+        print(f"plot -> {PLOTS_DIR / p.name}")
+
+
+def rewrite_plot_links(text):
+    def repl(m):
+        alt = m.group(1)
+        fname = Path(m.group(2)).name
+        return f"![{alt}]({{{{ '/assets/plots/{fname}' | relative_url }}}})"
+    return PLOT_PAT.sub(repl, text)
+
+
+def split_eval_report():
+    """Split persian_eval_report.md into per-section pages (## headers)."""
+    text = (SRC_REPORTS / "persian_eval_report.md").read_text()
+    parts = re.split(r"^(## .*)$", text, flags=re.M)
+    # parts: [preamble, hdr1, body1, hdr2, body2, ...]
+    pages = []
+    i = 1
+    while i < len(parts):
+        hdr = parts[i].strip()
+        body = parts[i + 1].strip()
+        title = hdr[3:].strip()
+        pages.append((title, body))
+        i += 2
+    return pages
+
+
+def page_md(title, body, order):
+    b = rewrite_plot_links(body)
+    return front_matter(title, order) + b + "\n"
+
+
+def build():
+    PAGES_DIR.mkdir(parents=True, exist_ok=True)
+    copy_plots()
+
+    # 1. main eval report -> one page per ## section
+    sections = split_eval_report()
+    for order, (title, body) in enumerate(sections, start=1):
+        slug = re.sub(r"[^\w\u0600-\u06FF]+", "-", title).strip("-").lower()
+        slug = re.sub(r"-{2,}", "-", slug) or f"page-{order}"
+        (PAGES_DIR / f"{order:02d}-{slug}.md").write_text(page_md(title, body, order))
+        print(f"page: {title!r}")
+
+    # 2. sample questions (already a self-contained md)
+    sq = (SRC_REPORTS / "persian_sample_questions.md").read_text()
+    (PAGES_DIR / "06-sample-questions.md").write_text(
+        front_matter("Sample questions — one tricky prompt per category", 6)
+        + rewrite_plot_links(sq) + "\n")
+    print("page: Sample questions")
+
+    # 3. prompt-engineering Q&A compare
+    pc = (SRC_REPORTS / "persian_prompt_compare.md").read_text()
+    (PAGES_DIR / "07-prompt-engineering-qa.md").write_text(
+        front_matter("Prompt engineering — vanilla vs improved full Q&A", 7)
+        + rewrite_plot_links(pc) + "\n")
+    print("page: Prompt engineering Q&A")
+
+    # 4. embeddings comparison (from README §4d if present)
+    readme = README.read_text()
+    m = re.search(r"## 4d\. Embedding model comparison.*?(?=\n## 5\.)", readme, re.S)
+    if m:
+        (PAGES_DIR / "08-embeddings.md").write_text(
+            front_matter("Embedding model comparison (Persian retrieval)", 8)
+            + rewrite_plot_links(m.group(0)) + "\n")
+        print("page: Embeddings")
+
+    # 5. history -> condensed one page per session file
+    for order, p in enumerate(sorted(SRC_HISTORY.glob("*.md")), start=10):
+        if p.name == "README.md":
+            continue
+        body = p.read_text()
+        title = body.splitlines()[0].lstrip("# ").strip()
+        (PAGES_DIR / f"{order:02d}-history-{p.stem}.md").write_text(
+            front_matter(title, order) + body + "\n")
+        print(f"page: {title!r}")
+
+
+if __name__ == "__main__":
+    build()

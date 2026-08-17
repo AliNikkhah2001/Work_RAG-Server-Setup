@@ -163,6 +163,7 @@ def build_report(data, out_path):
     lines.append("- **persian_radar_family.png** — per-family radar profiles.\n")
     lines.append("- **persian_speed.png** — tokens/sec and latency per task.\n")
     lines.append("- **persian_spider.png** — per-task (7-axis) spider per model.\n")
+    lines.append("- **persian_improvement.png** — vanilla vs improved-prompting mean accuracy.\n")
 
     lines.append("\n## Improved prompting vs vanilla\n")
     lines.append("For every model we re-ran the full 7-task suite using **improved Persian "
@@ -406,7 +407,8 @@ def make_plots(data, out_dir):
             fig.savefig(out_dir / "persian_improvement.png", dpi=140)
             plt.close(fig)
 
-    # ---- 8. per-task spider (7 axes) per model ----    n_task = len(TASK_NAMES)
+    # ---- 8. per-task spider (7 axes) per model ----
+    n_task = len(TASK_NAMES)
     t_angles = np.linspace(0, 2 * np.pi, n_task, endpoint=False).tolist()
     t_angles += t_angles[:1]
     fig, ax = plt.subplots(figsize=(9, 9), subplot_kw=dict(polar=True))

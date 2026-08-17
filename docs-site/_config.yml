@@ -1,0 +1,33 @@
+# Site configuration for the GitHub Pages multipage report.
+# Build: bundle exec jekyll build --source docs-site --destination _site
+remote_theme: just-the-docs/just-the-docs
+
+title: Work RAG Server Setup
+description: Persian LLM benchmark & prompt-engineering report — self-hosted GGUF models (H200).
+baseurl: "/Work_RAG-Server-Setup"
+url: "https://AliNikkhah2001.github.io"
+
+# Navigation: sidebar pages (top-level nav order)
+nav_order: 0
+search_enabled: true
+aux_links:
+  "GitHub repo": "https://github.com/AliNikkhah2001/Work_RAG-Server-Setup"
+
+# Multipage report sections are read dynamically from the _reports collection
+# folder below: each file becomes its own page and is listed on the index.
+collections:
+  reports:
+    output: true
+    permalink: /reports/:name/
+
+defaults:
+  - scope:
+      path: "_reports"
+    values:
+      layout: page
+      nav_order: 100
+
+color_scheme: light
+
+plugins:
+  - jekyll-seo-tag

@@ -233,7 +233,8 @@ Speed and accuracy are independent axes: Nemotron-49B is slowest *and* mid-ranke
 - [`docs/reports/persian_radar_family.png`](docs/reports/persian_radar_family.png) — **per-family radar profiles** (Gemma / Qwen / Nemotron / Llama / Mistral / Phi)
 - [`docs/reports/persian_speed.png`](docs/reports/persian_speed.png) — **tokens/sec + latency per task** per model
 - [`docs/reports/persian_spider.png`](docs/reports/persian_spider.png) — **per-task 7-axis spider** per model
-- [`docs/reports/persian_eval_report.md`](docs/reports/persian_eval_report.md) — full report with per-example input/output samples + **same-question cross-model comparison**
+- [`docs/reports/persian_improvement.png`](docs/reports/persian_improvement.png) — **vanilla vs improved prompting** mean accuracy
+- [`docs/reports/persian_eval_report.md`](docs/reports/persian_eval_report.md) — full report with per-example input/output samples + **same-question cross-model comparison** + **improved-prompting deltas**
 
 ![Mean accuracy](docs/reports/persian_mean.png)
 ![Per-task accuracy](docs/reports/persian_by_task.png)
@@ -261,6 +262,9 @@ offline-prep/venv/bin/python3.12 scripts/eval_persian.py \
     --model <path.gguf> --limit 50 --chat --max-tokens 128 --n-shots 2 \
     --out evalp_<name>_2shot.json      # few-shot variant
 offline-prep/venv/bin/python3.12 scripts/bench_speed.py --out logs/speed_bench.json  # tok/s
+offline-prep/venv/bin/python3.12 scripts/eval_persian.py --model <path.gguf> --limit 50 --chat \
+    --max-tokens 400 --prompt-style improved --out evalp_<name>_improved.json   # improved prompts
+offline-prep/venv/bin/python3.12 scripts/gen_prompt_compare.py   # vanilla-vs-improved full Q&A
 offline-prep/venv/bin/python3.12 scripts/gen_eval_report.py   # rebuild tables + plots
 ```
 
@@ -284,6 +288,28 @@ The harness supports `--n-shots N` to prepend N exemplars per task (`make_fewsho
 - **Format following decides MC/ARC**: on the photosynthesis ARC prompt, Gemma-4/3, Nemotron, Qwen3.8 and Qwen2.5 all answer `A`; Qwen3-30B wraps its answer in a `<think>` block, and Mistral/Phi-3 pick wrong options (`D`/`C`) — the score gap is instruction-following, not Persian ability.
 - **NER needs strict JSON**: models that emit raw names or chatty prose score 0 on NER even when the entities are present; Gemma-4 (1.0) and Gemma-3 (0.98) emit the expected structure.
 - Good/bad answer samples per model per task are listed inline in the report (each task's example section shows the model output with a hit/miss marker).
+
+### Improved prompting (ROLE / CONTEXT / CONSTRAINTS / OUTPUT FORMAT)
+
+Every model was re-run on the full 7-task suite with **improved Persian prompts** instead of the raw dataset prompt. The improved template uses the 4-component framework — **ROLE** (شما یک … هستید), **CONTEXT** (what the task is), **CONSTRAINTS** (no prose, no explanation, one answer, Persian output), **OUTPUT FORMAT** (the exact shape the scorer expects: a letter, an option number, a `[پاسخ نهایی]` block, one label, a tuple list, a short span). Each template stays **under ~80 tokens** (deliberately short, see `IMPROVED_TEMPLATES` in `scripts/eval_persian.py`). All 9 models **improved**:
+
+| Model | vanilla mean | improved mean | Δ |
+|---|---|---:|---:|
+| Gemma-4-31B | 0.663 | **0.820** | +0.157 |
+| Nemotron-49B | 0.494 | **0.694** | +0.200 |
+| Gemma-3-27B | 0.600 | **0.683** | +0.083 |
+| Qwen2.5-7B | 0.443 | **0.580** | +0.137 |
+| Qwen3.8-27B | 0.477 | **0.540** | +0.063 |
+| Mistral-7B | 0.186 | **0.409** | +0.223 |
+| Qwen3-30B-A3B | 0.283 | **0.397** | +0.114 |
+| Llama-3.2-3B | 0.326 | **0.371** | +0.046 |
+| Phi-3-mini | 0.143 | **0.314** | +0.171 |
+
+Largest absolute gains come from the **error-prone models** (Mistral +0.223, Nemotron +0.200, Phi +0.171) and from **format-strict tasks**: reading comprehension (+0.14…+0.62), NER (+0.12…+0.98, a near-perfect fix for Mistral/Llama/Phi), and entailment (Gemma-4 0.16 → 0.78). Prompt engineering therefore narrows — but does not close — the gap between strong and weak models, and it is nearly as valuable as the thinking-mode fix. Full vanilla-vs-improved per-task deltas and per-model sample outputs are in `docs/reports/persian_eval_report.md` (§ Improved prompting vs vanilla).
+
+**Full untruncated Q&A (vanilla vs improved)** for a strong model (Gemma-4-31B) and an error-prone model (Mistral-7B) is in [`docs/reports/persian_prompt_compare.md`](docs/reports/persian_prompt_compare.md): the same tricky question per task asked both ways, showing exactly how the 4-component template changes the model's answer shape (e.g. Mistral's verbose entailment prose → a bare `تناقض` label). Generate it with `offline-prep/venv/bin/python3.12 scripts/gen_prompt_compare.py`.
+
+![Improved prompting vs vanilla](docs/reports/persian_improvement.png)
 
 ## 4c. Sample questions — one tricky prompt per category, all models
 
