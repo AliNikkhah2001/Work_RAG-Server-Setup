@@ -9,6 +9,8 @@ Plots produced:
   - persian_scatter.png     : model size (GB on disk) vs mean accuracy (bubble = params)
   - persian_radar.png       : radar chart grouped by ability categories
   - persian_radar_family.png: one radar per model family (grouped)
+  - persian_speed.png       : tokens/sec and avg secs/task per model
+  - persian_spider.png      : per-task spider (7 axes) per model
 
 Usage:
   python scripts/gen_eval_report.py [--out docs/reports/persian_eval_report.md]
@@ -73,9 +75,16 @@ def load_results():
         with open(p) as f:
             d = json.load(f)
         model = Path(d["model"]).stem
+        if "2shot" in p.name or "nshot" in p.name:
+            model = f"{model} (2-shot)"
+        elif "0shot" in p.name:
+            model = f"{model} (0-shot)"
         accs = {r["task"]: r["acc"] for r in d["results"]}
         samples = {r["task"]: r["samples"] for r in d["results"]}
-        data[model] = {"mean": d["overall_mean"], "accs": accs, "samples": samples}
+        secs = {r["task"]: r.get("secs") for r in d["results"]}
+        tok_sec = {r["task"]: r.get("tok_sec") for r in d["results"]}
+        data[model] = {"mean": d["overall_mean"], "accs": accs, "samples": samples,
+                       "secs": secs, "tok_sec": tok_sec}
     return data
 
 
@@ -124,6 +133,29 @@ def build_report(data, out_path):
                  "bubble size = parameter count.\n")
     lines.append("- **persian_radar.png** — ability-group profile per model (all on one axis).\n")
     lines.append("- **persian_radar_family.png** — per-family radar profiles.\n")
+    lines.append("- **persian_speed.png** — tokens/sec and latency per task.\n")
+    lines.append("- **persian_spider.png** — per-task (7-axis) spider per model.\n")
+
+    lines.append("\n## Same question, all models (first example per task)\n")
+    lines.append("The same test prompt was sent to every model. Gold answers and per-model outputs "
+                 "show *why* scores differ (format-following, Persian fluency, reasoning quality).\n")
+    for t in TASK_NAMES:
+        lines.append(f"\n### {TASK_LABELS.get(t, t)}\n")
+        gold = None
+        outs = []
+        for m in models:
+            smps = data[m]["samples"].get(t)
+            if not smps:
+                continue
+            s = smps[0]
+            if gold is None:
+                gold = s["gold"]
+                lines.append(f"- **Prompt**: {s['prompt'][:250]}\n- **Gold**: {gold}\n")
+            outs.append((m, s))
+        for m, s in outs:
+            lines.append(f"- **{m}** (hit {'✅' if s['hit'] else '❌'}): `{s['output'][:160]}`")
+        if not outs:
+            lines.append("- *(no samples)*")
 
     lines.append("\n## Per-model samples\n")
     for m in models:
@@ -252,6 +284,50 @@ def make_plots(data, out_dir):
     fig.suptitle("Ability-group radar by model family", y=1.02, fontsize=13)
     fig.tight_layout()
     fig.savefig(out_dir / "persian_radar_family.png", dpi=140)
+    plt.close(fig)
+
+    # ---- 6. speed: tokens/sec + seconds/task ----
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
+    toks = []
+    secs_per = []
+    for m in models:
+        tv = [v for v in data[m]["tok_sec"].values() if v]
+        sv = [v for v in data[m]["secs"].values() if v]
+        toks.append(float(np.mean(tv)) if tv else 0)
+        secs_per.append(float(np.mean(sv)) if sv else 0)
+    x = np.arange(n_models)
+    ax1.bar(x, toks, color=[meta_of(m)[3] for m in models])
+    ax1.set_xticks(x)
+    ax1.set_xticklabels([m.split("-")[0] for m in models], rotation=30, ha="right", fontsize=7)
+    ax1.set_ylabel("tokens/sec")
+    ax1.set_title("Generation speed (tokens/sec)")
+    ax2.bar(x, secs_per, color=[meta_of(m)[3] for m in models])
+    ax2.set_xticks(x)
+    ax2.set_xticklabels([m.split("-")[0] for m in models], rotation=30, ha="right", fontsize=7)
+    ax2.set_ylabel("seconds per task (50 ex)")
+    ax2.set_title("Latency per task")
+    fig.tight_layout()
+    fig.savefig(out_dir / "persian_speed.png", dpi=140)
+    plt.close(fig)
+
+    # ---- 7. per-task spider (7 axes) per model ----
+    n_task = len(TASK_NAMES)
+    t_angles = np.linspace(0, 2 * np.pi, n_task, endpoint=False).tolist()
+    t_angles += t_angles[:1]
+    fig, ax = plt.subplots(figsize=(9, 9), subplot_kw=dict(polar=True))
+    for m in models:
+        vals = [data[m]["accs"].get(t) or 0 for t in TASK_NAMES]
+        vals += vals[:1]
+        _, _, fam, color = meta_of(m)
+        ax.plot(t_angles, vals, label=m, color=color, linewidth=1.2)
+        ax.fill(t_angles, vals, color=color, alpha=0.06)
+    ax.set_xticks(t_angles[:-1])
+    ax.set_xticklabels([TASK_LABELS[t] for t in TASK_NAMES], fontsize=8)
+    ax.set_ylim(0, 1)
+    ax.set_title("Per-task spider (7 Persian tasks)", pad=20)
+    ax.legend(loc="upper right", bbox_to_anchor=(1.35, 1.1), fontsize=7)
+    fig.tight_layout()
+    fig.savefig(out_dir / "persian_spider.png", dpi=140)
     plt.close(fig)
 
 

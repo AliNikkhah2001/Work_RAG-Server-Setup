@@ -208,6 +208,18 @@ offline-prep/venv/bin/python3.12 scripts/gen_eval_report.py   # rebuild tables +
 
 English + Persian conventional tasks (MMLU-3subj, GSM8K, fa_arc, fa_rc) are in [`logs/eval_*.json`](logs/) via [`scripts/eval_gguf.py`](scripts/eval_gguf.py). Persian eval datasets (ParsBench suite) are cached offline in `offline-prep/datasets` and were downloaded by [`scripts/download_persian_eval.py`](scripts/download_persian_eval.py).
 
+## 4c. Embedding model comparison (Persian retrieval)
+
+A 6-document Persian retrieval benchmark (`scripts/test_embeddings.py`) checks top-1 retrieval for 6 queries across three locally-served embedders. All reach top-1 correctness; scores differ in **confidence margin** (cosine of the retrieved doc):
+
+| Embedder | Dim | Top-1 acc | Mean top-1 cosine | Batch latency |
+|---|---|---|---|---|
+| `intfloat/multilingual-e5-small` | 384 | 1.0 | **0.898** | 0.14 s |
+| `BAAI/bge-m3` | 1024 | 1.0 | 0.646 | 0.27 s |
+| `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | 384 | 1.0 | 0.555 | 0.09 s |
+
+**Takeaway:** all three embedders retrieve the correct Persian document; `multilingual-e5-small` gives the widest separation between correct/incorrect docs (highest cosine), while `paraphrase-multilingual-MiniLM` is fastest. `bge-m3` (1024-dim, strongest multilingual coverage) is the safe choice when corpus similarity is low. Embedders are served OpenAI-compatible on `:8001` (e5-small), `:8002` (bge-m3), `:8003` (paraphrase-multilingual).
+
 ---
 
 ## 5. Plan & Progress
@@ -221,21 +233,17 @@ English + Persian conventional tasks (MMLU-3subj, GSM8K, fa_arc, fa_rc) are in [
 | P4 | Run + test sample repos (lightrag → anything-llm → ragflow → dify, in parallel) | ⏳ | each passes the RAG test harness |
 | P5 | Production hardening + runbook | ⏳ | stack cold-restarts cleanly |
 
-### Model download status (live daemons, 2026-08-16)
+### Model download status (live daemons, 2026-08-17)
 
-Downloads run as **systemd `rag-dl`** plus a dedicated 72B resume daemon; both never stop — failures trigger an **exponential backoff brake** (`BACKOFF_BASE=90s`, ×2, cap 3600s, ±30% jitter) and resume from the partial file.
+Downloads run as **systemd `rag-dl`** plus a dedicated Qwen3.8-27B daemon; both never stop — failures trigger an **exponential backoff brake** (`BACKOFF_BASE=90s`, ×2, cap 3600s, ±30% jitter) and resume from the partial file.
 
 | Target | Size | Progress | Note |
 |---|---|---|---|
-| Qwen2.5-72B Q8_0 part 1 | ~40 GB | **34.4/40 GB (86%)** | resuming via daemon; ~0.2–2.5 GB per retry before proxy drops |
-| Gemma-3-27B Q4_K_M | 16.5 GB | **12.7/16.5 GB (77%)** | resumed from 6.5 GB this session |
-| **Qwen3.8-27B Q4_K_M** | 17.8 GB | **downloading (dedicated daemon, pid 750522)** | multimodal; bartowski GGUF, verified reachable |
-| Qwen3-30B-A3B | 18.6 GB | 11.5 GB (62%) | paused mid-download |
-| Nemotron-Ultra-253B Q4_K_M | 151 GB | ~1–1.3 GB partials | queued behind smaller files |
-| Qwen2.5-72B Q4_K_M | 47.4 GB | queued | after Q8_0 part 1 completes |
-| Gemma-3-27B Q8_0 / DeepSeek-V4-Flash / MiniMax-M3 / Kimi-K3 / GLM-5.2 | — | queued | — |
+| **DeepSeek-V4-Flash** (safetensors) | ~88 GB | **25/46 shards (~54%)** | main daemon currently retrying; proxy resets >1 GB transfers |
+| Qwen2.5-72B Q8_0 / Nemotron-Ultra-253B | — | removed from queue | partials left on disk (73 GB / 3.6 GB), not deleted |
+| MiniMax-M3 / Kimi-K3 / GLM-5.2 | — | queued | not started |
 
-Completed since last update: Llama-3.2-3B, Mistral Q4_K_M, **Gemma-4-31B**, **Nemotron-49B**, **Qwen2.5-72B Q8_0 part 2/2**. Complete log trail: `offline-prep/logs/dl_models_20260816_*.log`.
+Completed & verified this round: **Gemma-4-31B**, **Gemma-3-27B**, **Qwen3.8-27B**, **Nemotron-49B**, **Qwen3-30B-A3B**, Qwen2.5-7B, Llama-3.2-3B, Mistral Q4_K_M, Phi-3 q4. Complete log trail: `offline-prep/logs/dl_models_*.log`.
 
 ---
 
