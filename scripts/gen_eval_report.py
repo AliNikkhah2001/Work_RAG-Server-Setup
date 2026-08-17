@@ -69,7 +69,7 @@ FAMILY_COLOR = {
 
 def load_results():
     data = {}
-    for p in sorted(LOG_DIR.glob("evalp_*.json")):
+    for p in sorted(LOG_DIR.glob("evalp_*.json")) + sorted(LOG_DIR.glob("logs/evalp_*.json")):
         if "smoke" in p.name:
             continue
         with open(p) as f:
@@ -79,6 +79,8 @@ def load_results():
             model = f"{model} (2-shot)"
         elif "0shot" in p.name:
             model = f"{model} (0-shot)"
+        if "improved" in p.name:
+            model = f"{model} (improved)"
         accs = {r["task"]: r["acc"] for r in d["results"]}
         samples = {r["task"]: r["samples"] for r in d["results"]}
         secs = {r["task"]: r.get("secs") for r in d["results"]}
@@ -93,7 +95,7 @@ def meta_of(model_stem):
 
 
 def bench_key(model_stem):
-    k = model_stem.replace(" (2-shot)", "").lower()
+    k = model_stem.replace(" (2-shot)", "").replace(" (improved)", "").lower()
     for short, full in [("gemma-4", "gemma-4-31b"), ("gemma-3", "gemma-3-27b"),
                         ("nemotron", "nemotron-49b"), ("qwen3.8", "qwen3.8-27b"),
                         ("qwen2.5", "qwen2.5-7b"), ("llama-3.2", "llama3.2-3b"),
@@ -161,6 +163,40 @@ def build_report(data, out_path):
     lines.append("- **persian_radar_family.png** — per-family radar profiles.\n")
     lines.append("- **persian_speed.png** — tokens/sec and latency per task.\n")
     lines.append("- **persian_spider.png** — per-task (7-axis) spider per model.\n")
+
+    lines.append("\n## Improved prompting vs vanilla\n")
+    lines.append("For every model we re-ran the full 7-task suite using **improved Persian "
+                 "prompts** (4-component framework: ROLE + CONTEXT + CONSTRAINTS + OUTPUT "
+                 "FORMAT, kept under ~80 tokens per task) instead of the raw dataset prompts. "
+                 "Deliberate output-format constraints in Persian were added because the "
+                 "scorers expect a strict shape (letter, option number, final-answer block, "
+                 "one label, tuple list, short span).\n")
+    improved = sorted((m for m in data if "(improved)" in m),
+                      key=lambda m: data[m]["mean"], reverse=True)
+    if improved:
+        base = {m.replace(" (improved)", ""): data[m] for m in improved}
+        lines.append("| Model | vanilla mean | improved mean | Δ |")
+        lines.append("|---|--:|--:|--:|")
+        for m in improved:
+            v = data.get(m.replace(" (improved)", ""))
+            if not v:
+                continue
+            imp = data[m]["mean"]
+            lines.append(f"| {m.replace(' (improved)', '')} | {v['mean']:.3f} | {imp:.3f} | "
+                         f"{imp - v['mean']:+.3f} |")
+        lines.append("\n### Per-task deltas (improved − vanilla)\n")
+        lines.append("| Model | " + " | ".join(TASK_LABELS[t] for t in TASK_NAMES) + " |")
+        lines.append("|---|" + "---|" * len(TASK_NAMES))
+        for m in improved:
+            v = data.get(m.replace(" (improved)", ""))
+            if not v:
+                continue
+            row = [m.replace(" (improved)", "")]
+            for t in TASK_NAMES:
+                vi = data[m]["accs"].get(t)
+                vv = v["accs"].get(t)
+                row.append(f"{vi - vv:+.2f}" if vi is not None and vv is not None else "—")
+            lines.append("| " + " | ".join(row) + " |")
 
     lines.append("\n## Same question, all models (first example per task)\n")
     lines.append("The same test prompt was sent to every model. Gold answers and per-model outputs "
@@ -340,8 +376,37 @@ def make_plots(data, out_dir):
     fig.savefig(out_dir / "persian_speed.png", dpi=140)
     plt.close(fig)
 
-    # ---- 7. per-task spider (7 axes) per model ----
-    n_task = len(TASK_NAMES)
+    # ---- 7. improvement: vanilla vs improved grouped bar ----
+    improved = [m for m in models if "(improved)" in m]
+    if improved:
+        pairs = [(m.replace(" (improved)", ""), m) for m in improved
+                 if m.replace(" (improved)", "") in data]
+        pairs.sort(key=lambda pr: data[pr[1]]["mean"], reverse=True)
+        if pairs:
+            fig, ax = plt.subplots(figsize=(11, 5))
+            names = [pr[0].replace("_", "-") for pr in pairs]
+            n = len(pairs)
+            x = np.arange(n)
+            w = 0.38
+            vv = [data[pr[0]]["mean"] for pr in pairs]
+            iv = [data[pr[1]]["mean"] for pr in pairs]
+            ax.bar(x - w / 2, vv, w, label="vanilla", color="#9aa0a6")
+            ax.bar(x + w / 2, iv, w, label="improved", color="#2e7d32")
+            for i, (a, b) in enumerate(zip(vv, iv)):
+                ax.text(i - w / 2, a + 0.008, f"{a:.3f}", ha="center", fontsize=7)
+                ax.text(i + w / 2, b + 0.008, f"{b:.3f}", ha="center", fontsize=7,
+                        color="#2e7d32", fontweight="bold")
+            ax.set_xticks(x)
+            ax.set_xticklabels(names, rotation=25, ha="right", fontsize=8)
+            ax.set_ylabel("Mean accuracy (7 Persian tasks)")
+            ax.set_title("Improved prompting (ROLE/CONTEXT/CONSTRAINTS/OUTPUT FORMAT) vs vanilla")
+            ax.legend(fontsize=8)
+            ax.set_ylim(0, max(max(vv), max(iv)) * 1.2)
+            fig.tight_layout()
+            fig.savefig(out_dir / "persian_improvement.png", dpi=140)
+            plt.close(fig)
+
+    # ---- 8. per-task spider (7 axes) per model ----    n_task = len(TASK_NAMES)
     t_angles = np.linspace(0, 2 * np.pi, n_task, endpoint=False).tolist()
     t_angles += t_angles[:1]
     fig, ax = plt.subplots(figsize=(9, 9), subplot_kw=dict(polar=True))

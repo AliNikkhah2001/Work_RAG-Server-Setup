@@ -208,7 +208,8 @@ def score(name, ex, text):
     return False, None
 
 
-def run_task(llm, name, rows, max_tokens, temperature, chat, n_shots=0, fewshot_fn=None):
+def run_task(llm, name, rows, max_tokens, temperature, chat, n_shots=0, fewshot_fn=None,
+             prompt_style="vanilla"):
     correct = 0
     n = 0
     t0 = time.time()
@@ -216,6 +217,8 @@ def run_task(llm, name, rows, max_tokens, temperature, chat, n_shots=0, fewshot_
     per_ex = []
     for ex in rows:
         prompt = ex["prompt"]
+        if prompt_style == "improved":
+            prompt = improved_prompt(name, prompt)
         if n_shots and fewshot_fn:
             prompt = fewshot_fn(ex, n_shots) + "\n\n" + prompt
         if chat:
@@ -271,6 +274,77 @@ def make_fewshot(rows_by_task, n_shots):
     return builder
 
 
+# ---------------------------------------------------------------------------
+# Improved-prompting templates (4-component framework: ROLE + CONTEXT +
+# CONSTRAINTS + OUTPUT FORMAT), written in Persian, deliberately short (~50-80
+# tokens each so the eval stays fast). Built from the failure patterns seen in
+# the sample-questions walkthrough: models emit prose/thinking-blocks/wrong
+# format, so each template pins the exact output shape the scorer expects.
+# ---------------------------------------------------------------------------
+IMPROVED_TEMPLATES = {
+    "fa_arc": (
+        "شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.\n"
+        "قوانین:\n"
+        "- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).\n"
+        "- هیچ توضیح، جمله یا علامتی اضافه نکنید.\n"
+        "- اگر مطمئن نیستید، بهترین حدس را بزنید.\n"
+        "فرمت خروجی: فقط یک حرف انگلیسی بزرگ، در یک خط.\n"
+    ),
+    "fa_mc": (
+        "شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.\n"
+        "قوانین:\n"
+        "- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).\n"
+        "- جمله، توضیح یا حرف گزینه را ننویسید.\n"
+        "فرمت خروجی: فقط یک عدد، در یک خط.\n"
+    ),
+    "fa_math": (
+        "شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.\n"
+        "قوانین:\n"
+        "- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.\n"
+        "- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.\n"
+        "- بعد از پاسخ نهایی هیچ عدد دیگری ننویسید.\n"
+        "فرمت خروجی:\n"
+        "[راه حل] …\n"
+        "[پاسخ نهایی] عدد\n"
+    ),
+    "fa_sentiment": (
+        "شما یک تحلیلگر احساسات هستید.\n"
+        "قوانین:\n"
+        "- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.\n"
+        "- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.\n"
+        "فرمت خروجی: فقط برچسب به فارسی، در یک خط.\n"
+    ),
+    "fa_entail": (
+        "شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.\n"
+        "قوانین:\n"
+        "- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.\n"
+        "- توضیح اضافه نکنید.\n"
+        "فرمت خروجی: فقط برچسب، در یک خط.\n"
+    ),
+    "fa_ner": (
+        "شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.\n"
+        "قوانین:\n"
+        "- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.\n"
+        "- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.\n"
+        "- مقدمه یا توضیح ننویسید.\n"
+        "فرمت خروجی: [('کلمه', 'برچسب'), ...]\n"
+    ),
+    "fa_rc": (
+        "شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.\n"
+        "قوانین:\n"
+        "- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.\n"
+        "- توضیح یا بازنویسی ننویسید.\n"
+        "فرمت خروجی: فقط پاسخ کوتاه، در یک خط.\n"
+    ),
+}
+
+
+def improved_prompt(task, base):
+    """Wrap a raw task prompt with the improved 4-component Persian template."""
+    tpl = IMPROVED_TEMPLATES.get(task)
+    return (tpl + "\n" + base) if tpl else base
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
@@ -283,6 +357,8 @@ def main():
     ap.add_argument("--chat", action="store_true")
     ap.add_argument("--n-shots", type=int, default=0,
                     help="prepend N correct in-task exemplars to each prompt")
+    ap.add_argument("--prompt-style", default="vanilla", choices=["vanilla", "improved"],
+                    help="vanilla = dataset prompt only; improved = 4-component Persian template")
     args = ap.parse_args()
 
     get = build_loader()
@@ -300,16 +376,26 @@ def main():
 
     results = []
     for t in tasks:
-        print(f"\n=== {t} ===")
+        print(f"\n=== {t} ({args.prompt_style}) ===")
         r = run_task(llm, t, rows_by_task[t], args.max_tokens, args.temperature, args.chat,
-                     n_shots=args.n_shots, fewshot_fn=fewshot_fn)
+                     n_shots=args.n_shots, fewshot_fn=fewshot_fn,
+                     prompt_style=args.prompt_style)
         print(f"acc={r['acc']}  ({r['correct']}/{r['n']})  {r['secs']}s  {r.get('tok_sec')} tok/s")
         results.append(r)
 
     scored = [r["acc"] for r in results if r["acc"] is not None]
     out = {"model": args.model, "results": results,
+           "prompt_style": args.prompt_style, "n_shots": args.n_shots,
            "overall_mean": round(sum(scored) / len(scored), 4) if scored else None}
     name = args.out or f"evalp_{Path(args.model).stem}.json"
+    if args.out is None:
+        stem = Path(args.model).stem
+        name = f"evalp_{stem}"
+        if args.prompt_style == "improved":
+            name += "_improved"
+        if args.n_shots:
+            name += f"_{args.n_shots}shot"
+        name += ".json"
     p = OUT_DIR / name
     p.parent.mkdir(parents=True, exist_ok=True)
     with open(p, "w") as f:
