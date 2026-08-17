@@ -92,6 +92,32 @@ def meta_of(model_stem):
     return MODEL_META.get(model_stem, (None, None, "Unknown", "#999999"))
 
 
+def bench_key(model_stem):
+    k = model_stem.replace(" (2-shot)", "").lower()
+    for short, full in [("gemma-4", "gemma-4-31b"), ("gemma-3", "gemma-3-27b"),
+                        ("nemotron", "nemotron-49b"), ("qwen3.8", "qwen3.8-27b"),
+                        ("qwen2.5", "qwen2.5-7b"), ("llama-3.2", "llama3.2-3b"),
+                        ("qwen3-30b", "qwen3-30b"), ("mistral", "mistral-7b"),
+                        ("phi-3", "phi3-mini")]:
+        if short in k:
+            return full
+    return None
+
+
+def load_speed_bench():
+    bench = {}
+    p = Path("logs/speed_bench.json")
+    if p.exists():
+        try:
+            raw = json.loads(p.read_text())
+            for name, v in raw.items():
+                if isinstance(v, dict) and v.get("tok_sec"):
+                    bench[name] = v["tok_sec"]
+        except Exception:
+            pass
+    return bench
+
+
 def group_accuracy(accs):
     out = {}
     for cat, tasks in ABILITY_GROUPS.items():
@@ -287,13 +313,17 @@ def make_plots(data, out_dir):
     plt.close(fig)
 
     # ---- 6. speed: tokens/sec + seconds/task ----
+    bench = load_speed_bench()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
     toks = []
     secs_per = []
     for m in models:
         tv = [v for v in data[m]["tok_sec"].values() if v]
         sv = [v for v in data[m]["secs"].values() if v]
-        toks.append(float(np.mean(tv)) if tv else 0)
+        ts = float(np.mean(tv)) if tv else 0
+        if not ts:
+            ts = bench.get(bench_key(m)) or 0
+        toks.append(ts)
         secs_per.append(float(np.mean(sv)) if sv else 0)
     x = np.arange(n_models)
     ax1.bar(x, toks, color=[meta_of(m)[3] for m in models])

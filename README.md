@@ -179,6 +179,22 @@ Nine complete GGUF models were benchmarked on **Persian** tasks via the [Persian
 | Mistral-7B | 0.220 | 0.240 | 0.080 |
 | Phi-3-mini | 0.147 | 0.190 | 0.090 |
 
+### Generation speed (tokens/sec, 256-token Persian generation)
+
+| Model | tok/s | Notes |
+|---|---|---|
+| Phi-3-mini q4 | 226.6 | tiny model, fastest |
+| Mistral-7B | 172.7 | |
+| Qwen2.5-7B | 163.9 | |
+| Qwen3-30B-A3B | 155.1 | MoE — only 3B active params |
+| Llama-3.2-3B | 72.2 | |
+| Gemma-3-27B | 67.3 | |
+| Qwen3.8-27B | 61.2 | thinking preamble slows it |
+| Gemma-4-31B | 55.7 | |
+| Nemotron-49B | 45.6 | largest model, slowest |
+
+Speed and accuracy are independent axes: Nemotron-49B is slowest *and* mid-ranked; Phi-3-mini is fastest *and* worst. Qwen3-30B-A3B is the efficiency outlier (fast MoE, weaker structured tasks).
+
 ### Plots
 
 - [`docs/reports/persian_mean.png`](docs/reports/persian_mean.png) — ranked mean accuracy
@@ -220,6 +236,25 @@ offline-prep/venv/bin/python3.12 scripts/gen_eval_report.py   # rebuild tables +
 ```
 
 English + Persian conventional tasks (MMLU-3subj, GSM8K, fa_arc, fa_rc) are in [`logs/eval_*.json`](logs/) via [`scripts/eval_gguf.py`](scripts/eval_gguf.py). Persian eval datasets (ParsBench suite) are cached offline in `offline-prep/datasets` and were downloaded by [`scripts/download_persian_eval.py`](scripts/download_persian_eval.py).
+
+### Few-shot (n-shot) evaluation
+
+The harness supports `--n-shots N` to prepend N exemplars per task (`make_fewshot` in `scripts/eval_persian.py`). So far 2-shot has been run on Qwen2.5-7B:
+
+| Model | Setting | Mean | ARC | MC | Math | Sentiment | NER | RC |
+|---|---|---|---|---|---|---|---|---|
+| Qwen2.5-7B | 0-shot | 0.443 | 0.680 | 0.360 | 0.380 | 0.660 | 0.880 | 0.140 |
+| Qwen2.5-7B | 2-shot | **0.466** | 0.740 | 0.320 | 0.120 | 0.780 | 0.960 | 0.340 |
+
+2-shot lifts NER (0.88 → 0.96), ARC (0.68 → 0.74), sentiment (0.66 → 0.78) and reading comprehension (0.14 → 0.34), but *hurts* math (0.38 → 0.12) — a known few-shot trade-off on arithmetic-style tasks where exemplars anchor wrong patterns. The 2-shot run is stored as `evalp_qwen2.5-7b_2shot.json` and appears in the report tables as a separate `(2-shot)` row. Full per-model exemplar inputs/outputs are in the same-question comparison section of `docs/reports/persian_eval_report.md`.
+
+### Same question, different models — why scores differ
+
+`docs/reports/persian_eval_report.md` includes a *same-question, all models* section (first example of each task) showing the identical prompt sent to every model. Concrete takeaways:
+
+- **Format following decides MC/ARC**: on the photosynthesis ARC prompt, Gemma-4/3, Nemotron, Qwen3.8 and Qwen2.5 all answer `A`; Qwen3-30B wraps its answer in a `<think>` block, and Mistral/Phi-3 pick wrong options (`D`/`C`) — the score gap is instruction-following, not Persian ability.
+- **NER needs strict JSON**: models that emit raw names or chatty prose score 0 on NER even when the entities are present; Gemma-4 (1.0) and Gemma-3 (0.98) emit the expected structure.
+- Good/bad answer samples per model per task are listed inline in the report (each task's example section shows the model output with a hit/miss marker).
 
 ## 4c. Embedding model comparison (Persian retrieval)
 
