@@ -48,23 +48,28 @@ TASK_NOTE = {
               "but Nemotron-49B, Qwen2.5-7B, Qwen3-30B and Phi-3-mini choose an *arguably reasonable* "
               "but wrong option — showing that ARC scores separate models on Persian science reasoning, "
               "not just on format-following.",
-    "fa_mc": "The fill-the-blank asks for the *option number* (`3` = نادیده گرفتن). The four top models "
-             "and Llama-3.2 output `3`; Qwen2.5-7B, Mistral and Phi-3 pick `4`/`4. جلوگیری از`; Qwen3-30B "
-             "wraps its answer in a `thinking` block (truncation cost). Mistral and Phi-3 answer in full "
-             "sentences instead of a bare number — a format-instruction gap, not a vocabulary gap.",
-    "fa_math": "The sequence problem's gold is `8`. Only **Gemma-4-31B** and **Nemotron-49B** output a clean "
-               "final answer the scorer accepts; the rest start the Persian 'راه حل' write-up correctly but "
-               "the final-answer block is missing/malformed. Phi-3-mini degrades into repeated gibberish. "
-               "This shows math scores are gated by output-structure compliance.",
-    "fa_sentiment": "The review 'کلا ارزش یک‌بار امتحان کردن هم نداره' (totally not worth trying) is clearly "
-                   "**NEGATIVE**. Gemma-4, Gemma-3, Qwen3.8 and Llama-3.2 get it; Mistral-7B and Qwen2.5-7B "
-                   "emit NEUTRAL or hedge with a long explanation (scorer can't map). Qwen3-30B thinks out "
-                   "loud and gets truncated. Sentiment is a *free-form* task — model prose length and "
-                   "emotion-range calibration matter as much as comprehension.",
-    "fa_entail": "The gold label is `n` (ناشناخته/neutral). **Every model misses it** — Gemma-4 and Gemma-3 "
-                 "say تناظر, Llama-3.2/Mistral say تناقض, Qwen3.8 says ناشناخته but the scorer needs the "
-                 "exact `<برچسب>: n` form. Entailment is the hardest task for all models (per-task accuracy "
-                 "0.00–0.26) — a genuinely hard NLI signal, not a parsing artifact.",
+    "fa_mc": "A workers/rate word problem: 8 workers finish in 20 days; adding 2 workers finishes it how many "
+             "days *earlier*? (gold `2` = ۴ روز). Gemma-4, Gemma-3, Qwen3.8, Qwen2.5-7B (2-shot) and Llama-3.2 "
+             "answer the option number correctly; Nemotron and Qwen2.5-7B (0-shot) pick wrong options (`4`/`3`), "
+             "Mistral answers `1. 16 روز`, Phi-3-mini prints *every* option, and Qwen3-30B wraps its answer in "
+             "a `thinking` block (truncated). Format-following (bare option number) decides the winner.",
+    "fa_math": "'5% of 2000 is equal to 10% of what number?' (gold `1000`). Five models — Gemma-4, Gemma-3, "
+              "Nemotron, Qwen3.8 and Qwen2.5-7B (0-shot) — work it correctly; Qwen2.5-7B **2-shot misses** "
+              "(the exemplar anchors a different structure), Llama-3.2 and Mistral set up the equation but "
+              "never output the final-answer block, and Phi-3-mini degrades into gibberish. Math scores are "
+              "gated by final-answer *structure compliance*, and few-shot can actually hurt.",
+    "fa_sentiment": "A product review — 'نوشیدنی مالته باید تلخ باشه نه شیرین… کاملا پشیمونم' — is clearly "
+                   "**NEGATIVE**. Gemma-4, Gemma-3, Qwen3.8, Llama-3.2 and Qwen2.5-7B (2-shot) get it; "
+                   "Mistral-7B says `NEUTRAL`, Qwen2.5-7B and Nemotron hedge with long explanations the scorer "
+                   "can't map, and Qwen3-30B emits the right label *after* a `thinking` block (truncation cost). "
+                   "A free-form task where prose length and label discipline matter as much as comprehension.",
+    "fa_entail": "The gold label is `<برچسب>: c` (تناقض/contradiction) — acid-rain premise vs hypothesis. "
+                 "**Half the models miss even this** (the task's best model only scores 0.26). Gemma-3, "
+                 "Nemotron, Llama-3.2 and Phi-3 pick تناقض (Qwen3-30B also hits, label hidden inside a "
+                 "`thinking` block); Gemma-4 and Qwen2.5 say ناشناخته, Mistral/Qwen2.5 say تناظر, Qwen3.8 "
+                 "answers in an English preamble. The *right-class* accuracy would be much higher — most "
+                 "failures are output-format, but the underlying NLI signal is genuinely the hardest of the "
+                 "seven tasks.",
     "fa_ner": "The input list has facility/location tokens (بزرگراه نیاوران …). Gemma-4/Gemma-3 and "
               "Qwen2.5-7B emit the expected `[('tok','LABEL'), …]` tuples (hit); Qwen3-30B and Qwen3.8 get "
               "stuck in `thinking`/English preamble; Llama-3.2, Mistral, Phi-3 reply with instructions "

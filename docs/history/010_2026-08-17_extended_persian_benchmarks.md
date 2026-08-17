@@ -13,7 +13,8 @@
   - kept `persian_mean.png`, `persian_by_task.png`
 - **Speed bench** (`scripts/bench_speed.py`, `scripts/services/run_speed_bench.sh`): 256-token Persian generation, all 9 models on GPU1. Results: Phi-3-mini 226.6, Mistral-7B 172.7, Qwen2.5-7B 163.9, Qwen3-30B-A3B 155.1 (MoE, 3B active), Llama-3.2-3B 72.2, Gemma-3-27B 67.3, Qwen3.8-27B 61.2, Gemma-4-31B 55.7, Nemotron-49B 45.6 tok/s.
 - **2-shot eval**: `--n-shots 2` on Qwen2.5-7B → 0.466 (vs 0-shot 0.443); lifts NER 0.88→0.96, ARC 0.68→0.74, RC 0.14→0.34; hurts math 0.38→0.12.
-- **Embedding comparison**: 3 embedders (e5-small 384d / bge-m3 1024d / paraphrase-MiniLM 384d) on 6-doc Persian retrieval — all top-1=1.0; mean top-1 cosine 0.898 / 0.646 / 0.555; latency 0.14 / 0.27 / 0.09 s. README §4c.
+- **Embedding comparison**: 3 embedders (e5-small 384d / bge-m3 1024d / paraphrase-MiniLM 384d) on 6-doc Persian retrieval — all top-1=1.0; mean top-1 cosine 0.898 / 0.646 / 0.555; latency 0.14 / 0.27 / 0.09 s. README §4d.
+- **Sample-questions section (README §4c)**: 7 tricky prompts (one per task) where the 9 models disagree, each model's raw output + score inline in README (also as `docs/reports/persian_sample_questions.md`). Generator: `scripts/gen_sample_questions.py`. Sample selection keyed by `(task,index)` (NER prompt template is identical across rows).
 - **README updated** with 9-model table (corrected Qwen3 scores), ability-group table, speed table, n-shot + same-question sections, all 7 plots embedded, "how to read the plots" explanations.
 - **Auto-commit/push daemon** (`scripts/services/autogit_daemon.sh`) now runs **every 30 min** (AUTOGIT_INTERVAL=1800s default), commit-then-rebase-then-push ordering fixed. Alive pid 900590.
 
@@ -47,7 +48,8 @@
 
 ### 4. README update
 - §4b: corrected 9-model table, ability-group table, speed table, 7 embedded PNGs, n-shot section, same-question "why scores differ" section, "how to read the plots", reproduction commands (max_tokens 400 + n-shots + bench_speed).
-- §4c (new): embedding model comparison.
+- §4c (new): sample-questions walkthrough (tricky prompt per task, all models, 0/2-shot).
+- §4d (new): embedding model comparison.
 - §4 inventory + download status refreshed to 2026-08-17.
 
 ### 5. Auto-git daemon
