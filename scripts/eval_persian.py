@@ -131,6 +131,20 @@ def mc_q(q, choices):
     return f"سؤال: {q}\nگزینه‌ها:\n{opts}\nفقط حرف گزینه درست را بگو:"
 
 
+def strip_think(text):
+    """Strip Qwen3-style <think>...</think> reasoning blocks. The final
+    answer is almost always the content after the closing </think> tag;
+    when present we return only that tail."""
+    if not text:
+        return text
+    # remove full think blocks
+    t = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    # if a lone closing tag exists (unbalanced), keep everything after it
+    if "</think>" in text and "<think>" not in text:
+        t = text.split("</think>", 1)[1]
+    return t.strip()
+
+
 def extract_letter(text):
     m = re.search(r"\b([A-J])\b", text.upper())
     return m.group(1) if m else None
@@ -194,29 +208,37 @@ def score(name, ex, text):
     return False, None
 
 
-def run_task(llm, name, rows, max_tokens, temperature, chat):
+def run_task(llm, name, rows, max_tokens, temperature, chat, n_shots=0, fewshot_fn=None):
     correct = 0
     n = 0
     t0 = time.time()
+    total_tokens = 0
     per_ex = []
     for ex in rows:
+        prompt = ex["prompt"]
+        if n_shots and fewshot_fn:
+            prompt = fewshot_fn(ex, n_shots) + "\n\n" + prompt
         if chat:
             out = llm.create_chat_completion(
-                messages=[{"role": "user", "content": ex["prompt"]}],
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=max_tokens, temperature=temperature)
             text = (out["choices"][0]["message"]["content"] or "").strip()
         else:
-            out = llm(ex["prompt"], max_tokens=max_tokens, temperature=temperature)
+            out = llm(prompt, max_tokens=max_tokens, temperature=temperature)
             text = out["choices"][0]["text"].strip()
+        text = strip_think(text)
+        total_tokens += out["usage"]["completion_tokens"] if "usage" in out else 0
         hit, pred = score(name, ex, text)
         if hit:
             correct += 1
         n += 1
-        per_ex.append({"prompt": ex["prompt"][:400], "gold": ex.get("raw_gold", ex["gold_norm"])[:200],
+        per_ex.append({"prompt": prompt[:400], "gold": ex.get("raw_gold", ex["gold_norm"])[:200],
                        "pred": str(pred)[:80], "output": text[:300], "hit": bool(hit)})
+    secs = time.time() - t0
+    tok_sec = round(total_tokens / secs, 1) if secs and total_tokens else None
     return {"task": name, "n": n, "correct": correct,
             "acc": round(correct / n, 4) if n else None,
-            "secs": round(time.time() - t0, 1), "samples": per_ex}
+            "secs": round(secs, 1), "tok_sec": tok_sec, "samples": per_ex}
 
 
 LOADERS = {
@@ -231,6 +253,24 @@ LOADERS = {
 }
 
 
+def make_fewshot(rows_by_task, n_shots):
+    """Return a builder that prepends n_shots correct exemplars of the same
+    task (with the gold answer appended) to each prompt."""
+    shots = {}
+    for t, rows in rows_by_task.items():
+        pool = []
+        for ex in rows:
+            gold = ex.get("raw_gold", ex["gold_norm"])
+            pool.append(ex["prompt"] + "\n" + str(gold))
+        shots[t] = pool[:n_shots]
+
+    def builder(ex, k):
+        t = ex.get("_task", "")
+        return "\n\n".join(shots.get(t, [])[:k])
+
+    return builder
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
@@ -241,6 +281,8 @@ def main():
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--out", default=None)
     ap.add_argument("--chat", action="store_true")
+    ap.add_argument("--n-shots", type=int, default=0,
+                    help="prepend N correct in-task exemplars to each prompt")
     args = ap.parse_args()
 
     get = build_loader()
@@ -248,6 +290,9 @@ def main():
     rows_by_task = {t: LOADERS[t](get, args.limit) for t in tasks}
     for t, r in rows_by_task.items():
         print(f"loaded {t}: {len(r)} rows")
+        for ex in r:
+            ex["_task"] = t
+    fewshot_fn = make_fewshot(rows_by_task, args.n_shots) if args.n_shots else None
 
     t0 = time.time()
     llm = Llama(model_path=args.model, n_ctx=8192, n_gpu_layers=args.n_gpu_layers, verbose=False)
@@ -256,8 +301,9 @@ def main():
     results = []
     for t in tasks:
         print(f"\n=== {t} ===")
-        r = run_task(llm, t, rows_by_task[t], args.max_tokens, args.temperature, args.chat)
-        print(f"acc={r['acc']}  ({r['correct']}/{r['n']})  {r['secs']}s")
+        r = run_task(llm, t, rows_by_task[t], args.max_tokens, args.temperature, args.chat,
+                     n_shots=args.n_shots, fewshot_fn=fewshot_fn)
+        print(f"acc={r['acc']}  ({r['correct']}/{r['n']})  {r['secs']}s  {r.get('tok_sec')} tok/s")
         results.append(r)
 
     scored = [r["acc"] for r in results if r["acc"] is not None]

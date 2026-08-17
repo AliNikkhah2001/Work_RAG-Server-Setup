@@ -114,17 +114,18 @@ All under `offline-prep/models/huggingface/` (git-ignored):
 
 | Model | Size | Status |
 |---|---|---|
-| `bartowski/Qwen2.5-7B-Instruct-GGUF` (Q4_K_M) | 4.7 GB | ✅ downloaded & validated (primary) |
-| `bartowski/Llama-3.2-3B-Instruct-GGUF` (Q4_K_M) | 2.0 GB | ✅ downloaded & evaluated |
-| `bartowski/Mistral-7B-Instruct-v0.3-GGUF` | 64 GB (IQ1–IQ5/Q2/Q3 + Q4_K_M) | ✅ Q4_K_M + all quants |
-| `microsoft/Phi-3-mini-4k-instruct-gguf` | 9.4 GB | ✅ q4 + fp16 |
-| `bartowski/google_gemma-4-31B-it-GGUF` (Q4_K_M) | 19.6 GB | ✅ downloaded & evaluated |
-| `bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF` (Q4_K_M) | 30.2 GB | ✅ downloaded & evaluated |
-| `bartowski/Qwen2.5-72B-Instruct-GGUF` (Q8_0 2/2 + part 1 partial) | ~40 GB | ⏳ part 1 resuming (34.4/40 GB) |
-| `bartowski/google_gemma-3-27b-it-GGUF` (Q4_K_M) | 16.5 GB | ⏳ resuming (12.7/16.5 GB) |
-| `bartowski/Qwen3.8-27B-GGUF` (Q4_K_M) | 17.8 GB | ⏳ downloading (dedicated daemon; multimodal) |
-| `Qwen/Qwen3-30B-A3B-GGUF` | 18.6 GB | ⏳ paused mid-download (11.5 GB) |
-| `bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF` | 151 GB | ⏳ queued / slow partials |
+| `bartowski/Qwen2.5-7B-Instruct-GGUF` (Q4_K_M) | 4.4 GB | ✅ downloaded & evaluated (0.443) |
+| `bartowski/Llama-3.2-3B-Instruct-GGUF` (Q4_K_M) | 1.9 GB | ✅ downloaded & evaluated (0.326) |
+| `bartowski/Mistral-7B-Instruct-v0.3-GGUF` | 4.4 GB (Q4_K_M) | ✅ evaluated (0.186) |
+| `microsoft/Phi-3-mini-4k-instruct-gguf` | 2.4 GB (q4) | ✅ evaluated (0.143) |
+| `bartowski/google_gemma-4-31B-it-GGUF` (Q4_K_M) | 19.6 GB | ✅ evaluated (0.663) |
+| `bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF` (Q4_K_M) | 30.2 GB | ✅ evaluated (0.494) |
+| `bartowski/google_gemma-3-27b-it-GGUF` (Q4_K_M) | 16.5 GB | ✅ downloaded & evaluated (0.600) |
+| `bartowski/Qwen3.8-27B-GGUF` (Q4_K_M) | 17.8 GB | ✅ downloaded; re-evaluated after thinking-mode fix |
+| `Qwen/Qwen3-30B-A3B-GGUF` (Q4_K_M) | 18.6 GB | ✅ downloaded; re-evaluated after thinking-mode fix |
+| `bartowski/Qwen2.5-72B-Instruct-GGUF` (Q8_0 2/2 + part 1 partial) | ~73 GB | ⏸ removed from queue (partial on disk) |
+| `bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF` | 3.6 GB partial | ⏸ removed from queue (partial on disk) |
+| `deepseek-ai/DeepSeek-V4-Flash` (safetensors) | ~88 GB | ⏳ 25/46 shards (~54%), proxy-limited |
 | `BAAI/bge-small-en-v1.5` | 383 MB | ✅ embeddings (dim 384) |
 | `sentence-transformers/all-MiniLM-L6-v2` | 932 MB | ✅ embeddings |
 | `intfloat/multilingual-e5-small` | 1.2 GB | ✅ Persian-capable embeddings (dim 384) |
