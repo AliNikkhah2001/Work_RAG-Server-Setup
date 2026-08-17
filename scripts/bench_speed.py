@@ -4,6 +4,7 @@
 import argparse
 import json
 import time
+from pathlib import Path
 
 from llama_cpp import Llama
 
@@ -41,8 +42,17 @@ def main():
     ap.add_argument("--out", default="logs/speed_bench.json")
     args = ap.parse_args()
     results = {}
+    out_path = Path(args.out)
+    if out_path.exists():
+        try:
+            results = json.loads(out_path.read_text())
+        except Exception:
+            results = {}
     for name, path in MODELS.items():
         if args.only and args.only != name:
+            continue
+        if name in results:
+            print(f"=== {name} (cached, skipping) ===", flush=True)
             continue
         print(f"=== {name} ===", flush=True)
         try:
@@ -52,9 +62,8 @@ def main():
         except Exception as e:
             print(f"  ERROR {e}", flush=True)
             results[name] = {"error": str(e)}
-    with open(args.out, "w") as f:
-        json.dump(results, f, indent=2)
-    print(f"wrote {args.out}")
+        out_path.write_text(json.dumps(results, indent=2))
+    print(f"wrote {out_path}")
 
 
 if __name__ == "__main__":
