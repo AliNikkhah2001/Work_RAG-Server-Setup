@@ -1,17 +1,47 @@
 # Persian LLM Evaluation Report
 
-Generated: 2026-08-16 14:18 UTC
+Generated: 2026-08-17 09:05 UTC
 
 ## Models (sorted by mean accuracy)
 
-| Model | Mean | Persian ARC (MC) | Parsinlu MC | Persian Math | Sentiment | Entailment | NER | Reading Comp. |
-|---|---|---|---|---|---|---|---|---|
-| google_gemma-4-31B-it-Q4_K_M | 0.663 | 0.960 | 0.700 | 0.640 | 0.820 | 0.160 | 1.000 | 0.360 |
-| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M | 0.494 | 0.920 | 0.320 | 0.500 | 0.680 | 0.220 | 0.460 | 0.360 |
-| Qwen2.5-7B-Instruct-Q4_K_M | 0.443 | 0.680 | 0.360 | 0.380 | 0.660 | 0.000 | 0.880 | 0.140 |
-| Llama-3.2-3B-Instruct-Q4_K_M | 0.326 | 0.560 | 0.300 | 0.140 | 0.580 | 0.240 | 0.000 | 0.460 |
-| Mistral-7B-Instruct-v0.3-Q4_K_M | 0.186 | 0.360 | 0.240 | 0.060 | 0.300 | 0.180 | 0.020 | 0.140 |
-| Phi-3-mini-4k-instruct-q4 | 0.143 | 0.340 | 0.100 | 0.000 | 0.220 | 0.160 | 0.000 | 0.180 |
+| Model | Family | Params | Size | Mean | Persian ARC (MC) | Parsinlu MC | Persian Math | Sentiment | Entailment | NER | Reading Comp. |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| google_gemma-4-31B-it-Q4_K_M | Gemma-4 | 31B | 19.6G | 0.663 | 0.960 | 0.700 | 0.640 | 0.820 | 0.160 | 1.000 | 0.360 |
+| google_gemma-3-27b-it-Q4_K_M | Gemma-3 | 27B | 16.5G | 0.600 | 0.940 | 0.520 | 0.260 | 0.900 | 0.200 | 0.980 | 0.400 |
+| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M | Nemotron | 49B | 30.2G | 0.494 | 0.920 | 0.320 | 0.500 | 0.680 | 0.220 | 0.460 | 0.360 |
+| Qwen2.5-7B-Instruct-Q4_K_M | Qwen2.5 | 7B | 4.4G | 0.443 | 0.680 | 0.360 | 0.380 | 0.660 | 0.000 | 0.880 | 0.140 |
+| Llama-3.2-3B-Instruct-Q4_K_M | Llama-3.2 | 3.2B | 1.9G | 0.326 | 0.560 | 0.300 | 0.140 | 0.580 | 0.240 | 0.000 | 0.460 |
+| Mistral-7B-Instruct-v0.3-Q4_K_M | Mistral | 7B | 4.4G | 0.186 | 0.360 | 0.240 | 0.060 | 0.300 | 0.180 | 0.020 | 0.140 |
+| Qwen3.8-27B-Q4_K_M | Qwen3.8 | 27B | 17.8G | 0.169 | 0.240 | 0.040 | 0.020 | 0.480 | 0.360 | 0.000 | 0.040 |
+| Phi-3-mini-4k-instruct-q4 | Phi-3 | 3.8B | 2.4G | 0.143 | 0.340 | 0.100 | 0.000 | 0.220 | 0.160 | 0.000 | 0.180 |
+| Qwen3-30B-A3B-Q4_K_M | Qwen3-MoE | 30B | 18.6G | 0.131 | 0.140 | 0.020 | 0.040 | 0.480 | 0.240 | 0.000 | 0.000 |
+
+## Ability-group scores (radar chart data)
+
+| Model | Reasoning & Knowledge | Language Understanding | Information Extraction |
+|---|---|---|---|
+| google_gemma-4-31B-it-Q4_K_M | 0.767 | 0.490 | 0.680 |
+| google_gemma-3-27b-it-Q4_K_M | 0.573 | 0.550 | 0.690 |
+| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M | 0.580 | 0.450 | 0.410 |
+| Qwen2.5-7B-Instruct-Q4_K_M | 0.473 | 0.330 | 0.510 |
+| Llama-3.2-3B-Instruct-Q4_K_M | 0.333 | 0.410 | 0.230 |
+| Mistral-7B-Instruct-v0.3-Q4_K_M | 0.220 | 0.240 | 0.080 |
+| Qwen3.8-27B-Q4_K_M | 0.100 | 0.420 | 0.020 |
+| Phi-3-mini-4k-instruct-q4 | 0.147 | 0.190 | 0.090 |
+| Qwen3-30B-A3B-Q4_K_M | 0.067 | 0.360 | 0.000 |
+
+## Figures
+
+- **persian_mean.png** — ranked mean accuracy.
+
+- **persian_by_task.png** — accuracy per task across models.
+
+- **persian_scatter.png** — model size (disk GB) vs mean accuracy; bubble size = parameter count.
+
+- **persian_radar.png** — ability-group profile per model (all on one axis).
+
+- **persian_radar_family.png** — per-family radar profiles.
+
 
 ## Per-model samples
 
@@ -177,6 +207,172 @@ Facility (تاسیس
   - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
   - **Pred**: 0.0
   - **Output**: بر اساس متن، **ایرانیان باستان** و **هندوها** آتش را مقدس می‌شمردند.
+  - **Hit**: ❌
+
+### google_gemma-3-27b-it-Q4_K_M (mean 0.600)
+
+
+#### Persian ARC (MC) — acc 0.94
+
+- **Prompt**: سؤال: کدام بیان به بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است؟
+گزینه‌ها:
+A)  نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است.
+B)  بیشتر اکوسیستم‌ها بر روی زمین یاف
+  - **Gold**: a
+  - **Pred**: A
+  - **Output**: A
+  - **Hit**: ✅
+- **Prompt**: سؤال: کدام قطعه از تجهیزات ایمنی برای جلوگیری از ورود هاگ‌های قارچ به دستگاه تنفسی استفاده می‌شود؟
+گزینه‌ها:
+A)  عینک ایمنی
+B)  ماسک تنفسی
+C)  دستکش لاستیکی
+D)  پیش بند سربی
+فقط حرف گزینه درست را بگو:
+  - **Gold**: b
+  - **Pred**: B
+  - **Output**: B
+  - **Hit**: ✅
+
+#### Parsinlu MC — acc 0.52
+
+- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
+فقط عدد متناظر با گزینه درست را خر
+  - **Gold**: جواب: گزینه 4
+  - **Pred**: 2
+  - **Output**: 2
+  - **Hit**: ❌
+- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
+فقط عدد متناظر با گزینه درست را خر
+  - **Gold**: جواب: گزینه 3
+  - **Pred**: 3
+  - **Output**: 3
+  - **Hit**: ✅
+
+#### Persian Math — acc 0.26
+
+- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
+  - **Gold**: 7 مهر
+  - **Pred**: 0.03
+  - **Output**: [راه حل]
+دو هفته برابر با 14 روز است. بنابراین، تاریخ تولد سینا 14 روز بعد از 24 شهریور است.
+24 + 14 = 38
+از آنجایی که شهریور 30 روز دارد، باید 30 را از 38 کم کنیم و به ماه بعد برویم.
+38 - 30 = 8
+بناب
+  - **Hit**: ❌
+- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
+  - **Gold**: 5 سال
+  - **Pred**: 0.032
+  - **Output**: [راه حل]
+ارتفاع درخت در سال ششم 36 متر است. از آنجایی که ارتفاع درخت هر سال دو برابر می‌شود، می‌توانیم ارتفاع درخت را در سال‌های قبل محاسبه کنیم:
+سال ششم: 36 متر
+سال پنجم: 36 / 2 = 18 متر
+سال چهارم: 1
+  - **Hit**: ❌
+
+#### Sentiment — acc 0.9
+
+- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
+پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
+زمانی که جمله دارای احساس خاصی 
+  - **Gold**: احساس: NEGATIVE
+  - **Pred**: negative
+  - **Output**: NEGATIVE
+
+**توضیح:**
+
+این جمله به وضوح حاوی احساسات منفی است. نویسنده از کیفیت محصول (مرغ) ناراضی است، به وجود مواد مضر (آنتی‌بیوتیک و استخوان زیاد) اشاره می‌کند و اعلام می‌کند که دیگر از این برند خری
+  - **Hit**: ✅
+- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
+پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
+زمانی که جمله دارای احساس خاصی 
+  - **Gold**: احساس: NEUTRAL
+  - **Pred**: negative
+  - **Output**: NEGATIVE
+
+**توضیح:**
+
+جمله لحنی انتقادی و نارضایتی دارد. گوینده معتقد است حجم شیر برای یک بچه مدرسه ای کافی نیست و این یک کمبود یا مشکل را نشان می‌دهد. کلمه "کفایت میکنه" در این جمله با لحنی طعنه آمیز
+  - **Hit**: ❌
+
+#### Entailment — acc 0.2
+
+- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
+رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
+- تناظر : اگر جمله 
+  - **Gold**: <برچسب>: c
+  - **Pred**: contradiction
+  - **Output**: تناقض
+  - **Hit**: ✅
+- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
+رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
+- تناظر : اگر جمله 
+  - **Gold**: <برچسب>: n
+  - **Pred**: None
+  - **Output**: تناظر
+  - **Hit**: ❌
+
+#### NER — acc 0.98
+
+- **Prompt**: شرح وظیفه:
+شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
+برچسب های موجودیت اسمی:
+
+PER (نفر)
+LOC (مکان)
+ORG (سازمان)
+Product (محصول)
+Event (رویداد)
+Facility (تاسیس
+  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
+  - **Pred**: 0.124
+  - **Output**: ```python
+[('افقی', 'O'),
+(':', 'O'),
+('0', 'O'),
+('ـ', 'O'),
+('از', 'O'),
+('عوامل', 'O'),
+('دوران', 'O'),
+('پهلوی', 'ORG'),
+('و', 'O'),
+('نخست\u200cوزیر', 'O'),
+('ایران', 'LOC'),
+('در', 'O'),
+('سالها
+  - **Hit**: ❌
+- **Prompt**: شرح وظیفه:
+شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
+برچسب های موجودیت اسمی:
+
+PER (نفر)
+LOC (مکان)
+ORG (سازمان)
+Product (محصول)
+Event (رویداد)
+Facility (تاسیس
+  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
+  - **Pred**: 0.417
+  - **Output**: ```
+[('طاهایی', 'PER'), ('گفت', 'O'), (':', 'O'), ('0', 'O'), ('طرح', 'O'), ('عمرانی', 'O'), (',', 'O'), ('0', 'O'), ('طرح', 'O'), ('مدرسه\u200cسازی', 'O'), ('در', 'O'), ('قالب', 'O'), ('0', 'O'), ('ک
+  - **Hit**: ✅
+
+#### Reading Comp. — acc 0.4
+
+- **Prompt**: متن: آب و هوای مناسب برای رشد گندم شرایط ایده‌آل برای رشد گندم ، آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد. بنابراین در م
+  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
+  - **Pred**: 0.444
+  - **Output**: آب و هوای مناسب برای رشد گندم به این صورت است:
+
+*   **دوره رشد رویشی:** خنک
+*   **دوران تشکیل دانه:** معتدل
+*   **زمان برداشت محصول:** گرم و خشک
+  - **Hit**: ✅
+- **Prompt**: متن: آتش از دیرباز مورد پذیرش ایرانیان باستان و هندوها بوده‌است. هندوها آتش مقدس را آگنی می‌گفتند و برای آن قربانیانی تقدیم می‌داشتند. در ایران پیش از زرتشت افسانه‌هایی دربارهٔ آتش وجود داشت که برخی ا
+  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
+  - **Pred**: 0.273
+  - **Output**: ایرانیان باستان و هندوها آتش را مقدس می‌شمردند.
   - **Hit**: ❌
 
 ### nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (mean 0.494)
@@ -783,6 +979,143 @@ def get_label(token):
   - **Output**: آتش را مقدس می شمرند چه در عقاید هندوها به عنوان آگنی مقدس و برای آن قربانیانی تقدیم می داشتند تا در ایران به عنوان نمادی ذات مینوی که مانند رشته‌ای آسمان و فضا و زمین را بهم متصل می‌کرده‌است. در این 
   - **Hit**: ❌
 
+### Qwen3.8-27B-Q4_K_M (mean 0.169)
+
+
+#### Persian ARC (MC) — acc 0.24
+
+- **Prompt**: سؤال: کدام بیان به بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است؟
+گزینه‌ها:
+A)  نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است.
+B)  بیشتر اکوسیستم‌ها بر روی زمین یاف
+  - **Gold**: a
+  - **Pred**: A
+  - **Output**: We need answer in Persian? User asks: "سؤال: کدام بیان به بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است؟ گزینه‌ها: A) نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است.
+  - **Hit**: ✅
+- **Prompt**: سؤال: کدام قطعه از تجهیزات ایمنی برای جلوگیری از ورود هاگ‌های قارچ به دستگاه تنفسی استفاده می‌شود؟
+گزینه‌ها:
+A)  عینک ایمنی
+B)  ماسک تنفسی
+C)  دستکش لاستیکی
+D)  پیش بند سربی
+فقط حرف گزینه درست را بگو:
+  - **Gold**: b
+  - **Pred**: A
+  - **Output**: We need answer user's question in Persian. User asks: "سؤال: کدام قطعه از تجهیزات ایمنی برای جلوگیری از ورود هاگ‌های قارچ به دستگاه تنفسی استفاده می‌شود؟ گزینه‌ها: A) عینک ایمنی B) ماسک تنفسی C) دستکش
+  - **Hit**: ❌
+
+#### Parsinlu MC — acc 0.04
+
+- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
+فقط عدد متناظر با گزینه درست را خر
+  - **Gold**: جواب: گزینه 4
+  - **Pred**: 44
+  - **Output**: We need answer user's request. User Persian: multiple choice math. Need output only number corresponding to correct option.
+Question: "در تقسیمی مقسو م 44 وباقی مانده 4 و خارج قسمت 8 است مقسوم علیه ﭵﻪ
+  - **Hit**: ❌
+- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
+فقط عدد متناظر با گزینه درست را خر
+  - **Gold**: جواب: گزینه 3
+  - **Pred**: A
+  - **Output**: We need answer in Persian? User asks: multiple choice, output only number corresponding to correct option. Need solve.
+
+Problem: "متحرکی که به سمت جنوب در حرکت بوده ، سه مرتبه هر بار یک قائمه مسیر خود
+  - **Hit**: ❌
+
+#### Persian Math — acc 0.02
+
+- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
+  - **Gold**: 7 مهر
+  - **Pred**: 0.0
+  - **Output**: We need answer in Persian. User gives examples and asks solve problem: "در 24 شهریور، سینا میگوید تاریخ تولد من دقیقا دو هفته ی دیگر است. تولد سینا چه روزی است؟" Need provide [راه حل] and [پاسخ]. Need
+  - **Hit**: ❌
+- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
+  - **Gold**: 5 سال
+  - **Pred**: 0.013
+  - **Output**: We need answer in Persian. User gives examples and asks solve problem:
+"مهسا درختی کاشته که هر سال ارتفاعش دو برابر میشود. شش سال از کاشت این درخت میگذرد، اکنون ارتفاع آن 36 متر است. چند سال طول کشیده
+  - **Hit**: ❌
+
+#### Sentiment — acc 0.48
+
+- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
+پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
+زمانی که جمله دارای احساس خاصی 
+  - **Gold**: احساس: NEGATIVE
+  - **Pred**: positive
+  - **Output**: We need answer in Persian likely. User asks: identify sentiment of Persian sentence. Options POSITIVE, NEUTRAL, NEGATIVE, OTHER. If no specific feeling or mixed emotions use OTHER. Sentence: "دوستان ح
+  - **Hit**: ❌
+- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
+پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
+زمانی که جمله دارای احساس خاصی 
+  - **Gold**: احساس: NEUTRAL
+  - **Pred**: positive
+  - **Output**: We need answer in Persian likely. User asks: identify sentiment of Persian sentence: "واقعا با این حجم شیر یه بچه مدرسه ای در روز ،براش کفایت میکنه" Options POSITIVE, NEUTRAL, NEGATIVE, OTHER. If no s
+  - **Hit**: ❌
+
+#### Entailment — acc 0.36
+
+- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
+رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
+- تناظر : اگر جمله 
+  - **Gold**: <برچسب>: c
+  - **Pred**: contradiction
+  - **Output**: We need answer in Persian likely. User asks NLI: premise: "زنان به قدری بخش بزرگی از نیروی کار را تشکیل می دهند که به سختی می توان باور داشت که اگر این امر در مورد زنان صادق نباشد ، این امر می تواند ص
+  - **Hit**: ✅
+- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
+رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
+- تناظر : اگر جمله 
+  - **Gold**: <برچسب>: n
+  - **Pred**: entailment
+  - **Output**: We need answer in Persian likely. User asks NLI: premise: "سالها است که کنگره در تلاش است تا اثربخشی مدیریت اطلاعات و فناوری را در دولت فدرال افزایش دهد." Hypothesis: "کنگره بودجه ویژه ای برای مدیریت 
+  - **Hit**: ❌
+
+#### NER — acc 0.0
+
+- **Prompt**: شرح وظیفه:
+شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
+برچسب های موجودیت اسمی:
+
+PER (نفر)
+LOC (مکان)
+ORG (سازمان)
+Product (محصول)
+Event (رویداد)
+Facility (تاسیس
+  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
+  - **Pred**: 0.005
+  - **Output**: We need answer in Persian likely. User asks NER labeling for given Persian token list. Need output list of tuples (word, label). Labels: PER, LOC, ORG, Product, Event, Facility, O. Need identify named
+  - **Hit**: ❌
+- **Prompt**: شرح وظیفه:
+شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
+برچسب های موجودیت اسمی:
+
+PER (نفر)
+LOC (مکان)
+ORG (سازمان)
+Product (محصول)
+Event (رویداد)
+Facility (تاسیس
+  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
+  - **Pred**: 0.027
+  - **Output**: ما باید به زبان فارسی پاسخ دهیم. کاربر درخواست برچسب‌گذاری NER برای لیست توکن‌های فارسی داده است. باید خروجی لیست تاپل‌ها باشد: (کلمه، برچسب). برچسب‌ها: PER, LOC, ORG, Product, Event, Facility, O.
+
+ور
+  - **Hit**: ❌
+
+#### Reading Comp. — acc 0.04
+
+- **Prompt**: متن: آب و هوای مناسب برای رشد گندم شرایط ایده‌آل برای رشد گندم ، آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد. بنابراین در م
+  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
+  - **Pred**: 0.208
+  - **Output**: We need answer in Persian. User provides text and asks: چه آب و هوایی برای رشد گندم خوب است؟ Need answer based on text. Need final concise. Text says ideal: cool climate in vegetative growth period, m
+  - **Hit**: ❌
+- **Prompt**: متن: آتش از دیرباز مورد پذیرش ایرانیان باستان و هندوها بوده‌است. هندوها آتش مقدس را آگنی می‌گفتند و برای آن قربانیانی تقدیم می‌داشتند. در ایران پیش از زرتشت افسانه‌هایی دربارهٔ آتش وجود داشت که برخی ا
+  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
+  - **Pred**: 0.052
+  - **Output**: We need answer in Persian likely. User provides text and question: "چه اقوامی آتش را مقدس می شمرند؟" Need answer based on text. Text says: "آتش از دیرباز مورد پذیرش ایرانیان باستان و هندوها بوده‌است. 
+  - **Hit**: ❌
+
 ### Phi-3-mini-4k-instruct-q4 (mean 0.143)
 
 
@@ -944,4 +1277,159 @@ Facility (تاسیس
   - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
   - **Pred**: 0.087
   - **Output**: آتش را در ایران و هندوستان باستان می‌خواهد مقدس شده‌است که ایرانیان و هندویان از آن استفاده کردن. در ایران، آتش مقدس را در زامی
+  - **Hit**: ❌
+
+### Qwen3-30B-A3B-Q4_K_M (mean 0.131)
+
+
+#### Persian ARC (MC) — acc 0.14
+
+- **Prompt**: سؤال: کدام بیان به بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است؟
+گزینه‌ها:
+A)  نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است.
+B)  بیشتر اکوسیستم‌ها بر روی زمین یاف
+  - **Gold**: a
+  - **Pred**: A
+  - **Output**: <think>
+Okay, let's try to figure out this question. The question is asking which statement best explains why photosynthesis is the foundation of most food chains. The options are A, B, C, D.
+
+First, 
+  - **Hit**: ✅
+- **Prompt**: سؤال: کدام قطعه از تجهیزات ایمنی برای جلوگیری از ورود هاگ‌های قارچ به دستگاه تنفسی استفاده می‌شود؟
+گزینه‌ها:
+A)  عینک ایمنی
+B)  ماسک تنفسی
+C)  دستکش لاستیکی
+D)  پیش بند سربی
+فقط حرف گزینه درست را بگو:
+  - **Gold**: b
+  - **Pred**: A
+  - **Output**: <think>
+Okay, let's see. The question is asking which safety equipment is used to prevent fungal spores from entering the respiratory system. The options are A) Safety goggles, B) Respiratory mask, C)
+  - **Hit**: ❌
+
+#### Parsinlu MC — acc 0.02
+
+- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
+فقط عدد متناظر با گزینه درست را خر
+  - **Gold**: جواب: گزینه 4
+  - **Pred**: I
+  - **Output**: <think>
+Okay, let's see. The question is about division where the dividend is 44, the remainder is 4, and the quotient is 8. We need to find the divisor.
+
+Hmm, I remember the formula for division: Div
+  - **Hit**: ❌
+- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
+فقط عدد متناظر با گزینه درست را خر
+  - **Gold**: جواب: گزینه 3
+  - **Pred**: A
+  - **Output**: <think>
+Okay, let's try to figure out this question. So, there's a moving object that was initially moving south. Then it makes three right-angle turns, each time turning right. The question is asking
+  - **Hit**: ❌
+
+#### Persian Math — acc 0.04
+
+- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
+  - **Gold**: 7 مهر
+  - **Pred**: 0.0
+  - **Output**: <think>
+Okay, let's try to figure out this problem. So, the question is: On September 24th, Sina says that his birthday is exactly two weeks later. What day is Sina's birthday?
+
+First, I need to under
+  - **Hit**: ❌
+- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
+  - **Gold**: 5 سال
+  - **Pred**: 0.0
+  - **Output**: <think>
+Okay, let's try to solve this problem step by step. So, the question is about a tree that Mahsa planted, and every year its height doubles. After six years, the tree is 36 meters tall. The que
+  - **Hit**: ❌
+
+#### Sentiment — acc 0.48
+
+- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
+پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
+زمانی که جمله دارای احساس خاصی 
+  - **Gold**: احساس: NEGATIVE
+  - **Pred**: positive
+  - **Output**: <think>
+Okay, let's see. I need to determine the sentiment of this Persian sentence. The user provided possible answers: POSITIVE, NEUTRAL, NEGATIVE, or OTHER. The instructions say to use OTHER if the
+  - **Hit**: ❌
+- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
+پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
+زمانی که جمله دارای احساس خاصی 
+  - **Gold**: احساس: NEUTRAL
+  - **Pred**: positive
+  - **Output**: <think>
+Okay, let's see. The user wants me to determine the sentiment of the given Persian sentence. The options are POSITIVE, NEUTRAL, NEGATIVE, or OTHER. The sentence is: "وقتی که جمله دارای احساس خ
+  - **Hit**: ❌
+
+#### Entailment — acc 0.24
+
+- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
+رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
+- تناظر : اگر جمله 
+  - **Gold**: <برچسب>: c
+  - **Pred**: None
+  - **Output**: <think>
+Okay, let's try to figure out the relationship between the given premise and hypothesis. 
+
+First, I need to understand both sentences. The premise says, "Women make up such a large part of the
+  - **Hit**: ❌
+- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
+رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
+- تناظر : اگر جمله 
+  - **Gold**: <برچسب>: n
+  - **Pred**: entailment
+  - **Output**: <think>
+Okay, let's try to figure out the relationship between the premise and the hypothesis here. The premise says that Congress has been trying for years to increase the effectiveness of informatio
+  - **Hit**: ❌
+
+#### NER — acc 0.0
+
+- **Prompt**: شرح وظیفه:
+شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
+برچسب های موجودیت اسمی:
+
+PER (نفر)
+LOC (مکان)
+ORG (سازمان)
+Product (محصول)
+Event (رویداد)
+Facility (تاسیس
+  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
+  - **Pred**: 0.005
+  - **Output**: <think>
+Okay, I need to label the given Persian tokens with the appropriate named entity tags. Let me start by recalling the tags: PER (person), LOC (location), ORG (organization), Product, Event, Fac
+  - **Hit**: ❌
+- **Prompt**: شرح وظیفه:
+شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
+برچسب های موجودیت اسمی:
+
+PER (نفر)
+LOC (مکان)
+ORG (سازمان)
+Product (محصول)
+Event (رویداد)
+Facility (تاسیس
+  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
+  - **Pred**: 0.0
+  - **Output**: <think>
+Okay, let's tackle this problem. So, the task is to tag each token in the given Persian list with the appropriate named entity labels. The labels are PER, LOC, ORG, Product, Event, Facility. I
+  - **Hit**: ❌
+
+#### Reading Comp. — acc 0.0
+
+- **Prompt**: متن: آب و هوای مناسب برای رشد گندم شرایط ایده‌آل برای رشد گندم ، آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد. بنابراین در م
+  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
+  - **Pred**: 0.0
+  - **Output**: <think>
+Okay, I need to answer the question: "What kind of weather is good for wheat growth?" Let me look at the provided text again to make sure I get the details right.
+
+The text says that suitable 
+  - **Hit**: ❌
+- **Prompt**: متن: آتش از دیرباز مورد پذیرش ایرانیان باستان و هندوها بوده‌است. هندوها آتش مقدس را آگنی می‌گفتند و برای آن قربانیانی تقدیم می‌داشتند. در ایران پیش از زرتشت افسانه‌هایی دربارهٔ آتش وجود داشت که برخی ا
+  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
+  - **Pred**: 0.0
+  - **Output**: <think>
+Okay, let's see. The user is asking which peoples considered fire as sacred. The text provided mentions that fire has been accepted by the ancient Iranians and Hindus. It also talks about the 
   - **Hit**: ❌
