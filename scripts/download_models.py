@@ -45,14 +45,19 @@ TARGETS = [
      ["Qwen3.8-27B-Q4_K_M.gguf"]),                                               # 17.8 GB (multimodal; bartowski quants incl. mmproj)
     ("bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF",
      ["*Nemotron-Super-49B-v1-Q4_K_M.gguf"]),                                    # 30.2 GB  (Nemotron 3 / Super)
+
+    # --- resumed 2026-08-18: DeepSeek-V4-Flash (was excluded 2026-08-17 by >100GB
+    # policy; partial 25/46 shards on disk — resume keeps completed shards) ---
+    ("deepseek-ai/DeepSeek-V4-Flash",
+     ["model-*.safetensors", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "README.md", "LICENSE"]),         # ~160 GB total
 ]
 
-# EXCLUDED (>100 GB download size, per project policy 2026-08-17):
-#   deepseek-ai/DeepSeek-V4-Flash   ~160 GB  safetensors (FP4/FP8)  — partial on disk (~54%), not deleted
+# EXCLUDED (>100 GB download size, policy 2026-08-17; DeepSeek-V4-Flash RE-INCLUDED 2026-08-18):
 #   unsloth/MiniMax-M3-GGUF         ~208 GB  GGUF UD-IQ4_XS
 #   unsloth/Kimi-K3-GGUF            ~594 GB  GGUF UD-IQ1_S
 #   zai-org/GLM-5.2-FP8             ~755 GB  safetensors (FP8)
-# (All four stay in the README as "excluded — >100 GB" reference entries.)
+# (These three stay in the README as "excluded — >100 GB" reference entries.)
 
 MAX_ATTEMPTS = 8
 RETRY_WAIT = 90
