@@ -351,6 +351,7 @@ def main():
     ap.add_argument("--tasks", default="fa_arc,fa_mc,fa_math,fa_sentiment,fa_entail,fa_ner,fa_rc")
     ap.add_argument("--limit", type=int, default=50)
     ap.add_argument("--n-gpu-layers", type=int, default=-1)
+    ap.add_argument("--n-ctx", type=int, default=8192)
     ap.add_argument("--max-tokens", type=int, default=160)
     ap.add_argument("--temperature", type=float, default=0.0)
     ap.add_argument("--out", default=None)
@@ -371,7 +372,7 @@ def main():
     fewshot_fn = make_fewshot(rows_by_task, args.n_shots) if args.n_shots else None
 
     t0 = time.time()
-    llm = Llama(model_path=args.model, n_ctx=8192, n_gpu_layers=args.n_gpu_layers, verbose=False)
+    llm = Llama(model_path=args.model, n_ctx=args.n_ctx, n_gpu_layers=args.n_gpu_layers, verbose=False)
     print(f"model loaded in {time.time()-t0:.1f}s")
 
     results = []

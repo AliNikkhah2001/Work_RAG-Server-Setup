@@ -229,14 +229,18 @@ Speed and accuracy are independent axes: Nemotron-49B is slowest *and* mid-ranke
 
 ### Plots
 
-- [`docs/reports/persian_mean.png`](docs/reports/persian_mean.png) — ranked mean accuracy
+Every chart is **interactive** too — a Plotly HTML twin lives next to each PNG in `docs/reports/interactive/` (hover, zoom, hide-series). Color rule: **each model has ONE color** used everywhere (solid = vanilla, hatched `//` = improved), and models of the **same family share similar shades** (Gemma = reds, Qwen = blues). See [`docs/reports/persian_eval_report.md`](docs/reports/persian_eval_report.md) **Model details** for creator/license/architecture per model.
+
+- [`docs/reports/persian_mean.png`](docs/reports/persian_mean.png) — ranked mean accuracy (vanilla solid / improved hatched, same model color)
 - [`docs/reports/persian_by_task.png`](docs/reports/persian_by_task.png) — per-task accuracy by model
 - [`docs/reports/persian_scatter.png`](docs/reports/persian_scatter.png) — **model size (disk GB) vs mean accuracy**, bubble area = parameter count
 - [`docs/reports/persian_radar.png`](docs/reports/persian_radar.png) — **ability-group radar profile** for all models
 - [`docs/reports/persian_radar_family.png`](docs/reports/persian_radar_family.png) — **per-family radar profiles** (Gemma / Qwen / Nemotron / Llama / Mistral / Phi)
 - [`docs/reports/persian_speed.png`](docs/reports/persian_speed.png) — **tokens/sec + latency per task** per model
 - [`docs/reports/persian_spider.png`](docs/reports/persian_spider.png) — **per-task 7-axis spider** per model
-- [`docs/reports/persian_improvement.png`](docs/reports/persian_improvement.png) — **vanilla vs improved prompting** mean accuracy
+- [`docs/reports/persian_improvement.png`](docs/reports/persian_improvement.png) — **vanilla vs improved prompting** mean accuracy (same color = same model)
+- [`docs/reports/persian_nshot.png`](docs/reports/persian_nshot.png) — **few-shot scaling** (0/1/2/3/5 exemplars, Qwen2.5-7B)
+- [`docs/reports/persian_temperature.png`](docs/reports/persian_temperature.png) — **temperature sweep** (0.0→1.0, Qwen2.5-7B)
 - [`docs/reports/persian_eval_report.md`](docs/reports/persian_eval_report.md) — full report with per-example input/output samples + **same-question cross-model comparison** + **improved-prompting deltas**
 
 ![Mean accuracy](docs/reports/persian_mean.png)

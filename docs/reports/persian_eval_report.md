@@ -1,64 +1,60 @@
 # Persian LLM Evaluation Report
 
-Generated: 2026-08-17 15:32 UTC
+Generated: 2026-08-18 09:01 UTC
 
 ## Models (sorted by mean accuracy)
 
-| Model | Family | Params | Size | Mean | Persian ARC (MC) | Parsinlu MC | Persian Math | Sentiment | Entailment | NER | Reading Comp. |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| google_gemma-4-31B-it-Q4_K_M (improved) | Unknown | ? | ? | 0.820 | 0.960 | 0.720 | 0.600 | 0.820 | 0.780 | 1.000 | 0.860 |
-| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved) | Unknown | ? | ? | 0.694 | 0.920 | 0.500 | 0.520 | 0.900 | 0.180 | 1.000 | 0.840 |
-| google_gemma-3-27b-it-Q4_K_M (improved) | Unknown | ? | ? | 0.683 | 0.940 | 0.520 | 0.420 | 0.820 | 0.340 | 1.000 | 0.740 |
-| google_gemma-4-31B-it-Q4_K_M | Gemma-4 | 31B | 19.6G | 0.663 | 0.960 | 0.700 | 0.640 | 0.820 | 0.160 | 1.000 | 0.360 |
-| google_gemma-3-27b-it-Q4_K_M | Gemma-3 | 27B | 16.5G | 0.600 | 0.940 | 0.520 | 0.260 | 0.900 | 0.200 | 0.980 | 0.400 |
-| Qwen2.5-7B-Instruct-Q4_K_M (improved) | Unknown | ? | ? | 0.580 | 0.700 | 0.300 | 0.380 | 0.840 | 0.080 | 1.000 | 0.760 |
-| Qwen3.8-27B-Q4_K_M (improved) | Unknown | ? | ? | 0.540 | 0.960 | 0.660 | 0.100 | 0.800 | 0.520 | 0.020 | 0.720 |
-| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M | Nemotron | 49B | 30.2G | 0.494 | 0.920 | 0.320 | 0.500 | 0.680 | 0.220 | 0.460 | 0.360 |
-| Qwen3.8-27B-Q4_K_M | Qwen3.8 | 27B | 17.8G | 0.477 | 0.920 | 0.620 | 0.180 | 0.760 | 0.260 | 0.020 | 0.580 |
-| Qwen2.5-7B-Instruct-Q4_K_M (2-shot) | Unknown | ? | ? | 0.466 | 0.740 | 0.320 | 0.120 | 0.780 | 0.000 | 0.960 | 0.340 |
-| Qwen2.5-7B-Instruct-Q4_K_M | Qwen2.5 | 7B | 4.4G | 0.443 | 0.680 | 0.360 | 0.380 | 0.660 | 0.000 | 0.880 | 0.140 |
-| Mistral-7B-Instruct-v0.3-Q4_K_M (improved) | Unknown | ? | ? | 0.409 | 0.480 | 0.180 | 0.100 | 0.420 | 0.200 | 1.000 | 0.480 |
-| Qwen3-30B-A3B-Q4_K_M (improved) | Unknown | ? | ? | 0.397 | 0.720 | 0.340 | 0.040 | 0.660 | 0.420 | 0.000 | 0.600 |
-| Llama-3.2-3B-Instruct-Q4_K_M (improved) | Unknown | ? | ? | 0.371 | 0.620 | 0.240 | 0.160 | 0.020 | 0.240 | 0.620 | 0.700 |
-| Llama-3.2-3B-Instruct-Q4_K_M | Llama-3.2 | 3.2B | 1.9G | 0.326 | 0.560 | 0.300 | 0.140 | 0.580 | 0.240 | 0.000 | 0.460 |
-| Phi-3-mini-4k-instruct-q4 (improved) | Unknown | ? | ? | 0.314 | 0.360 | 0.140 | 0.000 | 0.460 | 0.180 | 0.800 | 0.260 |
-| Qwen3-30B-A3B-Q4_K_M | Qwen3-MoE | 30B | 18.6G | 0.283 | 0.520 | 0.280 | 0.040 | 0.720 | 0.260 | 0.000 | 0.160 |
-| Mistral-7B-Instruct-v0.3-Q4_K_M | Mistral | 7B | 4.4G | 0.186 | 0.360 | 0.240 | 0.060 | 0.300 | 0.180 | 0.020 | 0.140 |
-| Phi-3-mini-4k-instruct-q4 | Phi-3 | 3.8B | 2.4G | 0.143 | 0.340 | 0.100 | 0.000 | 0.220 | 0.160 | 0.000 | 0.180 |
+| Model | Creator | Type | Params (active) | Size on disk | Context | Weights | Mean | Persian ARC (MC) | Parsinlu MC | Persian Math | Sentiment | Entailment | NER | Reading Comp. |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [Gemma 4 31B IT](https://huggingface.co/google/gemma-4-31B) | Google DeepMind | Dense decoder-only (multimodal: text+image) | 31B | 19.6 GB | 256K | GGUF Q4_K_M | 0.663 | 0.960 | 0.700 | 0.640 | 0.820 | 0.160 | 1.000 | 0.360 |
+| [Gemma 3 27B IT](https://huggingface.co/google/gemma-3-27b-it) | Google DeepMind | Dense decoder-only (multimodal: text+image) | 27B | 16.5 GB | 128K | GGUF Q4_K_M | 0.600 | 0.940 | 0.520 | 0.260 | 0.900 | 0.200 | 0.980 | 0.400 |
+| [Nemotron Super 49B v1](https://huggingface.co/nvidia/Llama-3_3-Nemotron-Super-49B-v1) | NVIDIA | Dense decoder-only reasoning model (Llama-3.3-70B derivative, NAS) | 49B | 30.2 GB | 128K | GGUF Q4_K_M | 0.494 | 0.920 | 0.320 | 0.500 | 0.680 | 0.220 | 0.460 | 0.360 |
+| [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B) | Alibaba (Qwen team) | Dense decoder-only VLM (text+image+video), thinking mode | 27B | 17.8 GB | 262K (→1M) | GGUF Q4_K_M | 0.477 | 0.920 | 0.620 | 0.180 | 0.760 | 0.260 | 0.020 | 0.580 |
+| [Qwen2.5-7B Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct) | Alibaba (Qwen team) | Dense decoder-only Instruct | 7.6B | 4.4 GB | 32K | GGUF Q4_K_M | 0.443 | 0.680 | 0.360 | 0.380 | 0.660 | 0.000 | 0.880 | 0.140 |
+| [Llama 3.2 3B Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) | Meta AI | Dense decoder-only Instruct | 3.2B | 1.9 GB | 128K | GGUF Q4_K_M | 0.326 | 0.560 | 0.300 | 0.140 | 0.580 | 0.240 | 0.000 | 0.460 |
+| [Qwen3-30B-A3B](https://huggingface.co/Qwen/Qwen3-30B-A3B) | Alibaba (Qwen team) | Mixture-of-Experts decoder-only (3B active), thinking mode | 30B (3B act.) | 18.6 GB | 128K | GGUF Q4_K_M | 0.283 | 0.520 | 0.280 | 0.040 | 0.720 | 0.260 | 0.000 | 0.160 |
+| [Mistral 7B Instruct v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) | Mistral AI | Dense decoder-only Instruct | 7.3B | 4.4 GB | 32K | GGUF Q4_K_M | 0.186 | 0.360 | 0.240 | 0.060 | 0.300 | 0.180 | 0.020 | 0.140 |
+| [Phi-3 Mini 4K Instruct](https://huggingface.co/microsoft/Phi-3-mini-4k-instruct) | Microsoft | Dense decoder-only Instruct | 3.8B | 2.4 GB | 4K | GGUF q4 | 0.143 | 0.340 | 0.100 | 0.000 | 0.220 | 0.160 | 0.000 | 0.180 |
+
+## Model details — architecture, creator, license, deployment
+
+All nine models were downloaded from the Hugging Face Hub as **GGUF** weight files, quantized with llama.cpp (Q4_K_M unless noted), and run **offline on the same 2× H200 NVL GPU box** via llama-cpp-python (GPU offload, `n_gpu_layers=-1`). Nothing ran on CPU. The 7-task Persian eval is single-pass, temperature 0.0, max_tokens 400 (needed so Qwen3-style thinking blocks are not truncated).
+
+| Property | [Gemma 4 31B IT](https://huggingface.co/google/gemma-4-31B) | [Gemma 3 27B IT](https://huggingface.co/google/gemma-3-27b-it) | [Nemotron Super 49B v1](https://huggingface.co/nvidia/Llama-3_3-Nemotron-Super-49B-v1) | [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B) | [Qwen2.5-7B Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct) | [Llama 3.2 3B Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) | [Qwen3-30B-A3B](https://huggingface.co/Qwen/Qwen3-30B-A3B) | [Mistral 7B Instruct v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) | [Phi-3 Mini 4K Instruct](https://huggingface.co/microsoft/Phi-3-mini-4k-instruct) |
+|---|---|---|---|---|---|---|---|---|---|
+| Creator | Google DeepMind | Google DeepMind | NVIDIA | Alibaba (Qwen team) | Alibaba (Qwen team) | Meta AI | Alibaba (Qwen team) | Mistral AI | Microsoft |
+| License | Apache 2.0 | Gemma Terms of Use | NVIDIA Open Model + Llama 3.3 Community | Apache 2.0 | Apache 2.0 | Llama 3.2 Community License | Apache 2.0 | Apache 2.0 | MIT |
+| Architecture | Dense decoder-only (multimodal: text+image) | Dense decoder-only (multimodal: text+image) | Dense decoder-only reasoning model (Llama-3.3-70B derivative, NAS) | Dense decoder-only VLM (text+image+video), thinking mode | Dense decoder-only Instruct | Dense decoder-only Instruct | Mixture-of-Experts decoder-only (3B active), thinking mode | Dense decoder-only Instruct | Dense decoder-only Instruct |
+| Params / active | 31B / 31B | 27B / 27B | 49B / 49B | 27B / 27B | 7.6B / 7.6B | 3.2B / 3.2B | 30B / 3B | 7.3B / 7.3B | 3.8B / 3.8B |
+| Context window | 256K | 128K | 128K | 262K (→1M) | 32K | 128K | 128K | 32K | 4K |
+| Key arch notes | 60 layers, hybrid sliding-window+global attention, GQA, p-RoPE, 262K vocab | Gemma 3 transformer, GQA, sliding window (SWA), 256K vocab | Llama-3.3-70B-Instruct customized via Neural Architecture Search | 64 layers, GQA 24/4 heads, Gated-DeltaNet linear attention interleaved with full attention | 28 layers, GQA 28/4 heads, SwiGLU, RoPE | Llama 3.2 transformer, GQA | MoE (A3B = 3B active of 30B), GQA, thinking mode | 32 layers, GQA 8/8 heads, Sliding Window Attention, SwiGLU | 32 layers, GQA 32/4 heads, 4K context |
+| Weights format | GGUF Q4_K_M | GGUF Q4_K_M | GGUF Q4_K_M | GGUF Q4_K_M | GGUF Q4_K_M | GGUF Q4_K_M | GGUF Q4_K_M | GGUF Q4_K_M | GGUF q4 |
+| Disk size | 19.6 GB | 16.5 GB | 30.2 GB | 17.8 GB | 4.4 GB | 1.9 GB | 18.6 GB | 4.4 GB | 2.4 GB |
+| Hardware | GPU | GPU | GPU | GPU | GPU | GPU | GPU | GPU | GPU |
 
 ## Ability-group scores (radar chart data)
 
 | Model | Reasoning & Knowledge | Language Understanding | Information Extraction |
 |---|---|---|---|
-| google_gemma-4-31B-it-Q4_K_M (improved) | 0.760 | 0.800 | 0.930 |
-| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved) | 0.647 | 0.540 | 0.920 |
-| google_gemma-3-27b-it-Q4_K_M (improved) | 0.627 | 0.580 | 0.870 |
 | google_gemma-4-31B-it-Q4_K_M | 0.767 | 0.490 | 0.680 |
 | google_gemma-3-27b-it-Q4_K_M | 0.573 | 0.550 | 0.690 |
-| Qwen2.5-7B-Instruct-Q4_K_M (improved) | 0.460 | 0.460 | 0.880 |
-| Qwen3.8-27B-Q4_K_M (improved) | 0.573 | 0.660 | 0.370 |
 | nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M | 0.580 | 0.450 | 0.410 |
 | Qwen3.8-27B-Q4_K_M | 0.573 | 0.510 | 0.300 |
-| Qwen2.5-7B-Instruct-Q4_K_M (2-shot) | 0.393 | 0.390 | 0.650 |
 | Qwen2.5-7B-Instruct-Q4_K_M | 0.473 | 0.330 | 0.510 |
-| Mistral-7B-Instruct-v0.3-Q4_K_M (improved) | 0.253 | 0.310 | 0.740 |
-| Qwen3-30B-A3B-Q4_K_M (improved) | 0.367 | 0.540 | 0.300 |
-| Llama-3.2-3B-Instruct-Q4_K_M (improved) | 0.340 | 0.130 | 0.660 |
 | Llama-3.2-3B-Instruct-Q4_K_M | 0.333 | 0.410 | 0.230 |
-| Phi-3-mini-4k-instruct-q4 (improved) | 0.167 | 0.320 | 0.530 |
 | Qwen3-30B-A3B-Q4_K_M | 0.280 | 0.490 | 0.080 |
 | Mistral-7B-Instruct-v0.3-Q4_K_M | 0.220 | 0.240 | 0.080 |
 | Phi-3-mini-4k-instruct-q4 | 0.147 | 0.190 | 0.090 |
 
 ## Figures
 
-- **persian_mean.png** — ranked mean accuracy.
+- **persian_mean.png** — ranked mean accuracy, vanilla vs improved paired.
 
 - **persian_by_task.png** — accuracy per task across models.
 
-- **persian_scatter.png** — model size (disk GB) vs mean accuracy; bubble size = parameter count.
+- **persian_scatter.png** — model size (disk GB) vs mean accuracy; bubble = params.
 
-- **persian_radar.png** — ability-group profile per model (all on one axis).
+- **persian_radar.png** — ability-group profile per model.
 
 - **persian_radar_family.png** — per-family radar profiles.
 
@@ -68,36 +64,63 @@ Generated: 2026-08-17 15:32 UTC
 
 - **persian_improvement.png** — vanilla vs improved-prompting mean accuracy.
 
+- **persian_nshot.png** — few-shot scaling (0/1/2/3/5-shot).
+
+- **persian_temperature.png** — temperature sweep (0.0→1.0).
+
+
+Interactive (Plotly) versions of every chart: `docs/reports/interactive/<name>.html`.
+
 
 ## Improved prompting vs vanilla
 
-For every model we re-ran the full 7-task suite using **improved Persian prompts** (4-component framework: ROLE + CONTEXT + CONSTRAINTS + OUTPUT FORMAT, kept under ~80 tokens per task) instead of the raw dataset prompts. Deliberate output-format constraints in Persian were added because the scorers expect a strict shape (letter, option number, final-answer block, one label, tuple list, short span).
+Every model was re-run on the full 7-task suite with **improved Persian prompts** (4-component framework: ROLE + CONTEXT + CONSTRAINTS + OUTPUT FORMAT, kept under ~80 tokens per task). The scorers expect a strict output shape (letter, option number, final-answer block, one label, tuple list, short span), and the improved templates pin exactly that shape in Persian.
 
-| Model | vanilla mean | improved mean | Δ |
-|---|--:|--:|--:|
-| google_gemma-4-31B-it-Q4_K_M | 0.663 | 0.820 | +0.157 |
-| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M | 0.494 | 0.694 | +0.200 |
-| google_gemma-3-27b-it-Q4_K_M | 0.600 | 0.683 | +0.083 |
-| Qwen2.5-7B-Instruct-Q4_K_M | 0.443 | 0.580 | +0.137 |
-| Qwen3.8-27B-Q4_K_M | 0.477 | 0.540 | +0.063 |
-| Mistral-7B-Instruct-v0.3-Q4_K_M | 0.186 | 0.409 | +0.223 |
-| Qwen3-30B-A3B-Q4_K_M | 0.283 | 0.397 | +0.114 |
-| Llama-3.2-3B-Instruct-Q4_K_M | 0.326 | 0.371 | +0.046 |
-| Phi-3-mini-4k-instruct-q4 | 0.143 | 0.314 | +0.171 |
+| Model | Family | vanilla mean | improved mean | Δ |
+|---|--:|--:|--:|--:|
+| Gemma 4 31B IT | Gemma | 0.663 | 0.820 | +0.157 |
+| Nemotron Super 49B v1 | Nemotron | 0.494 | 0.694 | +0.200 |
+| Gemma 3 27B IT | Gemma | 0.600 | 0.683 | +0.083 |
+| Qwen2.5-7B Instruct | Qwen | 0.443 | 0.580 | +0.137 |
+| Qwen3.8-27B | Qwen | 0.477 | 0.540 | +0.063 |
+| Mistral 7B Instruct v0.3 | Mistral | 0.186 | 0.409 | +0.223 |
+| Qwen3-30B-A3B | Qwen | 0.283 | 0.397 | +0.114 |
+| Llama 3.2 3B Instruct | Llama | 0.326 | 0.371 | +0.046 |
+| Phi-3 Mini 4K Instruct | Phi-3 | 0.143 | 0.314 | +0.171 |
 
 ### Per-task deltas (improved − vanilla)
 
 | Model | Persian ARC (MC) | Parsinlu MC | Persian Math | Sentiment | Entailment | NER | Reading Comp. |
 |---|---|---|---|---|---|---|---|
-| google_gemma-4-31B-it-Q4_K_M | +0.00 | +0.02 | -0.04 | +0.00 | +0.62 | +0.00 | +0.50 |
-| nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M | +0.00 | +0.18 | +0.02 | +0.22 | -0.04 | +0.54 | +0.48 |
-| google_gemma-3-27b-it-Q4_K_M | +0.00 | +0.00 | +0.16 | -0.08 | +0.14 | +0.02 | +0.34 |
-| Qwen2.5-7B-Instruct-Q4_K_M | +0.02 | -0.06 | +0.00 | +0.18 | +0.08 | +0.12 | +0.62 |
-| Qwen3.8-27B-Q4_K_M | +0.04 | +0.04 | -0.08 | +0.04 | +0.26 | +0.00 | +0.14 |
-| Mistral-7B-Instruct-v0.3-Q4_K_M | +0.12 | -0.06 | +0.04 | +0.12 | +0.02 | +0.98 | +0.34 |
-| Qwen3-30B-A3B-Q4_K_M | +0.20 | +0.06 | +0.00 | -0.06 | +0.16 | +0.00 | +0.44 |
-| Llama-3.2-3B-Instruct-Q4_K_M | +0.06 | -0.06 | +0.02 | -0.56 | +0.00 | +0.62 | +0.24 |
-| Phi-3-mini-4k-instruct-q4 | +0.02 | +0.04 | +0.00 | +0.24 | +0.02 | +0.80 | +0.08 |
+| Gemma 4 31B IT | +0.00 | +0.02 | -0.04 | +0.00 | +0.62 | +0.00 | +0.50 |
+| Nemotron Super 49B v1 | +0.00 | +0.18 | +0.02 | +0.22 | -0.04 | +0.54 | +0.48 |
+| Gemma 3 27B IT | +0.00 | +0.00 | +0.16 | -0.08 | +0.14 | +0.02 | +0.34 |
+| Qwen2.5-7B Instruct | +0.02 | -0.06 | +0.00 | +0.18 | +0.08 | +0.12 | +0.62 |
+| Qwen3.8-27B | +0.04 | +0.04 | -0.08 | +0.04 | +0.26 | +0.00 | +0.14 |
+| Mistral 7B Instruct v0.3 | +0.12 | -0.06 | +0.04 | +0.12 | +0.02 | +0.98 | +0.34 |
+| Qwen3-30B-A3B | +0.20 | +0.06 | +0.00 | -0.06 | +0.16 | +0.00 | +0.44 |
+| Llama 3.2 3B Instruct | +0.06 | -0.06 | +0.02 | -0.56 | +0.00 | +0.62 | +0.24 |
+| Phi-3 Mini 4K Instruct | +0.02 | +0.04 | +0.00 | +0.24 | +0.02 | +0.80 | +0.08 |
+
+## Few-shot scaling (0/1/2/3/5-shot)
+
+Same task prompts, N correct in-task exemplars prepended before the question. Numbers below are the mean over the 7 tasks; see `persian_nshot.png`.
+
+
+### Qwen2.5-7B Instruct
+
+| Shots | Mean | Persian ARC (MC) | Parsinlu MC | Persian Math | Sentiment | Entailment | NER | Reading Comp. |
+|---|--:|---|---|---|---|---|---|---|
+| 0 | 0.443 |0.680 | 0.360 | 0.380 | 0.660 | 0.000 | 0.880 | 0.140 |
+| 1 | 0.454 |0.620 | 0.380 | 0.120 | 0.800 | 0.000 | 0.980 | 0.280 |
+| 2 | 0.466 |0.740 | 0.320 | 0.120 | 0.780 | 0.000 | 0.960 | 0.340 |
+| 3 | 0.503 |0.700 | 0.440 | 0.240 | 0.800 | 0.000 | 0.980 | 0.360 |
+| 5 | 0.520 |0.660 | 0.500 | 0.260 | 0.800 | 0.000 | 0.980 | 0.440 |
+
+## Effect of temperature
+
+_(no temperature runs found yet)_
+
 
 ## Same question, all models (first example per task)
 
@@ -106,33 +129,19 @@ The same test prompt was sent to every model. Gold answers and per-model outputs
 
 ### Persian ARC (MC)
 
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را بزنید.
-فرمت خروجی: فقط یک حرف انگلیسی بزرگ، در یک
+- **Prompt**: سؤال: کدام بیان به بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است؟
+گزینه‌ها:
+A)  نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است.
+B)  بیشتر اکوسیستم‌ها بر روی زمین یافت می‌شوند تا در آب.
+C)  دی اکسید کربن نسبت به سایر
 - **Gold**: a
 
-- **google_gemma-4-31B-it-Q4_K_M (improved)** (hit ✅): `A`
-- **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved)** (hit ✅): `A`
-- **google_gemma-3-27b-it-Q4_K_M (improved)** (hit ✅): `A`
 - **google_gemma-4-31B-it-Q4_K_M** (hit ✅): `A`
 - **google_gemma-3-27b-it-Q4_K_M** (hit ✅): `A`
-- **Qwen2.5-7B-Instruct-Q4_K_M (improved)** (hit ✅): `A`
-- **Qwen3.8-27B-Q4_K_M (improved)** (hit ✅): `A`
 - **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M** (hit ✅): `A`
 - **Qwen3.8-27B-Q4_K_M** (hit ✅): `A`
-- **Qwen2.5-7B-Instruct-Q4_K_M (2-shot)** (hit ✅): `a`
 - **Qwen2.5-7B-Instruct-Q4_K_M** (hit ✅): `گزینه A) نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است، بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است.`
-- **Mistral-7B-Instruct-v0.3-Q4_K_M (improved)** (hit ❌): `D`
-- **Qwen3-30B-A3B-Q4_K_M (improved)** (hit ✅): `<think>
-Okay, let's see. The question is asking why photosynthesis is the foundation of most food chains. The options are A, B, C, D.
-
-First, I need to recall w`
-- **Llama-3.2-3B-Instruct-Q4_K_M (improved)** (hit ❌): `C`
 - **Llama-3.2-3B-Instruct-Q4_K_M** (hit ❌): `گزینه D`
-- **Phi-3-mini-4k-instruct-q4 (improved)** (hit ❌): `C) دی اکسید کربن نسبت به سایر گازها بیشتر در دسترس است.`
 - **Qwen3-30B-A3B-Q4_K_M** (hit ✅): `<think>
 Okay, let's try to figure out this question. The question is asking which statement best explains why photosynthesis is the foundation of most food chai`
 - **Mistral-7B-Instruct-v0.3-Q4_K_M** (hit ❌): `D)  تولیدکنندگان در تمام اکوسیستم‌ها گیاهان هستند.
@@ -144,36 +153,20 @@ Okay, let's try to figure out this question. The question is asking which statem
 
 ### Parsinlu MC
 
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد، در یک خط.
-
-در ادامه، به شما یک سوال چند گزینه‌ای
+- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
+فقط عدد متناظر با گزینه درست را خروجی بده.
+سوال: ''' در تقسیمی مقسو م 44 وباقی مانده
 - **Gold**: جواب: گزینه 4
 
-- **google_gemma-4-31B-it-Q4_K_M (improved)** (hit ❌): `3`
-- **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved)** (hit ❌): `3`
-- **google_gemma-3-27b-it-Q4_K_M (improved)** (hit ✅): `4`
 - **google_gemma-4-31B-it-Q4_K_M** (hit ❌): `5`
 - **google_gemma-3-27b-it-Q4_K_M** (hit ❌): `2`
-- **Qwen2.5-7B-Instruct-Q4_K_M (improved)** (hit ❌): `2`
-- **Qwen3.8-27B-Q4_K_M (improved)** (hit ✅): `4`
 - **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M** (hit ❌): `44 = 8 * 5 + 4
 معنی این جمله این است که اگر 44 را به 5 تقسیم کنیم، خارج قسمت 8 و باقی مانده 4 خواهد بود.
 بنابراین مقسوم علیه 5 است.
 پاسخ: 4`
 - **Qwen3.8-27B-Q4_K_M** (hit ✅): `4`
-- **Qwen2.5-7B-Instruct-Q4_K_M (2-shot)** (hit ✅): `4`
 - **Qwen2.5-7B-Instruct-Q4_K_M** (hit ❌): `3`
-- **Mistral-7B-Instruct-v0.3-Q4_K_M (improved)** (hit ✅): `4`
-- **Qwen3-30B-A3B-Q4_K_M (improved)** (hit ✅): `4`
-- **Llama-3.2-3B-Instruct-Q4_K_M (improved)** (hit ❌): `2`
 - **Llama-3.2-3B-Instruct-Q4_K_M** (hit ❌): `گزینه 3`
-- **Phi-3-mini-4k-instruct-q4 (improved)** (hit ✅): `پاسخ: 4. 5
-
-مقدار مقصود در سوال های مورد علیه 4 است که برای تقسیم مقصود می‌تواند از 44 که برای خارج قسمت 8 کند از 5 است.`
 - **Qwen3-30B-A3B-Q4_K_M** (hit ✅): `4`
 - **Mistral-7B-Instruct-v0.3-Q4_K_M** (hit ✅): `4. 5`
 - **Phi-3-mini-4k-instruct-q4** (hit ❌): `اوقات:
@@ -192,29 +185,9 @@ Okay, let's try to figure out this question. The question is asking which statem
 
 ### Persian Math
 
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی هیچ عدد دیگری ننویسید.
-فرمت خروجی:
-[راه حل] …
-[پاس
+- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی باشد بجز اعداد که به لاتین (انگلیسی) باید نوشته بشو
 - **Gold**: 7 مهر
 
-- **google_gemma-4-31B-it-Q4_K_M (improved)** (hit ❌): `[راه حل]
-برای پیدا کردن تاریخ تولد سینا، باید دو هفته (یعنی 14 روز) را به تاریخ 24 شهریور اضافه کنیم.
-ابتدا باید بدانیم ماه شهریور چند روز دارد. ماه شهریور 31 ر`
-- **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved)** (hit ❌): `[راه حل]
-برای تعیین تاریخ تولد سینا، باید دو هفته به تاریخ 24 شهریور اضافه کنیم. 
-یک هفته شامل 7 روز است، بنابراین دو هفته برابر با 14 روز است.
-24 شهریور + 14 ر`
-- **google_gemma-3-27b-it-Q4_K_M (improved)** (hit ❌): `[راه حل]
-دو هفته برابر با 14 روز است. اگر 14 روز به 24 شهریور اضافه کنیم، به تاریخ 8 مهر خواهیم رسید.
-[/راه حل]
-[پاسخ]
-8 مهر
-[/پاسخ]`
 - **google_gemma-4-31B-it-Q4_K_M** (hit ❌): `[راه حل]
 برای تعیین تاریخ تولد سینا، باید دو هفته (یعنی 14 روز) را به تاریخ 24 شهریور اضافه کنیم.
 ماه شهریور دارای 31 روز است.
@@ -223,9 +196,6 @@ Okay, let's try to figure out this question. The question is asking which statem
 دو هفته برابر با 14 روز است. بنابراین، تاریخ تولد سینا 14 روز بعد از 24 شهریور است.
 24 + 14 = 38
 از آنجایی که شهریور 30 روز دارد، باید 30 را از 38 کم ک`
-- **Qwen2.5-7B-Instruct-Q4_K_M (improved)** (hit ❌): `[راه حل]
-دو هفته برابر با 14 روز است. اگر در 24 شهریور سینا می‌گوید که تاریخ تولدش دقیقا دو هفته دیگر است، به این معنی است که تاریخ تولدش 14 روز پس از 24 شهریور`
-- **Qwen3.8-27B-Q4_K_M (improved)** (hit ❌): `We need answer in Persian. User gives examples and asks solve problem: "در 24 شهریور، سینا میگوید تاریخ تولد من دقیقا دو هفته ی دیگر است. تولد سینا چه روزی است؟`
 - **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M** (hit ❌): `[راه حل]
 برای تعیین تاریخ تولد سینا، باید دو هفته (14 روز) به تاریخ فعلی (24 شهریور) اضافه کنیم.
 
@@ -237,26 +207,14 @@ Okay, let's try to figure out this question. The question is asking which statem
 پس تاریخ تولد او برابر است با:
 24 + 14 = 38 شهریور
 از آن`
-- **Qwen2.5-7B-Instruct-Q4_K_M (2-shot)** (hit ❌): `[راه حل]
-سینا در 24 شهریور می‌گوید که تاریخ تولدش دقیقا دو هفته (14 روز) دیگر است. بنابراین، باید از روز 24 شهریور 14 روز را کاهش دهیم تا تاریخ تولد را پیدا کنی`
 - **Qwen2.5-7B-Instruct-Q4_K_M** (hit ❌): `[راه حل]
 دو هفته برابر با 14 روز است. بنابراین، اگر در 24 شهریور سینا می‌گوید تاریخ تولدش دقیقا دو هفته دیگر است، آنگاه تاریخ تولد سینا 10 شهریور است.
 
 [/راه حل`
-- **Mistral-7B-Instruct-v0.3-Q4_K_M (improved)** (hit ❌): `[راه حل]
-برای حل مسئله، ابتدا باید تولد سینا را به یک تاریخ رابطه بگذاریم. تولد سینا در 1391/03/20 رخداد شده است. در این صورت، تاریخ تولد من دقیقا دو هفته ی دیگ`
-- **Qwen3-30B-A3B-Q4_K_M (improved)** (hit ❌): `<think>
-Okay, let's try to figure out this problem. So, the question is: On September 24th, Sina says that his birthday is exactly two weeks later. What day is `
-- **Llama-3.2-3B-Instruct-Q4_K_M (improved)** (hit ❌): `[مسئله]
-تولد سینا در 24 شهریور، دو هفته بعد است. دو هفته بعد از 24 شهریور، 24 شهریور + 2 هفته = 24 شهریور + 14 روز = 7 آبان می باشد.
-[/مسئله]
-[راه حل]
-24 شهریور`
 - **Llama-3.2-3B-Instruct-Q4_K_M** (hit ❌): `مسئله: در 24 شهریور، سینا میگوید تاریخ تولد من دقیقا دو هفته ی دیگر است. تولد سینا چه روزی است؟
 
 راه حل:
 در 24 شهریور، دو هفته ی دیگر هم 2*7 = 14 روز است. این m`
-- **Phi-3-mini-4k-instruct-q4 (improved)** (hit ❌): `مین ماماتی فافا داندینقین واتیمین واتین اتا فه ماتین میدا واتین واتیمیتاتیماتین واتین وین وین واتیما فی ما واتیمین واتا ویتین وان فین ویم ویمه فین واتین وی وی و`
 - **Qwen3-30B-A3B-Q4_K_M** (hit ❌): `<think>
 Okay, let's try to figure out this problem. So, the question is: On September 24th, Sina says that his birthday is exactly two weeks later. What day is `
 - **Mistral-7B-Instruct-v0.3-Q4_K_M** (hit ❌): `[راه حل]
@@ -265,26 +223,17 @@ Okay, let's try to figure out this problem. So, the question is: On September 24
 
 ### Sentiment
 
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس
+- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
+پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
+زمانی که جمله دارای احساس خاصی نیست یا شامل احساسات مختلف است از OTHER استفاده کن
 - **Gold**: احساس: NEGATIVE
 
-- **google_gemma-4-31B-it-Q4_K_M (improved)** (hit ✅): `منفی`
-- **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved)** (hit ✅): `NEGATIVE`
-- **google_gemma-3-27b-it-Q4_K_M (improved)** (hit ✅): `منفی`
 - **google_gemma-4-31B-it-Q4_K_M** (hit ✅): `NEGATIVE`
 - **google_gemma-3-27b-it-Q4_K_M** (hit ✅): `NEGATIVE
 
 **توضیح:**
 
 این جمله به وضوح حاوی احساسات منفی است. نویسنده از کیفیت محصول (مرغ) ناراضی است، به وجود مواد مضر (آنتی‌بیوتیک و استخوان زیاد) اشاره می‌کن`
-- **Qwen2.5-7B-Instruct-Q4_K_M (improved)** (hit ✅): `منفی`
-- **Qwen3.8-27B-Q4_K_M (improved)** (hit ✅): `منفی`
 - **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M** (hit ✅): `با توجه به تحلیل جمله، بار یا احساس موجود در آن را می‌توان به شرح زیر شناسایی کرد:
 
 **نتیجه:** NEGATIVE
@@ -293,18 +242,10 @@ Okay, let's try to figure out this problem. So, the question is: On September 24
 
 1. **هشدار و هشدار دهی**: نویسنده با استفاد`
 - **Qwen3.8-27B-Q4_K_M** (hit ✅): `NEGATIVE`
-- **Qwen2.5-7B-Instruct-Q4_K_M (2-shot)** (hit ✅): `احساس: NEGATIVE`
 - **Qwen2.5-7B-Instruct-Q4_K_M** (hit ✅): `برای شناسایی بار یا احساس موجود در این جمله، باید متن را دقیقاً بررسی کرد:
 
 "دوستان حتما دقت کنید در قسمت فیله تکه های سبز رنگ داشت که نشان دهنده انتیبیوتیک های`
-- **Mistral-7B-Instruct-v0.3-Q4_K_M (improved)** (hit ✅): `NEGATIVE`
-- **Qwen3-30B-A3B-Q4_K_M (improved)** (hit ✅): `NEGATIVE`
-- **Llama-3.2-3B-Instruct-Q4_K_M (improved)** (hit ❌): `خنثی`
 - **Llama-3.2-3B-Instruct-Q4_K_M** (hit ✅): `در این جمله احساس منفی وجود دارد.`
-- **Phi-3-mini-4k-instruct-q4 (improved)** (hit ❌): `معنی این جمله خاصی است که مرغ از انتیبیوتیک هایی استفاده کرده است. احساس می‌رسد منفی.
-
-پاسخ‌های موجود در این جمله را:
-- POSITIVE: می‌توانید این احساس از مورد مر`
 - **Qwen3-30B-A3B-Q4_K_M** (hit ✅): `**بار جمله:** NEGATIVE  
 **توضیح:** جمله از انتقاد به کیفیت محصول (وجود تکه‌های سمی، انتیبیوتیک‌ها) و عدم رضایت از خرید (دیگر از این مارک خرید نمیکنند) حکایت می`
 - **Mistral-7B-Instruct-v0.3-Q4_K_M** (hit ❌): `NEUTRAL`
@@ -314,36 +255,17 @@ Okay, let's try to figure out this problem. So, the question is: On September 24
 
 ### Entailment
 
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-
-هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتی
+- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
+رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
+- تناظر : اگر جمله <فرضیه> به طور منطقی نتیجه‌ای از جمله <پیش‌فرض> با
 - **Gold**: <برچسب>: c
 
-- **google_gemma-4-31B-it-Q4_K_M (improved)** (hit ❌): `خنثی`
-- **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved)** (hit ✅): `تناقض`
-- **google_gemma-3-27b-it-Q4_K_M (improved)** (hit ✅): `تناقض`
 - **google_gemma-4-31B-it-Q4_K_M** (hit ❌): `ناشناخته`
 - **google_gemma-3-27b-it-Q4_K_M** (hit ✅): `تناقض`
-- **Qwen2.5-7B-Instruct-Q4_K_M (improved)** (hit ❌): `ناشناخته`
-- **Qwen3.8-27B-Q4_K_M (improved)** (hit ❌): `We need answer in Persian? User asks NLI label only one of استلزام، تناقض، یا خنثی. But later says labels can be تناظر، تناقض، ناشناخته. Output only most probab`
 - **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M** (hit ✅): `تناقض`
 - **Qwen3.8-27B-Q4_K_M** (hit ❌): `ناشناخته`
-- **Qwen2.5-7B-Instruct-Q4_K_M (2-shot)** (hit ❌): `ناشناسه`
 - **Qwen2.5-7B-Instruct-Q4_K_M** (hit ❌): `ناشناخته`
-- **Mistral-7B-Instruct-v0.3-Q4_K_M (improved)** (hit ✅): `تناقض`
-- **Qwen3-30B-A3B-Q4_K_M (improved)** (hit ✅): `<think>
-Okay, let's try to figure out the relationship between the given premise and hypothesis. 
-
-First, I need to understand both sentences. The premise says,`
-- **Llama-3.2-3B-Instruct-Q4_K_M (improved)** (hit ✅): `تناقض.`
 - **Llama-3.2-3B-Instruct-Q4_K_M** (hit ✅): `تناقض`
-- **Phi-3-mini-4k-instruct-q4 (improved)** (hit ❌): `<فرضیه>: زنان به قدری بخش بزرگی از نیروی کار هستند تنها افراد مهم هستند.
- exercise
-A psychology researcher wants to investigate the relationship between social `
 - **Qwen3-30B-A3B-Q4_K_M** (hit ❌): `<think>
 Okay, let's try to figure out the relationship between the given premise and hypothesis. 
 
@@ -356,17 +278,21 @@ First, I need to understand both sentences. The premise says,`
 
 ### NER
 
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
-- مقدمه یا توضیح ننویسید.
-فرمت خروجی: [('کلمه', 'بر
+- **Prompt**: شرح وظیفه:
+شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
+برچسب های موجودیت اسمی:
+
+PER (نفر)
+LOC (مکان)
+ORG (سازمان)
+Product (محصول)
+Event (رویداد)
+Facility (تاسیسات)
+
+فرمت خروجی:
+فرمت خروجی شما باید لیستی از تاپل
 - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), ('و', 'o'), ('نخست\u200cوزیر', 'o'), ('ایران', 'loc'), ('در', 'o'), ('سالهای', '
 
-- **google_gemma-4-31B-it-Q4_K_M (improved)** (hit ✅): `[('افقی', 'o'), (':', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), ('و', 'o'), ('نخست\u200cوزیر', 'o'), ('ایران', `
-- **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved)** (hit ✅): `[('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'O'), ('عوامل', 'O'), ('دوران', 'O'), ('پهلوی', 'PER'), ('و', 'O'), ('نخست\u200cوزیر', 'O'), ('ایران'`
-- **google_gemma-3-27b-it-Q4_K_M (improved)** (hit ✅): `[('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'O'), ('عوامل', 'O'), ('دوران', 'O'), ('پهلوی', 'ORG'), ('و', 'O'), ('نخست\u200cوزیر', 'O'), ('ایران'`
 - **google_gemma-4-31B-it-Q4_K_M** (hit ✅): ````python
 [
     ('افقی', 'O'),
@@ -389,27 +315,9 @@ First, I need to understand both sentences. The premise says,`
 ('پهلوی', 'ORG'),
 ('و', 'O'),
 ('نخست\u200cوزیر', 'O')`
-- **Qwen2.5-7B-Instruct-Q4_K_M (improved)** (hit ✅): `[('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'O'), ('عوامل', 'O'), ('دوران', 'O'), ('پهلوی', 'LOC'), ('و', 'O'), ('نخست', 'O'), ('وزیر', 'PER'), (`
-- **Qwen3.8-27B-Q4_K_M (improved)** (hit ❌): `We need answer user's request. Need produce final only list of tuples. Need label each token in input list. Need understand Persian NER labels: per, loc, org, p`
 - **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M** (hit ❌): `زیرا لیست ورودی بسیار طولانی است، برای صرفه جویی در زمان و فضا، من بخشی از لیست را انتخاب کرده و برای آن برچسب گذاری انجام داده‌ام. سپس، توضیحاتی در مورد رویکرد`
 - **Qwen3.8-27B-Q4_K_M** (hit ❌): `We need answer in Persian likely. User asks NER labeling for given Persian token list. Need output list of tuples (word, label). Labels: PER, LOC, ORG, Product,`
-- **Qwen2.5-7B-Instruct-Q4_K_M (2-shot)** (hit ❌): `برای برچسب‌گذاری لیست توکن‌های فارسی داده شده با برچسب‌های موجودیت اسمی، می‌توانیم از الگوهای متن و دانش‌های موجود در زبان فارسی برای تشخیص موجودیت‌های اسمی است`
 - **Qwen2.5-7B-Instruct-Q4_K_M** (hit ❌): `برای برچسب‌گذاری لیست توکن‌های فارسی داده شده با برچسب‌های موجودیت اسمی، می‌توانیم از زیرساخت‌های یادگیری ماشینی استفاده کنیم، اما در اینجا برای سادگی، از دانش `
-- **Mistral-7B-Instruct-v0.3-Q4_K_M (improved)** (hit ✅): `[('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'LOC'), ('عوامل', 'O'), ('دوران', 'EVENT'), ('پهلوی', 'O'), ('و', 'O'), ('نخست\u200cوزیر', 'PER'), ('`
-- **Qwen3-30B-A3B-Q4_K_M (improved)** (hit ❌): `<think>
-Okay, I need to label each token in the given Persian text with the appropriate entity type. Let me start by going through each word one by one.
-
-First,`
-- **Llama-3.2-3B-Instruct-Q4_K_M (improved)** (hit ❌): `['افقی', 'O']
-['نخستوزیر', 'PER']
-['ایران', 'ORG']
-['تهران', 'LOC']
-['سوم', 'PER']
-['یادداشتهایش', 'PER']
-['پیش', 'PER']
-['در', 'PER']
-['جمهوری', 'ORG']
-['استون`
 - **Llama-3.2-3B-Instruct-Q4_K_M** (hit ❌): `این لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری می کنم:
 
 - PER: ناصرالدین شاه
@@ -418,8 +326,6 @@ First,`
 - PER: تهران
 - PER: پهلوی
 - PE`
-- **Phi-3-mini-4k-instruct-q4 (improved)** (hit ❌): `برای متصمیelian کنید، این لیست تاپل از تاپل‌های موجودیت اسمی برچسب می‌کنید.
-فرمت خروجی شما باید این لیست از تاپل‌ها باشد که در آن هر تاپل از یک کلمه از متن ورود`
 - **Qwen3-30B-A3B-Q4_K_M** (hit ❌): `<think>
 Okay, I need to label the given Persian tokens with the appropriate named entity tags. Let me start by recalling the tags: PER (person), LOC (location),`
 - **Mistral-7B-Instruct-v0.3-Q4_K_M** (hit ❌): `برای برچسب گذاری توکن در لیست شما، باید برای هر تاپل که به یک موجودیت اسمی مربوط باشد، برچسب مورد نظر را به آن اضافه کنیم. برای توکن هایی که به هیچ موجودیت اسمی`
@@ -433,18 +339,9 @@ class ProductList:
 
 ### Reading Comp.
 
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-متن: آب و هوای مناسب برای رشد گندم شرایط ایده‌آل برا
+- **Prompt**: متن: آب و هوای مناسب برای رشد گندم شرایط ایده‌آل برای رشد گندم ، آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد. بنابراین در مناطقی که زمستانهای سخت دارند، کشت گندم با مشکلاتی 
 - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
 
-- **google_gemma-4-31B-it-Q4_K_M (improved)** (hit ✅): `آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول`
-- **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved)** (hit ✅): `آب و هوای خنک در دوره رشد رویشی، معتدل در دوران تشکیل دانه و گرم و خشک در زمان برداشت.`
-- **google_gemma-3-27b-it-Q4_K_M (improved)** (hit ✅): `آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد.`
 - **google_gemma-4-31B-it-Q4_K_M** (hit ✅): `شرایط ایده‌آل برای رشد گندم عبارت است از:
 ۱. آب و هوای **خنک** در دوره رشد رویشی.
 ۲. آب و هوای **معتدل** در دوران تشکیل دانه.
@@ -454,33 +351,16 @@ class ProductList:
 *   **دوره رشد رویشی:** خنک
 *   **دوران تشکیل دانه:** معتدل
 *   **زمان برداشت محصول:** گرم و خشک`
-- **Qwen2.5-7B-Instruct-Q4_K_M (improved)** (hit ✅): `آب و هوای خنک در دوره رشد رویشی، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول`
-- **Qwen3.8-27B-Q4_K_M (improved)** (hit ✅): `آب و هوای خنک در دوره رشد رویشی ، آب و هوای`
 - **nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M** (hit ✅): `پاسخ: آب و هوای خنک در دوره رشد رویشی، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول.`
 - **Qwen3.8-27B-Q4_K_M** (hit ✅): `آب و هوای مناسب برای رشد گندم این است:
 
 - در دوره رشد رویشی: **خنک**
 - در دوران تشکیل دانه: **معتدل**
 - در زمان برداشت محصول: **گرم و خشک**`
-- **Qwen2.5-7B-Instruct-Q4_K_M (2-shot)** (hit ✅): `برای رشد گندم، آب و هوایی که خوب است شامل سه دوره اصلی می‌شود:
-
-1. آب و هوای خنک در دوره رشد رویشی
-2. آب و هوای معتدل در دوران تشکیل دانه
-3. آب و هوای گرم و خشک`
 - **Qwen2.5-7B-Instruct-Q4_K_M** (hit ❌): `برای رشد گندم، آب و هوایی که مورد نیاز است شامل سه دوره اصلی است:
 
 1. **دوره رشد رویشی**: در این دوره، آب و هوای خنک مطلوب است. این شرایط می‌تواند به رشد صحیح و`
-- **Mistral-7B-Instruct-v0.3-Q4_K_M (improved)** (hit ❌): `آب و هوای معتدل`
-- **Qwen3-30B-A3B-Q4_K_M (improved)** (hit ❌): `<think>
-Okay, I need to answer the question "چه آب و هوایی برای رشد گندم خوب است?" based on the given text. Let me read the text carefully.
-
-The text says that `
-- **Llama-3.2-3B-Instruct-Q4_K_M (improved)** (hit ✅): `آب و هوای خنک در دوره رشد رویشی، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد.`
 - **Llama-3.2-3B-Instruct-Q4_K_M** (hit ✅): `آب و هوای خنک در دوره رشد رویشی، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد.`
-- **Phi-3-mini-4k-instruct-q4 (improved)** (hit ❌): `آب و هوای خشک و کم آبی برای رشد گندم خوب است.
-
-
-فقط پاسخ: آب و هوای خشک و کم آبی برای رشد گندم خوب است.`
 - **Qwen3-30B-A3B-Q4_K_M** (hit ❌): `پاسخ:  
 آب و هوای مناسب برای رشد گندم شامل سه مرحله اصلی است:  
 1. **دوره رشد رویشی**: آب و هوای **خنک**.  
@@ -491,502 +371,6 @@ The text says that `
 
 ## Per-model samples
 
-
-### google_gemma-4-31B-it-Q4_K_M (improved) (mean 0.820)
-
-
-#### Persian ARC (MC) — acc 0.96
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: A
-  - **Output**: A
-  - **Hit**: ✅
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.72
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 3
-  - **Output**: 3
-  - **Hit**: ❌
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 3
-  - **Output**: 3
-  - **Hit**: ✅
-
-#### Persian Math — acc 0.6
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.019
-  - **Output**: [راه حل]
-برای پیدا کردن تاریخ تولد سینا، باید دو هفته (یعنی 14 روز) را به تاریخ 24 شهریور اضافه کنیم.
-ابتدا باید بدانیم ماه شهریور چند روز دارد. ماه شهریور 31 روزه است.
-محاسبه تعداد روزهای باقی‌مانده 
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.019
-  - **Output**: [راه حل]
-طبق صورت مسئله، ارتفاع درخت هر سال دو برابر می‌شود. این بدان معناست که اگر به عقب برگردیم، ارتفاع درخت در سال قبل، نصف ارتفاع سال جاری است.
-در حال حاضر (سال ششم)، ارتفاع درخت 36 متر است.
-برای
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.82
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: منفی
-  - **Hit**: ✅
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: positive
-  - **Output**: مثبت
-  - **Hit**: ❌
-
-#### Entailment — acc 0.78
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: neutral
-  - **Output**: خنثی
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: neutral
-  - **Output**: خنثی
-  - **Hit**: ✅
-
-#### NER — acc 1.0
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.288
-  - **Output**: [('افقی', 'o'), (':', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), ('و', 'o'), ('نخست\u200cوزیر', 'o'), ('ایران', 'loc'), ('در', 'o'), ('سالهای', 'o'), ('
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.971
-  - **Output**: [('طاهایی', 'per'), ('گفت', 'o'), (':', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), ('،', 'o'), ('0', 'o'), ('طرح', 'o'), ('مدرسه\u200cسازی', 'o'), ('در', 'o'), ('قالب', 'o'), ('0', 'o'), ('کلاس'
-  - **Hit**: ✅
-
-#### Reading Comp. — acc 0.86
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 1.0
-  - **Output**: آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول
-  - **Hit**: ✅
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.5
-  - **Output**: ایرانیان باستان و هندوها
-  - **Hit**: ✅
-
-### nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (improved) (mean 0.694)
-
-
-#### Persian ARC (MC) — acc 0.92
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: A
-  - **Output**: A
-  - **Hit**: ✅
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.5
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 3
-  - **Output**: 3
-  - **Hit**: ❌
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 2
-  - **Output**: 2
-  - **Hit**: ❌
-
-#### Persian Math — acc 0.52
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.027
-  - **Output**: [راه حل]
-برای تعیین تاریخ تولد سینا، باید دو هفته به تاریخ 24 شهریور اضافه کنیم. 
-یک هفته شامل 7 روز است، بنابراین دو هفته برابر با 14 روز است.
-24 شهریور + 14 روز = 8 آبان (از آنجا که سپتامبر 30 روز د
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.018
-  - **Output**: [راه حل]
-از آنجا که ارتفاع درخت هر سال دو برابر می‌شود، برای پیدا کردن ارتفاع در سال‌های قبل، می‌توانیم هر سال ارتفاع را به دو تقسیم کنیم.
-
-- در سال ششم (اکنون): ارتفاع = 36 متر
-- در سال پنجم: ارتفاع 
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.9
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: NEGATIVE
-  - **Hit**: ✅
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: positive
-  - **Output**: POSITIVE
-  - **Hit**: ❌
-
-#### Entailment — acc 0.18
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: contradiction
-  - **Output**: تناقض
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: contradiction
-  - **Output**: تناقض
-  - **Hit**: ❌
-
-#### NER — acc 1.0
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.296
-  - **Output**: [('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'O'), ('عوامل', 'O'), ('دوران', 'O'), ('پهلوی', 'PER'), ('و', 'O'), ('نخست\u200cوزیر', 'O'), ('ایران', 'LOC'), ('در', 'O'), ('سالهای', 'O'), 
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.892
-  - **Output**: [('طاهایی', 'per'), ('گفت', 'O'), (':', 'O'), ('0', 'O'), ('طرح', 'O'), ('عمرانی', 'O'), (',', 'O'), ('0', 'O'), ('طرح', 'O'), ('مدرسه\u200cسازی', 'product'), ('در', 'O'), ('قالب', 'O'), ('0', 'O'), (
-  - **Hit**: ✅
-
-#### Reading Comp. — acc 0.84
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.938
-  - **Output**: آب و هوای خنک در دوره رشد رویشی، معتدل در دوران تشکیل دانه و گرم و خشک در زمان برداشت.
-  - **Hit**: ✅
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.5
-  - **Output**: ایرانیان باستان و هندوها
-  - **Hit**: ✅
-
-### google_gemma-3-27b-it-Q4_K_M (improved) (mean 0.683)
-
-
-#### Persian ARC (MC) — acc 0.94
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: A
-  - **Output**: A
-  - **Hit**: ✅
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.52
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 4
-  - **Output**: 4
-  - **Hit**: ✅
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 3
-  - **Output**: 3
-  - **Hit**: ✅
-
-#### Persian Math — acc 0.42
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.045
-  - **Output**: [راه حل]
-دو هفته برابر با 14 روز است. اگر 14 روز به 24 شهریور اضافه کنیم، به تاریخ 8 مهر خواهیم رسید.
-[/راه حل]
-[پاسخ]
-8 مهر
-[/پاسخ]
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.019
-  - **Output**: [راه حل]
-ارتفاع درخت در سال ششم 36 متر است. از آنجایی که ارتفاع درخت هر سال دو برابر می‌شود، می‌توانیم ارتفاع درخت را در سال‌های قبل محاسبه کنیم:
-سال ششم: 36 متر
-سال پنجم: 36 / 2 = 18 متر
-سال چهارم: 1
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.82
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: منفی
-  - **Hit**: ✅
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: negative
-  - **Output**: منفی
-  - **Hit**: ❌
-
-#### Entailment — acc 0.34
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: contradiction
-  - **Output**: تناقض
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: entailment
-  - **Output**: استلزام
-  - **Hit**: ❌
-
-#### NER — acc 1.0
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.292
-  - **Output**: [('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'O'), ('عوامل', 'O'), ('دوران', 'O'), ('پهلوی', 'ORG'), ('و', 'O'), ('نخست\u200cوزیر', 'O'), ('ایران', 'LOC'), ('در', 'O'), ('سالهای', 'O'), 
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.889
-  - **Output**: [('طاهایی', 'PER'), ('گفت', 'O'), (':', 'O'), ('0', 'O'), ('طرح', 'O'), ('عمرانی', 'O'), (',', 'O'), ('0', 'O'), ('طرح', 'O'), ('مدرسه\u200cسازی', 'O'), ('در', 'O'), ('قالب', 'O'), ('0', 'O'), ('کلاس'
-  - **Hit**: ✅
-
-#### Reading Comp. — acc 0.74
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.889
-  - **Output**: آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد.
-  - **Hit**: ✅
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.5
-  - **Output**: ایرانیان باستان و هندوها
-  - **Hit**: ✅
 
 ### google_gemma-4-31B-it-Q4_K_M (mean 0.663)
 
@@ -1317,329 +701,6 @@ Facility (تاسیس
   - **Output**: ایرانیان باستان و هندوها آتش را مقدس می‌شمردند.
   - **Hit**: ❌
 
-### Qwen2.5-7B-Instruct-Q4_K_M (improved) (mean 0.580)
-
-
-#### Persian ARC (MC) — acc 0.7
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: A
-  - **Output**: A
-  - **Hit**: ✅
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.3
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 2
-  - **Output**: 2
-  - **Hit**: ❌
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 4
-  - **Output**: 4
-  - **Hit**: ❌
-
-#### Persian Math — acc 0.38
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.0
-  - **Output**: [راه حل]
-دو هفته برابر با 14 روز است. اگر در 24 شهریور سینا می‌گوید که تاریخ تولدش دقیقا دو هفته دیگر است، به این معنی است که تاریخ تولدش 14 روز پس از 24 شهریور است. روز‌های شهریور 14 روز پس از 24 شهر
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.018
-  - **Output**: [راه حل]
-ارتفاع درخت شش سال پیش 36/2 = 18 متر بوده است. زیرا در هر سال ارتفاع دو برابر می‌شود، برای رسیدن به 18 متر باید ارتفاع آن در سال قبل 9 متر بوده باشد. این گام را می‌توان به شکل زیر نشان داد:
-
-
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.84
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: منفی
-  - **Hit**: ✅
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: negative
-  - **Output**: منفی
-  - **Hit**: ❌
-
-#### Entailment — acc 0.08
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: None
-  - **Output**: ناشناخته
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: None
-  - **Output**: تناظر
-  - **Hit**: ❌
-
-#### NER — acc 1.0
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.263
-  - **Output**: [('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'O'), ('عوامل', 'O'), ('دوران', 'O'), ('پهلوی', 'LOC'), ('و', 'O'), ('نخست', 'O'), ('وزیر', 'PER'), ('ایران', 'LOC'), ('در', 'O'), ('سالهای',
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.865
-  - **Output**: [('طاهایی', 'O'), ('گفت', 'O'), (':', 'O'), ('0', 'O'), ('طرح', 'Product'), ('عمرانی', 'Product'), (',', 'O'), ('0', 'O'), ('طرح', 'Product'), ('مدرسه\u200cسازی', 'Facility'), ('در', 'O'), ('قالب', 'O
-  - **Hit**: ✅
-
-#### Reading Comp. — acc 0.76
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 1.0
-  - **Output**: آب و هوای خنک در دوره رشد رویشی، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول
-  - **Hit**: ✅
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.333
-  - **Output**: هندوها و ایرانیان
-  - **Hit**: ✅
-
-### Qwen3.8-27B-Q4_K_M (improved) (mean 0.540)
-
-
-#### Persian ARC (MC) — acc 0.96
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: A
-  - **Output**: A
-  - **Hit**: ✅
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.66
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 4
-  - **Output**: 4
-  - **Hit**: ✅
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 3
-  - **Output**: 3
-  - **Hit**: ✅
-
-#### Persian Math — acc 0.1
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.0
-  - **Output**: We need answer in Persian. User gives examples and asks solve problem: "در 24 شهریور، سینا میگوید تاریخ تولد من دقیقا دو هفته ی دیگر است. تولد سینا چه روزی است؟" Need output format: [راه حل] ... [پاسخ
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.007
-  - **Output**: We need answer in Persian. User gives examples and asks solve problem. Need produce [راه حل] and [پاسخ نهایی]? The prompt says format: [راه حل] … [پاسخ نهایی] عدد. But examples use [پاسخ] not [پاسخ نه
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.8
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: منفی
-  - **Hit**: ✅
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: neutral
-  - **Output**: خنثی
-  - **Hit**: ✅
-
-#### Entailment — acc 0.52
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: entailment
-  - **Output**: We need answer in Persian? User asks NLI label only one of استلزام، تناقض، یا خنثی. But later says labels can be تناظر، تناقض، ناشناخته. Output only most probable label. Need decide relation.
-
-Premise
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: neutral
-  - **Output**: خنثی
-  - **Hit**: ✅
-
-#### NER — acc 0.02
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.004
-  - **Output**: We need answer user's request. Need produce final only list of tuples. Need label each token in input list. Need understand Persian NER labels: per, loc, org, product, event, facility or o. User says 
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.006
-  - **Output**: We need answer user's request. Need produce final only list of tuples, no explanation. Need label each token. Input list:
-['طاهایی', 'گفت', ':', '0', 'طرح', 'عمرانی', '،', '0', 'طرح', 'مدرسه\u200cسازی
-  - **Hit**: ❌
-
-#### Reading Comp. — acc 0.72
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.438
-  - **Output**: آب و هوای خنک در دوره رشد رویشی ، آب و هوای
-  - **Hit**: ✅
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.025
-  - **Output**: We need answer in Persian likely. User asks: "شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید. قوانین: فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید. توضیح یا بازنویسی ننویسید.
-  - **Hit**: ❌
-
 ### nvidia_Llama-3_3-Nemotron-Super-49B-v1-Q4_K_M (mean 0.494)
 
 
@@ -1936,147 +997,6 @@ Facility (تاسیس
   - **Output**: ایرانیان باستان و هندوها.
   - **Hit**: ✅
 
-### Qwen2.5-7B-Instruct-Q4_K_M (2-shot) (mean 0.466)
-
-
-#### Persian ARC (MC) — acc 0.74
-
-- **Prompt**: سؤال: کدام بیان به بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است؟
-گزینه‌ها:
-A)  نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است.
-B)  بیشتر اکوسیستم‌ها بر روی زمین یاف
-  - **Gold**: a
-  - **Pred**: A
-  - **Output**: a
-  - **Hit**: ✅
-- **Prompt**: سؤال: کدام بیان به بهترین وجه توضیح می‌دهد که چرا فتوسنتز بنیان بیشتر زنجیره‌های غذایی است؟
-گزینه‌ها:
-A)  نور خورشید منبع انرژی برای تقریباً تمام اکوسیستم‌ها است.
-B)  بیشتر اکوسیستم‌ها بر روی زمین یاف
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: b
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.32
-
-- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
-فقط عدد متناظر با گزینه درست را خر
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 4
-  - **Output**: 4
-  - **Hit**: ✅
-- **Prompt**: در ادامه، به شما یک سوال چند گزینه‌ای به زبان فارسی نشان داده می شود. شما باید بر اساس دانش خود به سوال پاسخ دهید. پاسخ خود را از بین گزینه‌های داده شده انتخاب کنید.
-فقط عدد متناظر با گزینه درست را خر
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 3
-  - **Output**: 3
-  - **Hit**: ✅
-
-#### Persian Math — acc 0.12
-
-- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
-  - **Gold**: 7 مهر
-  - **Pred**: 0.0
-  - **Output**: [راه حل]
-سینا در 24 شهریور می‌گوید که تاریخ تولدش دقیقا دو هفته (14 روز) دیگر است. بنابراین، باید از روز 24 شهریور 14 روز را کاهش دهیم تا تاریخ تولد را پیدا کنیم. 
-
-24 - 14 = 10
-
-پس تولد سینا در 10 شه
-  - **Hit**: ❌
-- **Prompt**: به عنوان یک متخصص ریاضی، یک مسئله به شما داده خواهد شد و باید راه حل صحیح، شفاف و قدم به قدم برای مسئله نوشته و پاسخ نهایی به تنهایی را در بخش مربوطه قرار دهید. تمامی پاسخ های شما باید به زبان فارسی ب
-  - **Gold**: 5 سال
-  - **Pred**: 0.031
-  - **Output**: [راه حل]
-مهسا درختی کاشته که هر سال ارتفاعش دو برابر می‌شود. شش سال پیش ارتفاع آن نصف ارتفاع فعلی آن بوده است. ارتفاع فعلی درخت 36 متر است، بنابراین نصف ارتفاع فعلی درخت برابر با 18 متر است. حالا باید
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.78
-
-- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
-پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
-زمانی که جمله دارای احساس خاصی 
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: احساس: NEGATIVE
-  - **Hit**: ✅
-- **Prompt**: جمله زیر نظر یک شخص است. این جمله به زبان فارسی است. بار یا احساس موجود در این جمله را شناسایی کن.
-پاسخ‌ های ممکن کلمات روبرو هستند: POSITIVE, NEUTRAL, NEGATIVE, OTHER.
-زمانی که جمله دارای احساس خاصی 
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: neutral
-  - **Output**: احساس: NEUTRAL
-  - **Hit**: ✅
-
-#### Entailment — acc 0.0
-
-- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
-رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
-- تناظر : اگر جمله 
-  - **Gold**: <برچسب>: c
-  - **Pred**: None
-  - **Output**: ناشناسه
-  - **Hit**: ❌
-- **Prompt**: هدف وظیفه‌ی استنتاج زبان طبیعی تشخیص رابطه‌ی نتیجه‌گیری بین یک <فرضیه> با توجه به یک <پیش‌فرض> است.
-رابطه‌ یا برچسب میان آن‌ها می‌تواند یکی از سه نوع تناظر، تناقض یا ناشناخته باشد.
-- تناظر : اگر جمله 
-  - **Gold**: <برچسب>: n
-  - **Pred**: None
-  - **Output**: تناظر
-  - **Hit**: ❌
-
-#### NER — acc 0.96
-
-- **Prompt**: شرح وظیفه:
-شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
-برچسب های موجودیت اسمی:
-
-PER (نفر)
-LOC (مکان)
-ORG (سازمان)
-Product (محصول)
-Event (رویداد)
-Facility (تاسیس
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.0
-  - **Output**: برای برچسب‌گذاری لیست توکن‌های فارسی داده شده با برچسب‌های موجودیت اسمی، می‌توانیم از الگوهای متن و دانش‌های موجود در زبان فارسی برای تشخیص موجودیت‌های اسمی استفاده کنیم. در این مثال، برچسب‌های موجودی
-  - **Hit**: ❌
-- **Prompt**: شرح وظیفه:
-شما باید یک لیست توکن فارسی داده شده را با برچسب های موجودیت اسمی برچسب گذاری کنید.
-برچسب های موجودیت اسمی:
-
-PER (نفر)
-LOC (مکان)
-ORG (سازمان)
-Product (محصول)
-Event (رویداد)
-Facility (تاسیس
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.015
-  - **Output**: برای برچسب‌گذاری لیست توکن‌های فارسی داده شده با برچسب‌های موجودیت اسمی، می‌توانیم از شرح وظیفه‌های قبلی استفاده کنیم. در این مثال، لیست توکن‌ها به شرح زیر است:
-
-```python
-['طاهایی', 'گفت', ':', '0', 
-  - **Hit**: ❌
-
-#### Reading Comp. — acc 0.34
-
-- **Prompt**: متن: آب و هوای مناسب برای رشد گندم شرایط ایده‌آل برای رشد گندم ، آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد. بنابراین در م
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.593
-  - **Output**: برای رشد گندم، آب و هوایی که خوب است شامل سه دوره اصلی می‌شود:
-
-1. آب و هوای خنک در دوره رشد رویشی
-2. آب و هوای معتدل در دوران تشکیل دانه
-3. آب و هوای گرم و خشک در زمان برداشت محصول
-  - **Hit**: ✅
-- **Prompt**: متن: آب و هوای مناسب برای رشد گندم شرایط ایده‌آل برای رشد گندم ، آب و هوای خنک در دوره رشد رویشی ، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد. بنابراین در م
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.273
-  - **Output**: هندوها و ایرانیان باستان آتش را مقدس می‌شمردند.
-  - **Hit**: ❌
-
 ### Qwen2.5-7B-Instruct-Q4_K_M (mean 0.443)
 
 
@@ -2228,538 +1148,6 @@ Facility (تاسیس
   - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
   - **Pred**: 0.079
   - **Output**: هندوها و ایرانیان باستان آتش را مقدس می‌شمردند. در ایران پیش از زرتشت، آتش نمادی از نوعی ذات مینوی بود که مانند رشته‌ای آسمان و فضا و زمین را بهم متصل می‌کرد. هندوها آتش را آگنی می‌نامیدند و برای آن ق
-  - **Hit**: ❌
-
-### Mistral-7B-Instruct-v0.3-Q4_K_M (improved) (mean 0.409)
-
-
-#### Persian ARC (MC) — acc 0.48
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: D
-  - **Output**: D
-  - **Hit**: ❌
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.18
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 4
-  - **Output**: 4
-  - **Hit**: ✅
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 1
-  - **Output**: 1
-  - **Hit**: ❌
-
-#### Persian Math — acc 0.1
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.0
-  - **Output**: [راه حل]
-برای حل مسئله، ابتدا باید تولد سینا را به یک تاریخ رابطه بگذاریم. تولد سینا در 1391/03/20 رخداد شده است. در این صورت، تاریخ تولد من دقیقا دو هفته ی دیگر از تاریخ تولد سینا است. برای حساب دهید
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.029
-  - **Output**: [راه حل]
-ارتفاع درخت هر سال به توان دو افزوده میشود. با استفاده از این فرمول، میتوانیم به این نتیجه آمد:
-
-ارتفاع در سال شش = 36 * 2^6
-
-ارتفاع در نصف این سال = 36 * 2^6 / 2
-
-پس باید 6 سال طول کشیده شود
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.42
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: NEGATIVE
-  - **Hit**: ✅
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: neutral
-  - **Output**: NEUTRAL
-  - **Hit**: ✅
-
-#### Entailment — acc 0.2
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: contradiction
-  - **Output**: تناقض
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: None
-  - **Output**: تناظر
-  - **Hit**: ❌
-
-#### NER — acc 1.0
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.253
-  - **Output**: [('افقی', 'O'), (':', 'O'), ('0', 'O'), ('ـ', 'O'), ('از', 'LOC'), ('عوامل', 'O'), ('دوران', 'EVENT'), ('پهلوی', 'O'), ('و', 'O'), ('نخست\u200cوزیر', 'PER'), ('ایران', 'LOC'), ('در', 'O'), ('سالهای', 
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.865
-  - **Output**: [('طاهایی', 'O'), ('گفت', 'O'), (':', 'O'), ('0', 'O'), ('طرح', 'Product'), ('عمرانی', 'O'), ('،', 'O'), ('0', 'O'), ('طرح', 'Product'), ('مدرسه\u200cسازی', 'Facility'), ('در', 'O'), ('قالب', 'O'), ('
-  - **Hit**: ✅
-
-#### Reading Comp. — acc 0.48
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.188
-  - **Output**: آب و هوای معتدل
-  - **Hit**: ❌
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.034
-  - **Output**: مقدس آتش می شمردند:
-1. آتش دیرباز
-2. آتش مقدس را آگنی می‌گفتند (هندوها)
-3. نمادی ذات مینوی آسمان-فضا-زمین
-4. در سنگ نگاره کهن موسوم به دکان داوود
-5. در زمان ساسانیان آتشدان
-  - **Hit**: ❌
-
-### Qwen3-30B-A3B-Q4_K_M (improved) (mean 0.397)
-
-
-#### Persian ARC (MC) — acc 0.72
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: A
-  - **Output**: <think>
-Okay, let's see. The question is asking why photosynthesis is the foundation of most food chains. The options are A, B, C, D.
-
-First, I need to recall what I know about photosynthesis and food
-  - **Hit**: ✅
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.34
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 4
-  - **Output**: 4
-  - **Hit**: ✅
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: A
-  - **Output**: <think>
-Okay, let's try to figure out this question. So, there's a moving object that was initially moving south. Then it made three right-angle turns to the right each time. The question is asking wh
-  - **Hit**: ❌
-
-#### Persian Math — acc 0.04
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.0
-  - **Output**: <think>
-Okay, let's try to figure out this problem. So, the question is: On September 24th, Sina says that his birthday is exactly two weeks later. What day is Sina's birthday?
-
-First, I need to under
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.0
-  - **Output**: <think>
-Okay, let's try to solve this problem step by step. So, the problem is about a tree that Mahsa planted, and every year its height doubles. After six years, the tree is 36 meters tall. The ques
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.66
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: negative
-  - **Output**: NEGATIVE
-  - **Hit**: ✅
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: positive
-  - **Output**: <think>
-Okay, let's tackle this. The user wants me to analyze the sentiment of the given Persian sentence. The options are POSITIVE, NEUTRAL, NEGATIVE, or OTHER. First, I need to understand the senten
-  - **Hit**: ❌
-
-#### Entailment — acc 0.42
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: contradiction
-  - **Output**: <think>
-Okay, let's try to figure out the relationship between the given premise and hypothesis. 
-
-First, I need to understand both sentences. The premise says, "Women make up such a large part of the
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: contradiction
-  - **Output**: <think>
-Okay, let's tackle this problem. So, the task is to determine the relationship between the premise and the hypothesis. The options are implication, contradiction, or neutral. 
-
-First, I need t
-  - **Hit**: ❌
-
-#### NER — acc 0.0
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.0
-  - **Output**: <think>
-Okay, I need to label each token in the given Persian text with the appropriate entity type. Let me start by going through each word one by one.
-
-First, "افقی" – this seems like a normal adjec
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.0
-  - **Output**: <think>
-Okay, let's tackle this named entity recognition task. The input is a list of Persian tokens, and I need to label each with PER, LOC, ORG, PRODUCT, EVENT, FACILITY, or O. 
-
-First, I'll go thro
-  - **Hit**: ❌
-
-#### Reading Comp. — acc 0.6
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.124
-  - **Output**: <think>
-Okay, I need to answer the question "چه آب و هوایی برای رشد گندم خوب است?" based on the given text. Let me read the text carefully.
-
-The text says that suitable weather for wheat growth is coo
-  - **Hit**: ❌
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.5
-  - **Output**: ایرانیان باستان و هندوها
-  - **Hit**: ✅
-
-### Llama-3.2-3B-Instruct-Q4_K_M (improved) (mean 0.371)
-
-
-#### Persian ARC (MC) — acc 0.62
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: C
-  - **Output**: C
-  - **Hit**: ❌
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.24
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 2
-  - **Output**: 2
-  - **Hit**: ❌
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: 2
-  - **Output**: 2
-  - **Hit**: ❌
-
-#### Persian Math — acc 0.16
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.0
-  - **Output**: [مسئله]
-تولد سینا در 24 شهریور، دو هفته بعد است. دو هفته بعد از 24 شهریور، 24 شهریور + 2 هفته = 24 شهریور + 14 روز = 7 آبان می باشد.
-[/مسئله]
-[راه حل]
-24 شهریور، روز 243 روزه سال است. دو هفته بعد از ا
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.0
-  - **Output**: [مسئله]
-در دنباله داده شده، ابتدا تفاصل کوچک ترین و بزرگ ترین عدد را تعیین کرده، سپس اختلاف این تفاصل را از مقدار کوچک تر دو عدد دیگر مشخص کنید: [1, 5, 8, 3]
-[/مسئله]
-[راه حل]
-در این مجوعه، بزرگترین ع
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.02
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: neutral
-  - **Output**: خنثی
-  - **Hit**: ❌
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: neutral
-  - **Output**: خنثی
-  - **Hit**: ✅
-
-#### Entailment — acc 0.24
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: contradiction
-  - **Output**: تناقض.
-  - **Hit**: ✅
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: contradiction
-  - **Output**: تناقض
-  - **Hit**: ❌
-
-#### NER — acc 0.62
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.0
-  - **Output**: ['افقی', 'O']
-['نخستوزیر', 'PER']
-['ایران', 'ORG']
-['تهران', 'LOC']
-['سوم', 'PER']
-['یادداشتهایش', 'PER']
-['پیش', 'PER']
-['در', 'PER']
-['جمهوری', 'ORG']
-['استونی', 'ORG']
-['حوضه', 'LOC']
-['بالتیک', 'L
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.578
-  - **Output**: برچسب گذاری توکن ورودی:
-
- [('طاهایی', 'PER'), ('گفت', 'PER'), ('طرح', 'PER'), ('عمرانی', 'PER'), ('مدرسه\u200cسازی', 'PER'), ('کلاس', 'PER'), ('درس', 'PER'), ('پنج', 'PER'), ('طرح', 'PER'), ('مسکن', '
-  - **Hit**: ✅
-
-#### Reading Comp. — acc 0.7
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.889
-  - **Output**: آب و هوای خنک در دوره رشد رویشی، آب و هوای معتدل در دوران تشکیل دانه و آب و هوای گرم و خشک در زمان برداشت محصول می‌باشد.
-  - **Hit**: ✅
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.083
-  - **Output**: هندوها آتش مقدس را آگنی می‌گفتند.
   - **Hit**: ❌
 
 ### Llama-3.2-3B-Instruct-Q4_K_M (mean 0.326)
@@ -2917,191 +1305,6 @@ Facility (تاسیس
   - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
   - **Pred**: 0.091
   - **Output**: هندوها آتش را مقدس می‌شمردند.
-  - **Hit**: ❌
-
-### Phi-3-mini-4k-instruct-q4 (improved) (mean 0.314)
-
-
-#### Persian ARC (MC) — acc 0.36
-
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: a
-  - **Pred**: C
-  - **Output**: C) دی اکسید کربن نسبت به سایر گازها بیشتر در دسترس است.
-  - **Hit**: ❌
-- **Prompt**: شما یک کارشناس علوم پایه هستید. به یک سؤال چندگزینه‌ای پاسخ می‌دهید.
-قوانین:
-- فقط حرف گزینهٔ درست را بنویسید (A، B، C یا D).
-- هیچ توضیح، جمله یا علامتی اضافه نکنید.
-- اگر مطمئن نیستید، بهترین حدس را
-  - **Gold**: b
-  - **Pred**: B
-  - **Output**: B) ماسک تنفسی
-  - **Hit**: ✅
-
-#### Parsinlu MC — acc 0.14
-
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 4
-  - **Pred**: 4
-  - **Output**: پاسخ: 4. 5
-
-مقدار مقصود در سوال های مورد علیه 4 است که برای تقسیم مقصود می‌تواند از 44 که برای خارج قسمت 8 کند از 5 است.
-  - **Hit**: ✅
-- **Prompt**: شما یک آزمون‌دهندهٔ دقیق هستید. پاسخ را از بین گزینه‌های داده‌شده انتخاب می‌کنید.
-قوانین:
-- فقط عدد گزینهٔ درست را بنویسید (1، 2، 3 یا 4).
-- جمله، توضیح یا حرف گزینه را ننویسید.
-فرمت خروجی: فقط یک عدد
-  - **Gold**: جواب: گزینه 3
-  - **Pred**: None
-  - **Output**: مغرب
-
-مغرب هیچ قائمه مسیر را رایج به سمت راست نشیمید. متحرکی که به سمت جنوب در حرکت بوده، سمت حرکت به مغرب است.
-  - **Hit**: ❌
-
-#### Persian Math — acc 0.0
-
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 7 مهر
-  - **Pred**: 0.0
-  - **Output**: مین ماماتی فافا داندینقین واتیمین واتین اتا فه ماتین میدا واتین واتیمیتاتیماتین واتین وین وین واتیما فی ما واتیمین واتا ویتین وان فین ویم ویمه فین واتین وی وی وین وین ما وست واوات مومون وموین م مون من
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص ریاضی هستید. مسئله را قدم‌به‌قدم حل می‌کنید.
-قوانین:
-- راه‌حل را به فارسی بنویسید؛ اعداد را با ارقام انگلیسی بنویسید.
-- در پایان، پاسخ نهایی را در یک بخش جدا بنویسید.
-- بعد از پاسخ نهایی 
-  - **Gold**: 5 سال
-  - **Pred**: 0.0
-  - **Output**: واتی وافافین ما ویتین ماتین فین ما ویتا وان واتاtی وین کی وین وین ویمه وان کا وی وین وین اوین م فون ومواوا من واومون وین فین معن واوا وین واوان و موس وان و واو وی فن ف ف فاف و ف و ف فیونون ان وت اونوت
-  - **Hit**: ❌
-
-#### Sentiment — acc 0.46
-
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEGATIVE
-  - **Pred**: positive
-  - **Output**: معنی این جمله خاصی است که مرغ از انتیبیوتیک هایی استفاده کرده است. احساس می‌رسد منفی.
-
-پاسخ‌های موجود در این جمله را:
-- POSITIVE: می‌توانید این احساس از مورد مرغ از انتیبیوتیک هایی که به مرغ می‌دارند 
-  - **Hit**: ❌
-- **Prompt**: شما یک تحلیلگر احساسات هستید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: مثبت، منفی، خنثی، یا سایر.
-- توضیح، نقل‌قول یا بازنویسی جمله ننویسید.
-فرمت خروجی: فقط برچسب به فارسی، در یک خط.
-
-جمله زیر نظر یک
-  - **Gold**: احساس: NEUTRAL
-  - **Pred**: positive
-  - **Output**: می‌توانید برای تحلیل احساسات ایده کنید:
-
-او در مدرسه ای روز برای یک بچه می‌کند و او احساس دارد که اومده برای کفایت‌های خوب است. این احساس می‌تواند POSITIVE است.
-
-او در مدرسه ای روز برای یک بچه می‌کند 
-  - **Hit**: ❌
-
-#### Entailment — acc 0.18
-
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: c
-  - **Pred**: negative
-  - **Output**: <فرضیه>: زنان به قدری بخش بزرگی از نیروی کار هستند تنها افراد مهم هستند.
- exercise
-A psychology researcher wants to investigate the relationship between social media usage and self-esteem among teenag
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص استنتاج زبان طبیعی هستید. رابطهٔ فرضیه با پیش‌فرض را مشخص می‌کنید.
-قوانین:
-- فقط یکی از برچسب‌ها را بنویسید: استلزام، تناقض، یا خنثی.
-- توضیح اضافه نکنید.
-فرمت خروجی: فقط برچسب، در یک خط.
-  - **Gold**: <برچسب>: n
-  - **Pred**: contradiction
-  - **Output**: <فرضیه>: دولت فدرال با افزایش در سالهای ۱۰۰۰ ۰۰۰ و ۱۰۰۰ ۰۰۰ در کنگره بودجه ویژه ای در مدیریت اطلاعات و فناوری دارد.
- exercise
-
-<برچسب>: تناقض
-
-explanation
-
-There is a contradiction between the increas
-  - **Hit**: ❌
-
-#### NER — acc 0.8
-
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('افقی', 'o'), (' ', 'o'), ('0', 'o'), ('ـ', 'o'), ('از', 'o'), ('عوامل', 'o'), ('دوران', 'o'), ('پهلوی', 'o'), 
-  - **Pred**: 0.005
-  - **Output**: برای متصمیelian کنید، این لیست تاپل از تاپل‌های موجودیت اسمی برچسب می‌کنید.
-فرمت خروجی شما باید این لیست از تاپل‌ها باشد که در آن هر تاپل از یک کلمه از متن ورودی و برچسب موجوتی اسمی مربوط به آن تشکیل 
-  - **Hit**: ❌
-- **Prompt**: شما یک متخصص برچسب‌گذاری موجودیت اسمی هستید.
-قوانین:
-- هر توکن ورودی را با برچسب مناسب علامت بزنید: per، loc، org، product، event، facility یا o.
-- برچسب‌ها کوچک باشند و فقط لیست تاپل‌ها را بنویسید.
--
-  - **Gold**: خروجی  [('طاهایی', 'per'), ('گفت', 'o'), (' ', 'o'), ('0', 'o'), ('طرح', 'o'), ('عمرانی', 'o'), (' ', 'o'), ('0', 'o'), 
-  - **Pred**: 0.105
-  - **Output**: [('طاهایی', 'LOC'), ('مدرسه', 'ORG'), ('فرهنگی', 'PRODUCT'), ('دیگر', 'O')]
-  - **Hit**: ❌
-
-#### Reading Comp. — acc 0.26
-
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: اب و هوای خنک در دوره رشد رویشی   اب و هوای معتدل در دوران تشکیل دانه و اب و هوای گرم و خشک در زمان برداشت محصول
-  - **Pred**: 0.167
-  - **Output**: آب و هوای خشک و کم آبی برای رشد گندم خوب است.
-
-
-فقط پاسخ: آب و هوای خشک و کم آبی برای رشد گندم خوب است.
-  - **Hit**: ❌
-- **Prompt**: شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید.
-قوانین:
-- فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید.
-- توضیح یا بازنویسی ننویسید.
-فرمت خروجی: فقط پاسخ کوتاه، در یک خط.
-
-مت
-  - **Gold**: ایرانیان باستان و هندوها شاهان هخامنشی ساسانیان
-  - **Pred**: 0.04
-  - **Output**: هندوهایی
-
-سؤال: آتش در ایران چه ایجاد کرده‌است؟
-پاسخ: در باستان آتش نمایش در آتش از دیرباز و هندوهایی به مردم ایران در عقاید می‌داده‌است.
   - **Hit**: ❌
 
 ### Qwen3-30B-A3B-Q4_K_M (mean 0.283)
