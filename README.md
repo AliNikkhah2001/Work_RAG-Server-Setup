@@ -153,13 +153,14 @@ Models over **100 GB download size are excluded** (stopped/removed from the down
 | **Llama-3.2-3B-Instruct** Q4_K_M | `bartowski/Llama-3.2-3B-Instruct-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF> |
 | **Mistral-7B-Instruct-v0.3** Q4_K_M | `bartowski/Mistral-7B-Instruct-v0.3-GGUF` | GGUF (single file) | <https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF> |
 | **Phi-3-mini-4k-instruct** q4 | `microsoft/Phi-3-mini-4k-instruct-gguf` | GGUF (single file) | <https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf> |
-| ~~DeepSeek-V4-Flash~~ | ~~`deepseek-ai/DeepSeek-V4-Flash`~~ | ~~safetensors (FP4/FP8)~~ | ~~<https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash>~~ |
+| **DeepSeek-V4-Flash** (in-progress) | `deepseek-ai/DeepSeek-V4-Flash` | safetensors (FP4/FP8), 46 shards | <https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash> |
 | ~~MiniMax-M3~~ | ~~`unsloth/MiniMax-M3-GGUF`~~ | ~~GGUF UD-IQ4_XS~~ | ~~<https://huggingface.co/unsloth/MiniMax-M3-GGUF>~~ |
 | ~~Kimi-K3~~ | ~~`unsloth/Kimi-K3-GGUF`~~ | ~~GGUF UD-IQ1_S~~ | ~~<https://huggingface.co/unsloth/Kimi-K3-GGUF>~~ |
 | ~~GLM-5.2-FP8~~ | ~~`zai-org/GLM-5.2-FP8`~~ | ~~safetensors (FP8)~~ | ~~<https://huggingface.co/zai-org/GLM-5.2-FP8>~~ |
 
 **Policy notes**
-- Excluded models are **> 100 GB download size**: DeepSeek-V4-Flash (~160 GB), MiniMax-M3 (~208 GB), Kimi-K3 (~594 GB), GLM-5.2-FP8 (~755 GB). Struck through above for reference; their `download_models.py` targets were removed and the DeepSeek daemon stopped (25/46 shards partial kept on disk, ~54%).
+- **DeepSeek-V4-Flash download resumed 2026-08-18** (was excluded on 2026-08-17 under the >100 GB policy, but is now being downloaded again by the `rag-dl` systemd daemon). Resume keeps completed shards; 25/46 shards (~86 GB) were on disk when resumed. After it completes it will be ~160 GB and should be served via vLLM or llama.cpp with flash-attention.
+- Still excluded (>100 GB): MiniMax-M3 (~208 GB), Kimi-K3 (~594 GB), GLM-5.2-FP8 (~755 GB). Struck through above for reference.
 - Sizes on the Hugging Face hub can change as new revisions are released; re-check the `Files` tab before downloading.
 - All GGUF entries are quantized via llama.cpp and load directly in llama.cpp / llama-cpp-python / vLLM (single-file GGUFs are required by vLLM's loader).
 
@@ -310,6 +311,31 @@ Every model was re-run on the full 7-task suite with **improved Persian prompts*
 Largest absolute gains come from the **error-prone models** (Mistral +0.223, Nemotron +0.200, Phi +0.171) and from **format-strict tasks**: reading comprehension (+0.14…+0.62), NER (+0.12…+0.98, a near-perfect fix for Mistral/Llama/Phi), and entailment (Gemma-4 0.16 → 0.78). Prompt engineering therefore narrows — but does not close — the gap between strong and weak models, and it is nearly as valuable as the thinking-mode fix. Full vanilla-vs-improved per-task deltas and per-model sample outputs are in `docs/reports/persian_eval_report.md` (§ Improved prompting vs vanilla).
 
 **Full untruncated Q&A (vanilla vs improved)** for a strong model (Gemma-4-31B) and an error-prone model (Mistral-7B) is in [`docs/reports/persian_prompt_compare.md`](docs/reports/persian_prompt_compare.md): the same tricky question per task asked both ways, showing exactly how the 4-component template changes the model's answer shape (e.g. Mistral's verbose entailment prose → a bare `تناقض` label). Generate it with `offline-prep/venv/bin/python3.12 scripts/gen_prompt_compare.py`.
+
+### Vanilla vs improved — question format & model responses
+
+The improved template wraps the raw question with a short Persian instruction (ROLE + CONSTRAINTS + OUTPUT FORMAT). Example for **reading comprehension**:
+
+| | Prompt (question shown as sent to the model) |
+|---|---|
+| **Vanilla** | `متن: از آنجا که قطر رئوس غیر مجاور را متصل می‌کند، یک مثلث نمی‌تواند قطر داشته باشد …` `سؤال: کدام شکل هندسی قطر ندارد؟ پاسخ:` |
+| **Improved** | `شما یک پاسخ‌گوی دقیق هستید. پاسخ را مستقیم از متن استخراج می‌کنید. قوانین: فقط پاسخ کوتاه (همان عبارت موجود در متن) را بنویسید. توضیح یا بازنویسی ننویسید. فرمت خروجی: فقط پاسخ کوتاه، در یک خط.` + same `متن: … سؤال: … پاسخ:` |
+
+**How the answers change (same question, same model):**
+
+| Task (gold) | Model | Vanilla response | Improved response |
+|---|---|---|---|
+| **RC** `مثلث` | Gemma-4-31B | `مثلث` ✅ | `مثلث` ✅ |
+| **RC** `مثلث` | Mistral-7B | `یک مثلث قطر ندارد.` ❌ (paraphrase fails exact match) | `مثلث` ✅ (bare span now) |
+| **Math** `1000` | Gemma-4-31B | `[راه حل] … [پاسخ] 1000` ✅ | `[راه حل] … [پاسخ] 1000` ✅ |
+| **Math** `1000` | Mistral-7B | `100 * 10/100 = 10` ❌ | `100` ❌ (right idea, arithmetic slips) |
+| **Entail** `contradiction` | Mistral-7B | prose repeating the task definition ❌ | `تناقض` ✅ (bare label) |
+| **NER** (Jaccard) | Gemma-4-31B | tuple list, Jaccard **0.783** ✅ | tuple list, Jaccard **0.977** ✅ |
+| **NER** (Jaccard) | Mistral-7B | prose category groups, no tuples ❌ (0.0) | tuple list, Jaccard **0.755** ✅ |
+| **Sentiment** `negative` | Mistral-7B | `NEUTRAL` ❌ | `NEUTRAL` ❌ (label task still hard) |
+| **ARC** `A` | Mistral-7B | `A) شستن دست‌ها` ✅ (letter extracted) | `A` ✅ |
+
+The improved template mainly **fixes format-following** (bare label/span/letter, tuple list, `[پاسخ نهایی]` block) — which is exactly what the scorers require — while content errors (e.g. Mistral's sentiment `NEUTRAL` or its math slip) persist. Full verbatim inputs/outputs per task are in [`docs/reports/persian_prompt_compare.md`](docs/reports/persian_prompt_compare.md).
 
 ![Improved prompting vs vanilla](docs/reports/persian_improvement.png)
 

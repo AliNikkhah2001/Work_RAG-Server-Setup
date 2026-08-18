@@ -41,7 +41,7 @@ MODELS = {
 
 def load_all():
     samples = defaultdict(dict)
-    for f in list(LOG_DIR.glob("evalp_*.json")) + list(LOG_DIR.glob("logs/evalp_*.json")):
+    for f in LOG_DIR.glob("evalp_*.json"):
         if "smoke" in f.name or "improved" in f.name or "2shot" in f.name:
             continue
         d = json.load(open(f))
@@ -53,19 +53,27 @@ def load_all():
 
 
 def pick_tricky(task, samples):
-    task_samples = [per for k, per in samples.items() if k[0] == task]
+    """Return (task, index) of the tricky sample for a task — the row where the
+    models disagree most (fraction of correct answers closest to 0.5)."""
     best, best_score = None, 99
-    for per in task_samples:
-        if len(per) < 4:
+    for k, per in samples.items():
+        if k[0] != task or len(per) < 4:
             continue
         frac = sum(1 for v in per.values() if v["hit"]) / len(per)
         sc = abs(frac - 0.5)
         if sc < best_score:
-            best_score, best = sc, per
-    if best is None:
-        return None
-    for name, s in best.items():
-        return s["prompt"], s["gold"]
+            best_score, best = sc, k
+    return best
+
+
+def full_rows(task):
+    """Load the full (untruncated) dataset rows for a task, via the eval loader."""
+    from eval_persian import build_loader, LOADERS
+    get = build_loader()
+    rows = LOADERS[task](get, None)
+    for ex in rows:
+        ex["_task"] = task
+    return rows
 
 
 def main():
@@ -91,7 +99,13 @@ def main():
         picked = pick_tricky(task, samples)
         if picked is None:
             continue
-        prompt, gold = picked
+        t, idx = picked
+        rows = full_rows(t)
+        if idx >= len(rows):
+            continue
+        ex = rows[idx]
+        prompt = ex["prompt"]
+        gold = ex.get("gold") or ex.get("raw_gold")
         lines.append(f"\n#### {TASK_LABEL.get(task, task)}\n")
         lines.append(f"**Gold:** `{gold}`\n")
         lines.append("\n<details>\n<summary>Shared tricky input</summary>\n\n```\n"
@@ -105,11 +119,11 @@ def main():
                     messages=[{"role": "user", "content": msg}],
                     max_tokens=args.max_tokens, temperature=0.0)
                 text = strip_think((out["choices"][0]["message"]["content"] or "").strip())
-                ex = {"kind": {"fa_arc": "mc", "fa_mc": "mc", "fa_math": "open",
-                               "fa_sentiment": "label", "fa_entail": "label",
-                               "fa_ner": "ner", "fa_rc": "open"}[task],
-                      "gold": gold, "gold_norm": gold}
-                hit, pred = score(task, ex, text)
+                exx = {"kind": {"fa_arc": "mc", "fa_mc": "mc", "fa_math": "open",
+                                "fa_sentiment": "label", "fa_entail": "label",
+                                "fa_ner": "ner", "fa_rc": "open"}[task],
+                       "gold": gold, "gold_norm": str(gold)}
+                hit, pred = score(task, exx, text)
                 mark = "✅" if hit else "❌"
                 lines.append(f"\n**{label} — {style.title()}** {mark}\n")
                 lines.append(f"> Pred: `{pred}`\n")
