@@ -1,6 +1,9 @@
 # Site configuration for the GitHub Pages multipage report.
 # Build: bundle exec jekyll build --source docs-site --destination _site
-remote_theme: just-the-docs/just-the-docs
+# NOTE: use `theme:` (gem) not `remote_theme:` — our Actions workflow runs
+# `bundle exec jekyll build`, which ignores remote_theme unless the
+# jekyll-remote-theme plugin is loaded. The gem is declared in the Gemfile.
+theme: just-the-docs
 
 title: Work RAG Server Setup
 description: Persian LLM benchmark & prompt-engineering report — self-hosted GGUF models (H200).

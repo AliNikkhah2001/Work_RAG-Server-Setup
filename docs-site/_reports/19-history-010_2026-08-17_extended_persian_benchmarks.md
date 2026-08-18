@@ -113,9 +113,9 @@ setsid bash scripts/services/autogit_daemon.sh
 
 ### 8. GitHub Pages multipage report site (2026-08-18)
 
-- **Setup**: `docs-site/` Jekyll site with remote `just-the-docs` theme (`_config.yml`, `Gemfile`, `index.md` with dynamic TOC over the `reports` collection). `scripts/gen_pages.py` splits `docs/reports/persian_eval_report.md` on `##` into `docs-site/_reports/` pages, copies plots to `docs-site/assets/plots/`, emits `PLOT_EXPLAIN` captions, adds history files as pages, rewrites plot links to `{{ '/assets/plots/...' | relative_url }}`.
+- **Setup**: `docs-site/` Jekyll site with remote `just-the-docs` theme (`_config.yml`, `Gemfile`, `index.md` with dynamic TOC over the `reports` collection). `scripts/gen_pages.py` splits `docs/reports/persian_eval_report.md` on `##` into `docs-site/_reports/` pages, copies plots to `docs-site/assets/plots/`, emits `PLOT_EXPLAIN` captions, adds history files as pages, rewrites plot links to Liquid `relative_url` filters.
 - **Deploy**: `.github/workflows/pages.yml` — Jekyll build job (setup-ruby 3.2 + bundler-cache in `docs-site/`, configure-pages, build, upload-pages-artifact) + deploy-pages job.
-- **Critical GitHub setting**: Pages build+deployment Source must be **"GitHub Actions"** (Settings → Pages). The default "Deploy from a branch" Jekyll-builds the repo root and fails on `{{`/`{%` liquid tags in `docs/guides/*.md`. Set via API: `PUT /repos/.../pages {"build_type":"workflow","source":{"branch":"main","path":"/"}}`.
+- **Critical GitHub setting**: Pages build+deployment Source must be **"GitHub Actions"** (Settings → Pages). The default "Deploy from a branch" Jekyll-builds the repo root and fails on Liquid tag syntax in `docs/guides/*.md`. Set via API: `PUT /repos/.../pages {"build_type":"workflow","source":{"branch":"main","path":"/"}}`.
 - **"Set up job" failures were GitHub infra**: `codeload.github.com` 429/503 rate limits when downloading actions — transient, resolved by re-dispatching the workflow.
 - **Verified**: site HTTP 200, Pages status `built`, all 19 report pages + plots 200. Commits `b2f45b8`, `2a04933`.
 
