@@ -387,6 +387,7 @@ def main():
     scored = [r["acc"] for r in results if r["acc"] is not None]
     out = {"model": args.model, "results": results,
            "prompt_style": args.prompt_style, "n_shots": args.n_shots,
+           "temperature": args.temperature,
            "overall_mean": round(sum(scored) / len(scored), 4) if scored else None}
     name = args.out or f"evalp_{Path(args.model).stem}.json"
     if args.out is None:

@@ -314,7 +314,37 @@ Every model was re-run on the full 7-task suite with **improved Persian prompts*
 
 Largest absolute gains come from the **error-prone models** (Mistral +0.223, Nemotron +0.200, Phi +0.171) and from **format-strict tasks**: reading comprehension (+0.14…+0.62), NER (+0.12…+0.98, a near-perfect fix for Mistral/Llama/Phi), and entailment (Gemma-4 0.16 → 0.78). Prompt engineering therefore narrows — but does not close — the gap between strong and weak models, and it is nearly as valuable as the thinking-mode fix. Full vanilla-vs-improved per-task deltas and per-model sample outputs are in `docs/reports/persian_eval_report.md` (§ Improved prompting vs vanilla).
 
-**Full untruncated Q&A (vanilla vs improved)** for a strong model (Gemma-4-31B) and an error-prone model (Mistral-7B) is in [`docs/reports/persian_prompt_compare.md`](docs/reports/persian_prompt_compare.md): the same tricky question per task asked both ways, showing exactly how the 4-component template changes the model's answer shape (e.g. Mistral's verbose entailment prose → a bare `تناقض` label). Generate it with `offline-prep/venv/bin/python3.12 scripts/gen_prompt_compare.py`.
+**Full untruncated Q&A (vanilla vs improved)** for a strong model (Gemma-4-31B) and an error-prone model (Mistral-7B) is in [`docs/reports/persian_prompt_compare.md`](docs/reports/persian_prompt_compare.md): the same tricky question per task asked both ways, showing exactly how the 4-component template changes the model's answer shape (e.g. Mistral's verbose entailment prose → a bare `تناقض` label). The prompts are shown **side by side** with RTL Persian layout and the 4-component format is explained per task. Generate it with `offline-prep/venv/bin/python3.12 scripts/gen_prompt_compare.py`.
+
+### Few-shot scaling (Qwen2.5-7B)
+
+N correct in-task exemplars are prepended before each question (mean over 7 tasks):
+
+| Shots | Mean | ARC | MC | Math | Sent | NER | RC |
+|---|--:|---:|---:|---:|---:|---:|---:|
+| 0 | 0.443 | 0.68 | 0.36 | 0.38 | 0.66 | 0.88 | 0.14 |
+| 1 | 0.454 | 0.62 | 0.38 | 0.12 | 0.80 | 0.98 | 0.28 |
+| 2 | 0.466 | 0.74 | 0.32 | 0.12 | 0.78 | 0.96 | 0.34 |
+| 3 | 0.503 | 0.70 | 0.44 | 0.24 | 0.80 | 0.98 | 0.36 |
+| 5 | 0.520 | 0.74 | 0.44 | 0.28 | 0.82 | 0.96 | 0.38 |
+
+Few-shot helps most where the raw format is already decent (NER 0.88 → 0.98, RC 0.14 → 0.38) and hurts where the exemplars look unlike the test (math 0.38 → 0.12). Gains are modest vs prompt engineering (5-shot +0.077 vs improved template +0.137).
+
+### Effect of temperature (Qwen2.5-7B)
+
+| T | Mean | ARC | MC | Math | Sent | NER | RC |
+|---|--:|---:|---:|---:|---:|---:|---:|
+| 0.0 | **0.443** | 0.68 | 0.36 | 0.38 | 0.66 | 0.88 | 0.14 |
+| 0.2 | 0.346 | 0.68 | 0.36 | 0.16 | 0.40 | 0.70 | 0.12 |
+| 0.5 | 0.334 | 0.70 | 0.36 | 0.18 | 0.40 | 0.58 | 0.12 |
+| 0.8 | 0.354 | 0.72 | 0.36 | 0.24 | 0.38 | 0.64 | 0.12 |
+| 1.0 | 0.369 | 0.70 | 0.36 | 0.18 | 0.46 | 0.76 | 0.12 |
+
+Higher temperature **hurts** this model on every task (greedy 0.0 is best). The drop is worst on format-strict tasks (NER 0.88 → 0.58, sentiment 0.66 → 0.38) where sampling noise breaks the exact output shape the scorer needs; math/ARC are near-flat. For evaluation, always use temperature 0.0.
+
+### Model details — creator, license, architecture, deployment
+
+Full per-model metadata (creator, license, params/active, context window, architecture notes, weights format, disk size, GPU/CPU) is in the **Model details** table in [`docs/reports/persian_eval_report.md`](docs/reports/persian_eval_report.md): Google DeepMind (Gemma-4 31B, Apache-2.0 · Gemma-3 27B), Alibaba (Qwen3.8-27B, Qwen3-30B-A3B MoE, Qwen2.5-7B — all Apache-2.0), NVIDIA (Nemotron-49B, NVIDIA Open Model + Llama 3.3 Community), Meta (Llama-3.2-3B), Mistral (7B v0.3), Microsoft (Phi-3-mini, MIT). All ran on the **2× H200 NVL GPUs** via llama-cpp-python (nothing on CPU).
 
 ### Vanilla vs improved — question format & model responses
 

@@ -174,7 +174,7 @@ def meta_of(stem):
 def model_stem(model_key):
     """Strip (variant) suffixes from a loaded model key to get the GGUF stem."""
     for suf in (" (improved)", " (2-shot)", " (1-shot)", " (3-shot)", " (5-shot)",
-                " (0-shot)", " (temp0.2)", " (temp0.5)", " (temp0.8)", " (temp1.0)"):
+                " (0-shot)", " (temp0.2)", " (temp0.5)", " (temp0.8)", " (temp1)"):
         model_key = model_key.replace(suf, "")
     return model_key
 
@@ -191,14 +191,25 @@ def load_results():
         variants = []
         if "improved" in p.name:
             variants.append("improved")
-        for n, tag in [("1shot", "1-shot"), ("2shot", "2-shot"), ("3shot", "3-shot"),
-                       ("5shot", "5-shot"), ("0shot", "0-shot")]:
-            if f"_{n}" in p.name or f"-{n}" in p.name:
-                variants.append(tag)
-        for t in [0.2, 0.5, 0.8, 1.0]:
-            tag = f"temp{t:g}"
-            if tag in p.name:
-                variants.append(f"temp{t:g}")
+        n_shots = d.get("n_shots", 0) or 0
+        if n_shots:
+            variants.append(f"{n_shots}-shot")
+        else:
+            # older files: infer shot count from the filename
+            for tag in ("1shot", "2shot", "3shot", "5shot"):
+                if f"_{tag}" in p.name or f"-{tag}" in p.name:
+                    variants.append(f"{tag[0]}-shot")
+                    break
+        temp = d.get("temperature", 0.0) or 0.0
+        if temp and temp > 0:
+            variants.append(f"temp{temp:g}")
+        elif not temp and not n_shots:
+            # older files: infer variant from the filename (temp02/temp05/...)
+            for tag, val in [("temp02", 0.2), ("temp05", 0.5), ("temp08", 0.8),
+                             ("temp10", 1.0), ("temp02", 0.2)]:
+                if tag in p.name:
+                    variants.append(f"temp{val:g}")
+                    break
         key = stem + "".join(f" ({v})" for v in variants)
         accs = {r["task"]: r["acc"] for r in d["results"]}
         samples = {r["task"]: r["samples"] for r in d["results"]}
@@ -247,7 +258,7 @@ def group_accuracy(accs):
 
 def base_stem(key):
     for suf in (" (improved)", " (2-shot)", " (1-shot)", " (3-shot)", " (5-shot)",
-                " (0-shot)", " (temp0.2)", " (temp0.5)", " (temp0.8)", " (temp1.0)"):
+                " (0-shot)", " (temp0.2)", " (temp0.5)", " (temp0.8)", " (temp1)"):
         key = key.replace(suf, "")
     return key
 

@@ -142,6 +142,16 @@ def build():
         (PAGES_DIR / f"{order:02d}-{slug}.md").write_text(page_md(title, body, order))
         print(f"page: {title!r}")
 
+    # remove stale pages from earlier report versions (extra/renamed sections)
+    current = {f"{order:02d}-{re.sub(r'-{2,}', '-', re.sub(r'[^\w\u0600-\u06FF]+', '-', t).strip('-').lower()):s}.md"
+               for order, (t, _) in enumerate(sections, start=1)}
+    for fixed in ("07-sample-questions.md", "08-prompt-engineering-qa.md", "09-embeddings.md"):
+        current.add(fixed)
+    for p in PAGES_DIR.glob("*.md"):
+        if p.name not in current:
+            p.unlink()
+            print(f"stale page removed: {p.name}")
+
     # 2. sample questions (already a self-contained md)
     sq = (SRC_REPORTS / "persian_sample_questions.md").read_text()
     (PAGES_DIR / "07-sample-questions.md").write_text(

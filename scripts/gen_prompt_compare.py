@@ -16,6 +16,8 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from llama_cpp import Llama
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eval_persian import improved_prompt, strip_think, score  # noqa: E402
 
@@ -187,7 +189,6 @@ def main():
     ap.add_argument("--out", default="docs/reports/persian_prompt_compare.md")
     args = ap.parse_args()
 
-    from llama_cpp import Llama
     samples = load_all()
 
     lines = []
