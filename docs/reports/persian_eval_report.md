@@ -1,6 +1,6 @@
 # Persian LLM Evaluation Report
 
-Generated: 2026-08-18 09:17 UTC
+Generated: 2026-08-19 09:18 UTC
 
 ## Models (sorted by mean accuracy)
 
