@@ -1,0 +1,12 @@
+[
+  {"id": "q1", "question": "What is the recommended size for shared_buffers in PostgreSQL relative to RAM?", "answer": "25% of total RAM", "source_doc": "postgresql.md", "topic": "PostgreSQL"},
+  {"id": "q2", "question": "Which data structure does Redis use to implement sorted sets (ZSET)?", "answer": "skip list and a hash table", "source_doc": "redis.md", "topic": "Redis"},
+  {"id": "q3", "question": "What QoS class does a Kubernetes pod get when requests equal limits?", "answer": "Guaranteed", "source_doc": "kubernetes.md", "topic": "Kubernetes"},
+  {"id": "q4", "question": "Which storage driver is the default for Docker on modern Linux?", "answer": "OverlayFS2", "source_doc": "docker.md", "topic": "Docker"},
+  {"id": "q5", "question": "What chunk overlap percentage is recommended in RAG to improve boundary recall?", "answer": "10-20%", "source_doc": "rag.md", "topic": "RAG"},
+  {"id": "q6", "question": "How much memory does the NVIDIA H200 GPU have?", "answer": "141 GB HBM3e", "source_doc": "gpu.md", "topic": "GPU"},
+  {"id": "q7", "question": "Which Python technique JIT-compiles hot loops?", "answer": "Numba", "source_doc": "python.md", "topic": "Python"},
+  {"id": "q8", "question": "What header mitigates XSS attacks?", "answer": "Content-Security-Policy", "source_doc": "security.md", "topic": "Security"},
+  {"id": "q9", "question": "Which quantization methods reduce LLM memory footprint?", "answer": "AWQ, GPTQ (INT8/INT4)", "source_doc": "llm.md", "topic": "LLM"},
+  {"id": "q10", "question": "Which vector database is written in Rust and supports payload filtering?", "answer": "Qdrant", "source_doc": "vector-db.md", "topic": "VectorDB"}
+]

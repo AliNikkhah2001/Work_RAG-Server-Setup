@@ -57,13 +57,21 @@ TARGETS = [
     ("deepseek-ai/DeepSeek-V4-Flash",
      ["model-*.safetensors", "model.safetensors.index.json", "tokenizer*.json",
       "config.json", "generation_config.json", "README.md", "LICENSE"]),         # ~149 GB done
+
+    # --- resumed/added 2026-08-19: >100GB repos now INCLUDED (policy lifted per user) ---
+    ("bartowski/nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-GGUF",
+     ["nvidia_Llama-3_1-Nemotron-Ultra-253B-v1-Q4_K_M*", "README.md"]),          # ~132 GB (Q4_K_M, 4 shards; partial on disk -> resume)
+    ("unsloth/MiniMax-M3-GGUF",
+     ["UD-IQ4_XS/*", "README.md"]),                                               # ~208 GB  GGUF UD-IQ4_XS (6 shards)
+    ("unsloth/Kimi-K3-GGUF",
+     ["UD-IQ1_S/*", "README.md"]),                                                # ~594 GB  GGUF UD-IQ1_S (14 shards)
+    ("zai-org/GLM-5.2-FP8",
+     ["model-*.safetensors", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "chat_template.jinja",
+      "README.md", "LICENSE"]),                                                   # ~755 GB  safetensors FP8 (141 shards)
 ]
 
-# EXCLUDED (>100 GB download size, policy 2026-08-17; DeepSeek-V4-Flash RE-INCLUDED 2026-08-18):
-#   unsloth/MiniMax-M3-GGUF         ~208 GB  GGUF UD-IQ4_XS
-#   unsloth/Kimi-K3-GGUF            ~594 GB  GGUF UD-IQ1_S
-#   zai-org/GLM-5.2-FP8             ~755 GB  safetensors (FP8)
-# (These three stay in the README as "excluded — >100 GB" reference entries.)
+# POLICY UPDATE 2026-08-19: >100GB exclusion lifted per user. All repos INCLUDED above.
 
 MAX_ATTEMPTS = 8
 RETRY_WAIT = 90
