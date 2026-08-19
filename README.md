@@ -8,6 +8,54 @@ Setup and staging of a **RAG development + production system** on an NVIDIA H200
 
 ---
 
+## Implementation Progress
+
+### Phase 0 — Assets refresh (plots / interactive / Pages / README)
+- [x] 0.1 Regenerate report + plots + interactive Plotly + Pages from current logs
+- [x] 0.2 Verify live site: index (200), 04-figures (10 iframes), n-shot, temperature, RTL compare all 200
+- [x] 0.3 Commit + push to `main`
+
+### Phase 1 — DeepSeek inference bring-up (blocker, highest risk)
+- [ ] 1.1 Create separate venv (`venv-deepseek`) with torch≥2.10, transformers≥5.0, tilelang, fast_hadamard
+- [ ] 1.2 Convert weights MP=2 via bundled `inference/convert.py`
+- [ ] 1.3 Smoke test chat + batch inference via `torchrun generate.py`
+- [ ] 1.4 Wrap generate.py as OpenAI-compatible FastAPI server (port 9001)
+
+### Phase 2 — GPU capacity & parallel-instance benchmark
+- [ ] 2.1 Per-model single-instance VRAM + tok/s measurement
+- [ ] 2.2 Parallel packing: max instances/GPU per model, latency vs concurrency
+- [ ] 2.3 Plot `persian_parallel.png` + interactive; add to report
+
+### Phase 3 — Higher-reasoning research & benchmark
+- [ ] 3.1 Research: native thinking mode (Qwen3.8, Qwen3-30B, Gemma-3, Nemotron) + CoT fallback
+- [ ] 3.2 Implement per-model reasoning invocation in eval harness
+- [ ] 3.3 Benchmark vanilla vs high-reasoning for all 10 models → plots/report
+
+### Phase 4 — Full re-benchmark including DeepSeek
+- [ ] 4.1 Re-run 7-task Persian eval (vanilla + improved) for DeepSeek
+- [ ] 4.2 Extend MODEL_META + all 10 plots/tables with DeepSeek
+- [ ] 4.3 Verify DeepSeek in all plots + same-question + per-model samples
+
+### Phase 5 — LLM inference manager (gateway/middleman)
+- [ ] 5.1 Research auth methods (JWT, API keys, scopes)
+- [ ] 5.2 Design SQLite schema (models, api_tokens, chat_sessions, messages, metrics)
+- [ ] 5.3 Implement FastAPI gateway: /v1/models, /v1/chat/completions, /auth/*, /admin, /metrics
+- [ ] 5.4 Model lifecycle: warm instances, hot-swap, metrics logging
+
+### Phase 6 — Repo restructure + benchmark migration
+- [ ] 6.1 Create `benchmarks/` and `llm_inference_manager/` folders
+- [ ] 6.2 Migrate eval scripts to call manager API instead of loading llama.cpp directly
+
+### Phase 7 — Re-run benchmark via manager + report
+- [ ] 7.1 Re-run full Persian suite through manager; validate parity
+- [ ] 7.2 Update report + Pages + README with manager architecture + API table
+
+### Phase 8 — DeepSeek + frontend integration & API docs
+- [ ] 8.1 DeepSeek in open-webui via manager; verify chat works
+- [ ] 8.2 API endpoint details per model in report + README (base URL, model id, auth, curl)
+
+---
+
 ## 1. Hardware & Environment
 
 | Item | Value |
