@@ -1,0 +1,5 @@
+torch>=2.6,<2.9
+safetensors>=0.4.3
+transformers>=4.44
+numpy
+tqdm
