@@ -31,26 +31,32 @@ TARGETS = [
      ["Llama-3.2-3B-Instruct-Q4_K_M.gguf"]),                                    #  2.0 GB done
     ("bartowski/Qwen2.5-7B-Instruct-GGUF",
      ["Qwen2.5-7B-Instruct-Q4_K_M.gguf"]),                                       #  4.7 GB done
+    ("bartowski/Mistral-7B-Instruct-v0.3-GGUF",
+     ["Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"]),                                  #  4.4 GB done
 
     # --- pending queue (smallest first) ---
-    ("bartowski/Mistral-7B-Instruct-v0.3-GGUF",
-     ["Mistral-7B-Instruct-v0.3-Q4_K_M.gguf"]),                                  #  4.4 GB
     ("bartowski/google_gemma-3-27b-it-GGUF",
      ["google_gemma-3-27b-it-Q4_K_M.gguf"]),                                     # 16.5 GB (gated)
+    ("bartowski/Qwen3.8-27B-GGUF",
+     ["Qwen3.8-27B-Q4_K_M.gguf"]),                                               # 17.8 GB (multimodal; bartowski quants incl. mmproj)
     ("Qwen/Qwen3-30B-A3B-GGUF",
      ["Qwen3-30B-A3B-Q4_K_M.gguf"]),                                             # 18.6 GB
     ("bartowski/google_gemma-4-31B-it-GGUF",
      ["google_gemma-4-31B-it-Q4_K_M.gguf"]),                                     # 19.6 GB (gated)
-    ("bartowski/Qwen3.8-27B-GGUF",
-     ["Qwen3.8-27B-Q4_K_M.gguf"]),                                               # 17.8 GB (multimodal; bartowski quants incl. mmproj)
     ("bartowski/nvidia_Llama-3_3-Nemotron-Super-49B-v1-GGUF",
      ["*Nemotron-Super-49B-v1-Q4_K_M.gguf"]),                                    # 30.2 GB  (Nemotron 3 / Super)
 
+    # --- FULL downloads: grab EVERY quant/file in the repo, not just Q4_K_M ---
+    ("bartowski/Mistral-7B-Instruct-v0.3-GGUF",
+     ["*"]),                                                                     # FULL ~64 GB (all quants; Q4 done above)
+    ("bartowski/Qwen2.5-72B-Instruct-GGUF",
+     ["*"]),                                                                     # FULL ~73 GB (all files incl. sharded Q8_0)
+
     # --- resumed 2026-08-18: DeepSeek-V4-Flash (was excluded 2026-08-17 by >100GB
-    # policy; partial 25/46 shards on disk — resume keeps completed shards) ---
+    # policy; 46/46 shards verified on disk 2026-08-19) ---
     ("deepseek-ai/DeepSeek-V4-Flash",
      ["model-*.safetensors", "model.safetensors.index.json", "tokenizer*.json",
-      "config.json", "generation_config.json", "README.md", "LICENSE"]),         # ~160 GB total
+      "config.json", "generation_config.json", "README.md", "LICENSE"]),         # ~149 GB done
 ]
 
 # EXCLUDED (>100 GB download size, policy 2026-08-17; DeepSeek-V4-Flash RE-INCLUDED 2026-08-18):
