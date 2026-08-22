@@ -288,6 +288,24 @@ def scan_models():
             "shards": f"{present}/{total}" if total else "",
         })
     models.sort(key=lambda m: m["disk"], reverse=True)
+    # add pending queue entries that have no dir yet (so they appear as 0% queued)
+    try:
+        from download_models import TARGETS as _TARGETS
+        existing = {m["name"] for m in models}
+        # expected sizes in bytes for pending large models (from TARGETS comments)
+        _expected_map = {
+            "unsloth_MiniMax-M3-GGUF": 208 * 1024**3,
+            "unsloth_Kimi-K3-GGUF": 594 * 1024**3,
+            "zai-org_GLM-5.2-FP8": 755 * 1024**3,
+        }
+        for repo, _p in _TARGETS:
+            name = repo.replace("/", "_")
+            if name not in existing:
+                exp = _expected_map.get(name, 0)
+                models.append({"name": name, "disk": 0, "expected": exp, "pct": 0.0, "status": "queued", "shards": ""})
+    except Exception:
+        pass
+    models.sort(key=lambda m: m["disk"], reverse=True)
     return models
 
 
