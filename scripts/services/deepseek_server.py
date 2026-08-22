@@ -3,13 +3,18 @@
 import os
 import sys
 import json
-import torch
+from typing import List
 
-# ---- Hard-coded absolute paths ----
-# These paths are fixed for this deployment
+import torch
+import uvicorn
+from fastapi import FastAPI, Request
+from pydantic import BaseModel, Field
+
+# ---- Hard-coded absolute paths (REPO_ROOT/inference — fixed for this deployment) ----
 REPO_ROOT = "/splunk-data/v1/Work_RAG-Server-Setup"
 INFERENCE_DIR = os.path.join(REPO_ROOT, "offline-prep/models/huggingface/deepseek-ai_DeepSeek-V4-Flash/inference")
-CONFIG_PATH = os.path.join(REPO_ROOT, "offline-prep/models/huggingface/deepseek-ai_DeepSeek-V4-Flash/config.json")
+# Use inference/config.json (43 layers, correct moe_inter_dim etc) — NOT the HF config.json
+CONFIG_PATH = os.path.join(INFERENCE_DIR, "config.json")
 CKPT_BASE = os.path.join(REPO_ROOT, "offline-prep/models/deepseek-v4-converted")
 TOKENIZER_PATH = os.path.join(REPO_ROOT, "offline-prep/models/huggingface/deepseek-ai_DeepSeek-V4-Flash")
 
@@ -17,25 +22,40 @@ TOKENIZER_PATH = os.path.join(REPO_ROOT, "offline-prep/models/huggingface/deepse
 sys.path.insert(0, INFERENCE_DIR)
 
 from model import Transformer, ModelArgs
-from safetensors.torch import load_model as sl
+from safetensors.torch import load_model
 from transformers import AutoTokenizer
 
-# Load config
+app = FastAPI(title="DeepSeek-V4-Flash OpenAI Compatible", version="1.0.0")
+
+# Load config — inference/config.json matches ModelArgs fields exactly
 with open(CONFIG_PATH) as f:
     args = ModelArgs(**json.load(f))
 
-# Create model on cuda
-model = Transformer(args)
-
-# Load weights
-load_model(model, os.path.join(CKPT_BASE, "model0-mp2.safetensors"), strict=False)
-
-# Load tokenizer
-tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH)
-
-model.tokenizer = tokenizer
-model.eval()
-print(f"DeepSeek model loaded successfully: dim={args.dim}, n_layers={args.n_layers}")
+# Create model on cuda (deferred load when torch.cuda.is_available)
+# Note: full 88GB sharded weights require ~90GB unified VRAM; for MP=2 use model0/mp2 + model1/mp2
+model = None
+tokenizer = None
+try:
+    if torch.cuda.is_available():
+        with torch.device("cuda"):
+            model = Transformer(args)
+        # Load weights for rank 0 shard only when running single-process (WORLD_SIZE=1)
+        # For MP=2, launch via torchrun with --ckpt-path and model{rank}-mp{world_size}
+        rank = int(os.getenv("RANK", "0"))
+        world_size = int(os.getenv("WORLD_SIZE", "1"))
+        ckpt_file = os.path.join(CKPT_BASE, f"model{rank}-mp{world_size}.safetensors")
+        if not os.path.exists(ckpt_file):
+            # fallback to mp2 shard 0 for single-GPU smoke test
+            ckpt_file = os.path.join(CKPT_BASE, "model0-mp2.safetensors")
+        load_model(model, ckpt_file, strict=False)
+        tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH)
+        model.tokenizer = tokenizer
+        model.eval()
+        print(f"DeepSeek model loaded successfully: dim={args.dim}, n_layers={args.n_layers}, ckpt={ckpt_file}")
+    else:
+        print("CUDA not available — model init deferred (meta device test only)")
+except Exception as e:
+    print(f"DeepSeek model load deferred/failed: {e} — server will still start for health checks")
 
 # ---- Pydantic models ----
 from pydantic import BaseModel, Field
