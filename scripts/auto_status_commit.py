@@ -437,6 +437,9 @@ def rewrite_progress_section(text, evidence, download_section):
             skip_initial_blank = False
             continue
         skip_initial_blank = False
+        # Avoid consecutive blank lines (prevents double blank after duplicate headers)
+        if line == "" and out_lines and out_lines[-1] == "":
+            continue
         if line.startswith("- [ ] ") or line.startswith("- [x] "):
             text_part = line[6:].strip()
             new_state = decide_checkbox(evidence, text_part)
