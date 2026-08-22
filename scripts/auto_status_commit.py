@@ -414,8 +414,29 @@ def rewrite_progress_section(text, evidence, download_section):
     body = text[hdr:sep]
     rest = text[sep:]  # starts with "\n---\n..."
 
+    # Strip any old Download Progress section from body to prevent duplication
+    dl_marker = "## Download Progress"
+    dl_idx = body.find(dl_marker)
+    if dl_idx >= 0:
+        body = body[:dl_idx].rstrip()
+
     out_lines = [marker, ""]
+    seen_marker = True  # already added
+    skip_initial_blank = True
     for line in body.splitlines():
+        # Skip the original marker line and any duplicate Implementation Progress headers
+        if line.strip() == marker:
+            if seen_marker:
+                # first line is the marker we already have; skip it and any duplicates
+                continue
+            seen_marker = True
+            out_lines.append(line)
+            continue
+        # Skip the blank line immediately after the marker (already in out_lines)
+        if skip_initial_blank and line == "":
+            skip_initial_blank = False
+            continue
+        skip_initial_blank = False
         if line.startswith("- [ ] ") or line.startswith("- [x] "):
             text_part = line[6:].strip()
             new_state = decide_checkbox(evidence, text_part)
