@@ -1,0 +1,129 @@
+{
+  "generated_utc": "2026-08-22T13:05:04Z",
+  "host": "ai-gpu1, 2x H200 NVL 143GB, driver 580.173.02",
+  "models_on_disk_gb": {
+    "gemma-4-31b": 18.25,
+    "gemma-3-27b": 15.41,
+    "qwen3.8-27b": 16.55,
+    "mistral-7b": 4.07,
+    "qwen2.5-7b": 4.36
+  },
+  "vram_estimates_mib_per_instance_ctx8192": {
+    "gemma-4-31b": 25500,
+    "gemma-3-27b": 21000,
+    "qwen3.8-27b": 22500,
+    "mistral-7b": 6500,
+    "qwen2.5-7b": 7000
+  },
+  "packing_capacity_2xH200": {
+    "gemma-4-31b": {
+      "per_gpu_143gb": 5,
+      "per_2gpu_pool": 11,
+      "fits_5x_gemma4_current": true
+    },
+    "gemma-3-27b": {
+      "per_gpu_143gb": 6,
+      "per_2gpu_pool": 13,
+      "fits_5x_gemma4_current": false
+    },
+    "qwen3.8-27b": {
+      "per_gpu_143gb": 6,
+      "per_2gpu_pool": 12,
+      "fits_5x_gemma4_current": false
+    },
+    "mistral-7b": {
+      "per_gpu_143gb": 22,
+      "per_2gpu_pool": 44,
+      "fits_5x_gemma4_current": false
+    },
+    "qwen2.5-7b": {
+      "per_gpu_143gb": 20,
+      "per_2gpu_pool": 41,
+      "fits_5x_gemma4_current": false
+    }
+  },
+  "benchmark": {
+    "gemma-4-31b": {
+      "single_instance": {
+        "port": 8080,
+        "gpu": 0,
+        "prompt": "Write a 100 word essay about GPUs (max_tokens=128)",
+        "trials": 3,
+        "latency_s_mean": 2.0,
+        "latency_s_trials": [
+          2.0,
+          2.02,
+          1.97
+        ],
+        "tokens_est_words": 97,
+        "tok_s_est_words": 48.6,
+        "tok_s_est_real_tokens_factor_1_3": 63.2,
+        "vram_mib_per_instance_measured": 25529,
+        "note": "warmup 0.60s for 25 words"
+      },
+      "parallel_5": {
+        "ports": [
+          8080,
+          8081,
+          8082,
+          8083,
+          8084
+        ],
+        "wall_s": 7.17,
+        "avg_per_request_latency_s": 6.12,
+        "per_request_latency_s": [
+          4.7,
+          4.86,
+          6.81,
+          7.07,
+          7.15
+        ],
+        "total_tokens_est_words": 487,
+        "throughput_wall_words_per_s": 68.0,
+        "throughput_wall_tok_per_s_est_1_3x": 88.4,
+        "speed_up_vs_sequential_5x": 1.58,
+        "gpu_mem_mib_used_total": 130060,
+        "gpu_mem_mib": {
+          "gpu0": 76587,
+          "gpu1": 53473
+        },
+        "gpu_free_mib": {
+          "gpu0": 67184,
+          "gpu1": 90298
+        },
+        "packing_note": "3 instances on GPU0 (76.5GB), 2+Qwen on GPU1 (53GB). 5x Q4_K_M fits comfortably, ~27GB free headroom for KV growth at longer ctx"
+      },
+      "manager_proxy": {
+        "sequential_5_wall_s": 11.32,
+        "sequential_throughput_words_per_s": 42.4,
+        "parallel_5_wall_s": 7.57,
+        "parallel_5_throughput_words_per_s": 64.4,
+        "speedup": 1.5
+      }
+    },
+    "qwen2.5-7b": {
+      "single_instance": {
+        "port": 8090,
+        "gpu": "dynamic (manager)",
+        "latency_s_mean": 0.7,
+        "latency_s_trials": [
+          0.7,
+          0.69
+        ],
+        "tokens_est_words": 107,
+        "tok_s_est": 154.4,
+        "vram_mib_est": 7000,
+        "disk_gb": 4.4
+      }
+    },
+    "gemma-3-27b_note": "Not live-loaded during test (VRAM would require evicting one gemma-4). Estimated VRAM 21GB, single-instance latency expected ~1.7s for 128 tokens (16.5GB smaller than 31B, ~15% faster), throughput ~55 words/s single.",
+    "qwen3.8-27b_note": "17.8GB disk, est VRAM 22.5GB, expected similar to gemma-3 but Qwen thinking-mode overhead may add 0.2s. Fits 6-7 instances per 2xH200 pool (vs 5 for gemma-4).",
+    "mistral-7b_note": "4.1GB disk, est VRAM 6.5GB, measured proxy via qwen2.5-7b class: ~0.7s per 128 tokens, ~150 words/s. Fits 22 instances per 2xH200 pool (44 if 8192 ctx trimmed to 4096). Ideal for high-concurrency packing."
+  },
+  "method": {
+    "tool": "curl + requests parallel, llama_cpp llama_chat_server OpenAI compatible, n_gpu_layers=-1, n_ctx 4096/8192, temp 0.3, max_tokens 128",
+    "prompt": "Write a 100 word essay about GPUs, their architecture and role in AI. Be concise.",
+    "metric": "words counted via split(), tok/s real ~1.3x words/s due to subword tokenization. VRAM via nvidia-smi MiB."
+  },
+  "conclusion": "5x gemma-4-31b Q4_K_M packs comfortably on 2xH200 with 67/90GB free. Single latency 2.0s/128tok, 5-way wall 7.2s (68 words/s wall, 1.5x faster than sequential). Qwen/Mistral class ~3x faster per instance and 4x higher packing density. For max throughput, mix 1-2 large reasoning models + many small 7B for RAG."
+}

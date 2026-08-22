@@ -1,0 +1,6 @@
+model,disk_gb,vram_mib_est,max_instances_2xH200,single_latency_s_128tok,single_throughput_words_per_s,parallel_5_wall_s,parallel_throughput_words_per_s,notes
+gemma-4-31b,18.25,25500,11,2.0,48.6,7.17,68.0,measured 5x live
+gemma-3-27b,15.41,21000,13,1.7,55,,,"estimated, not loaded (needs 21GB)"
+qwen3.8-27b,16.55,22500,12,1.8,52,,,estimated
+mistral-7b,4.07,6500,44,0.7,154,,,proxy measured via qwen2.5-7b same class
+qwen2.5-7b,4.36,7000,41,0.7,154,,,measured on 8090
