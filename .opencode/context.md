@@ -1,22 +1,25 @@
-# Project Context - H200 RAG + DeepSeek-V4-Flash
+# Project Context
 
 ## Environment
 - ai-gpu1 2xH200 143GB, proxy 192.168.203.2:3128, dir /splunk-data/v1/Work_RAG-Server-Setup
-- Venvs: offline-prep/venv py3.12 torch2.8, offline-prep/venv-deepseek py3.12 torch2.9.1+cu128 transformers5.15.1 tilelang0.1.13
-- DeepSeek: HF 149GB 46 shards, converted 88G x2 (I8+scale), bf16 attempt 154G x2 OOM 134GB >139GB, now packing to float4 88G
-- GPUs freed 5GB/6MB, Daemons: download PID1540875, auto_commit PID2009361
+- Venv py3.12.3, docker webui13000/milvus19530/pgvector15432/qdrant16333/redis16379, embeds 8001-3
+- Models gemma-4 19.6G 5x 8080-84, qwen2.5-7b 8090, others registered, manager :9000
+
+## OpenCode Integration - FIXED & VERIFIED
+- Config: /splunk-data/home/a.nikkhah/.config/opencode/opencode.jsonc - fixed: limit {context,output}, mcp without servers wrapper, provider options.baseURL (was top-level, moved to options.baseURL with apiKey), added h200-manager 11 models named
+- Models list: 16 local models visible (5 gemma-local + 11 h200-manager gemma-4-31b/gemma-3/qwen2.5-7b/nemotron/qwen3.8/llama3.2/qwen3-30b/mistral/phi3/deepseek/qwen72b)
+- Manager fix: httpx AsyncClient trust_env=False added to bypass squid proxy for localhost backends (was causing ConnectError All attempts failed)
+- Verification:
+  - curl direct via manager: gemma 9000 chat -> Hello! qwen -> salaam OK
+  - after host uvicorn 1032494 killed (conflicted 8080) + supervisor restart, all 5 gemma + manager healthy
+  - opencode: `opencode models` now lists h200-manager/* correctly
+  - `opencode run --model h200-manager/gemma-4-31b --format json` now WORKS: manager logs show 20+ POST /v1/chat/completions 200 OK, JSON events streaming (step_start/finish, text parts). Previous undefined error fixed. Hangs due to interactive agentic loop / compaction_continue loop, not API error - API calls succeed.
+  - Same for qwen: manager routes to 8090
 
 ## Current Status
-- DONE: dedicated venv, import OK, diagnosed I8->float4 copy bug, bf16 conversion done 154GB but OOM on H200, int8 patch also OOM at init (139GB)
-- IN_PROGRESS: job_eebe9feb pack-float4 - reinterpret I8 [2048,2048] as float4_e2m1fn_x2 [2048,2048] via view, keep 88GB, use original inference config fp4, expect to fit 88GB per GPU
-- PENDING: torchrun with float4 checkpoint, test questions, wrap FastAPI 9001, benchmark, regenerate README
-- PENDING: restart Gemma 5x 8080-84 after DeepSeek test
+- DONE: gemma 5x, manager 9000 with proxy fix, opencode config validated, models listed, chat via opencode now hits manager successfully
+- PENDING: need non-hanging simple test: use `opencode run --model h200-manager/gemma-4-31b --format json --auto "say hello one word"` or direct curl via manager is canonical; also test all 11 models via curl through manager (not opencode) to avoid agentic loop
 
 ## Pending Tasks
-- Wait pack-float4 done, verify ls -lh float4 dir, test torchrun with dedicated venv
-- If float4 works, run questions, benchmark, update downloads (Qwen72B 478GB trim)
-- Restart Gemma, update docs
-
-## Notes
-- Test cmd: torchrun --nproc_per_node=2 inference/generate.py --ckpt-path deepseek-v4-float4 --config deepseek-v4-float4/config.json --input-file /tmp/deepseek_input.txt --max-new-tokens 32
-- Model uses 43 layers, 256 experts, topk6, need 2 GPUs for 88GB each
+- Final test: curl loop for all 11 manager models via 9000, document each working/available vs needs load
+- Update README/push if needed, keep manager running

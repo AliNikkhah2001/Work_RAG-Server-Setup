@@ -318,7 +318,7 @@ async def proxy_chat(model_id: str, payload: dict):
     # backend expects its own model-id like gemma-4-31b-1 ; but we pass original
     payload = dict(payload)
     # ensure max_tokens etc
-    async with httpx.AsyncClient(timeout=120) as client:
+    async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
         r = await client.post(f"{backend}/v1/chat/completions", json=payload)
         if r.status_code!=200:
             raise HTTPException(status_code=r.status_code, detail=r.text)
