@@ -1,25 +1,24 @@
 # Project Context
 
 ## Environment
-- ai-gpu1 2xH200 143GB, proxy 192.168.203.2:3128, dir /splunk-data/v1/Work_RAG-Server-Setup
-- Venv py3.12.3, docker webui13000/milvus19530/pgvector15432/qdrant16333/redis16379, embeds 8001-3
-- Models gemma-4 19.6G 5x 8080-84, qwen2.5-7b 8090, others registered, manager :9000
+- ai-gpu1 2xH200 143GB driver 580.173.02 CUDA13, proxy 192.168.203.2:3128, dir /splunk-data/v1/Work_RAG-Server-Setup
+- Venv py3.12.3, docker 9 Up (webui13000/milvus19530/pgvector15432/qdrant16333/redis16379 + grafana/prom/otel/node-exporter), embeds 8001-3, gemma 5x 8080-84 + qwen 8090 via manager 9000
 
-## OpenCode Integration - FIXED & VERIFIED
-- Config: /splunk-data/home/a.nikkhah/.config/opencode/opencode.jsonc - fixed: limit {context,output}, mcp without servers wrapper, provider options.baseURL (was top-level, moved to options.baseURL with apiKey), added h200-manager 11 models named
-- Models list: 16 local models visible (5 gemma-local + 11 h200-manager gemma-4-31b/gemma-3/qwen2.5-7b/nemotron/qwen3.8/llama3.2/qwen3-30b/mistral/phi3/deepseek/qwen72b)
-- Manager fix: httpx AsyncClient trust_env=False added to bypass squid proxy for localhost backends (was causing ConnectError All attempts failed)
-- Verification:
-  - curl direct via manager: gemma 9000 chat -> Hello! qwen -> salaam OK
-  - after host uvicorn 1032494 killed (conflicted 8080) + supervisor restart, all 5 gemma + manager healthy
-  - opencode: `opencode models` now lists h200-manager/* correctly
-  - `opencode run --model h200-manager/gemma-4-31b --format json` now WORKS: manager logs show 20+ POST /v1/chat/completions 200 OK, JSON events streaming (step_start/finish, text parts). Previous undefined error fixed. Hangs due to interactive agentic loop / compaction_continue loop, not API error - API calls succeed.
-  - Same for qwen: manager routes to 8090
+## Dashboard Webapp — NEW (2026-08-23 14:11)
+- File: llm_inference_manager/app.py 917 lines (was 580), patched with dashboard routes, backup app.py.bak
+- Routes: GET / (dashboard), GET /dashboard (same), GET /api/dashboard (comprehensive JSON), GET /api/project, GET /api/usage, PATCH/PUT /admin/models/{id}, POST /admin/models/load/unload
+- Dashboard HTML: DASHBOARD_HTML 300+ lines, tabs Overview/Models/Embeds&Docker/Project/Usage/Playground, vanilla JS fetch /api/dashboard, GPU bars, model cards with Run/Stop/Test/Edit buttons, embed/docker/disk/project/usage, chat + embed playgrounds
+- Manager restarted pid 2289945, health models_loaded 2 (after reload qwen 8085, GPU1 free 76321), gemma still 5x, qwen 8090 + 8085 both, all health 200
+- Tests: curl /dashboard → HTML ok, curl /api/dashboard → 11 models/9 docker/3 embeds/9 project/benchmarks 28 logs, curl /api/project, /api/usage (99 gemma 1862ms avg, 39 qwen 1418ms), curl /v1/chat gemma→Hello OK
 
-## Current Status
-- DONE: gemma 5x, manager 9000 with proxy fix, opencode config validated, models listed, chat via opencode now hits manager successfully
-- PENDING: need non-hanging simple test: use `opencode run --model h200-manager/gemma-4-31b --format json --auto "say hello one word"` or direct curl via manager is canonical; also test all 11 models via curl through manager (not opencode) to avoid agentic loop
+## Previous Milestone — DONE 50/50 (100%)
+- README 1540 lines 114K ✅ VERIFIED RUNBOOK (sections 0..14), backup README.md.bak.20260823, 3 manager_test logs, 2 opencode_session logs, Reviewer gate closed 13:21
+- Manager trust_env=False fix, opencode h200-manager 11 models visible, both configs synced
+- Todos: 0 remaining /50 done, M1-M4 completed, status pass
 
-## Pending Tasks
-- Final test: curl loop for all 11 manager models via 9000, document each working/available vs needs load
-- Update README/push if needed, keep manager running
+## Pending Tasks Dashboard
+- Verify run/stop via curl: test POST /admin/models/load gemma-3-27b →8085 and unload, test PATCH edit, ensure UI buttons work in browser (curl already proves API)
+- Update README to document dashboard: add §15 Dashboard (routes, screenshots, curls, run/stop/edit)
+- Retest opencode models + curl gemma chat after dashboard restart
+- Update todo.md to add M5 Dashboard milestone and mark done, update work-log
+- Ensure manager log persists, no regression of 5x gemma

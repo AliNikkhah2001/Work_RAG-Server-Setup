@@ -118,3 +118,13 @@
 ### T4.2: Closeout | agent:Reviewer | status: completed | depends:T4.1
 - [x] S4.2.1: FINAL `git diff README.md | head -n 200` + `git log --oneline -5` preview, ensure work-log.md synced, remove resolved sync-issues, mark all [x] | file:README.md | size:S
 
+
+## M5: Dashboard Webapp — Detailed Control Center | status: completed
+### T5.1: Dashboard Implementation | agent:Worker
+- [x] S5.1.1: Patch llm_inference_manager/app.py 580→917 lines — add /dashboard, /api/dashboard, /api/project, /api/usage, PATCH/PUT /admin/models/{id}, Dashboard HTML (6 tabs, vanilla JS) | size:L
+- [x] S5.1.2: Fix syntax except Exception, restart manager pid 2289945, verify gemma 5x + qwen 8090 still healthy | size:M
+- [x] S5.1.3: Test dashboard curls — /dashboard HTML, /api/dashboard 11/9/3, /api/project, /api/usage, chat gemma → Hello | size:M
+- [x] S5.1.4: Test model Run/Stop/Edit via API — POST load gemma-3-27b →8086, PATCH notes, POST unload, re-register qwen2.5-7b via PUT → loaded 8090, verify models_loaded 2 | size:M
+- [x] S5.1.5: Update README §15 Dashboard — routes table, verified curls, browser instructions, 1612 lines | size:M
+- [x] S5.1.6: Verify opencode still 11 h200-manager, curl gemma chat still 200, dashboard playground works | size:S
+

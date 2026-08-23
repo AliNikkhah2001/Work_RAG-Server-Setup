@@ -1538,3 +1538,75 @@ offline-prep/venv/bin/python3.12 scripts/rag_test_harness.py \
 - [`docs/reports/`](docs/reports/) — Persian eval report + comparison plots.
 
 Generated artifacts (reports/logs/state) live under `offline-prep/` and are **not** tracked in git.
+
+---
+
+## 15. Dashboard Webapp — H200 RAG Control Center (NEW 2026-08-23)
+
+**Live URL:** `http://127.0.0.1:9000/` and `http://127.0.0.1:9000/dashboard` (same), also `http://192.168.96.82:9000/dashboard` from LAN, and `http://host.docker.internal:9000/dashboard` from Docker. **Manager pid 2289945, 917 lines** (`app.py` patched from 580, backup `app.py.bak`).
+
+### What it contains (single-file, no CDN, vanilla JS)
+
+| Tab | Content | Data source |
+|-----|---------|-------------|
+| **Overview** | Manager version, `models_loaded`, GPU bars (used/free/util per GPU via `nvidia-smi`), proxy `192.168.203.2:3128`, paths (`root`, `venv`, `models_dir`), recent metrics (10), README quick-start copy | `GET /api/dashboard` (gpus, manager) + `GET /health` |
+| **Models (11)** | Grid of 11 cards: `gemma-4-31b` (champion 19.6G loaded 5×), `gemma-3-27b`, `qwen3.8-27b`, `qwen3-30b-a3b`, `nemotron-49b`, `qwen2.5-7b` (loaded 8090), `llama-3.2-3b`, `mistral-7b`, `phi-3-mini`, `deepseek`, `qwen72b` — each shows family/params/quant/context/benchmark mean, `path_exists` ✅/❌, `backends` chips, `live_health` 200/err, **▶ Run** / **⏹ Stop** / **💬 Test** / **✎ Edit** buttons, filter by name/status | `GET /api/dashboard` models + `PATCH /admin/models/{id}` |
+| **Embeds & Docker** | 3 embeds health (`8001 e5-small dim384`, `8002 bge-m3 dim1024`, `8003 paraph 384` + embed test dim), 9 docker table (webui 13000 healthy, milvus 19530, pgvector 15432, qdrant 16333, redis 16379, grafana 13001, prometheus 19090, otel 14317, node-exporter 19100), disk `du -sh` (17 repos ~1.9T), benchmarks `28 evalp*.json` + `10 png` | `GET /api/dashboard` embeds/docker/disk/benchmarks |
+| **Project** | Structure tree for 9 key dirs (`scripts 24 files`, `services 13`, `deploy`, `llm_inference_manager`, `models/huggingface 17`, `docs/reports`, `e2e-test`, `rag_storage`, `logs`) + scripts how-to-run | `GET /api/project` |
+| **Usage & Sessions** | By-model `cnt`/`avg_ms`/`max_ms` (gemma 99 avg 1862ms, qwen 39 avg 1418ms), recent 10 requests, 10 recent sessions, API tokens | `GET /api/usage` + `GET /v1/sessions` |
+| **Playground** | Chat via manager (select model, prompt, max_tokens, temp → `POST /v1/chat/completions`), Embed playground (direct `8001` → dim + first 5 vector) | `POST /v1/chat/completions`, `POST /v1/embeddings` |
+
+### API — Dashboard & Model Control
+
+| Method | Path | Description | Test curl |
+|--------|------|-------------|-----------|
+| `GET` | `/` , `/dashboard` | **Dashboard HTML** (300+ lines CSS/JS) | `curl -s http://127.0.0.1:9000/dashboard \| head -c 300` → `<!doctype html>…H200 RAG Dashboard` |
+| `GET` | `/api/dashboard` | **Aggregated JSON** (manager + 11 models + docker 9 + embeds 3 + disk + project 9 + metrics) | `curl -s http://127.0.0.1:9000/api/dashboard \| jq '.manager,.models[0].live_health'` |
+| `GET` | `/api/project` | Structure + disk + docker | `curl -s http://127.0.0.1:9000/api/project \| jq` |
+| `GET` | `/api/usage` | By-model + recent 30 | `curl -s http://127.0.0.1:9000/api/usage \| jq` |
+| `POST` | `/admin/models/load?model_id=` | **Run** — spawns `llama_chat_server.py` on next free port 8085..8100, picks GPU with most `free_mib`, logs `logs/llama_server_<port>.log` | `curl -X POST http://127.0.0.1:9000/admin/models/load?model_id=gemma-3-27b` → `{"status":"spawned","port":8086,"gpu":1,"pid":...}` |
+| `POST` | `/admin/models/unload?model_id=` | **Stop** — `terminate()` + clear `backends` → `available` | `curl -X POST http://127.0.0.1:9000/admin/models/unload?model_id=gemma-3-27b` → `{"status":"unloaded"}` |
+| `PATCH` | `/admin/models/{id}` | **Edit** — `ModelPatch` (`name`,`params`,`size_gb`,`quant`,`path`,`context`,`benchmark_mean`,`notes`) | `curl -X PATCH http://127.0.0.1:9000/admin/models/gemma-3-27b -H "Content-Type: application/json" -d '{"notes":"test"}'` |
+| `PUT` | `/admin/models/{id}` | **Create/Replace** — full cfg with `backends` (used to re-register `qwen2.5-7b` → `["http://127.0.0.1:8090"]` without spawning) | `curl -X PUT http://127.0.0.1:9000/admin/models/qwen2.5-7b -d @cfg.json` |
+
+### Verified curls (2026-08-23 14:11-14:15)
+
+```bash
+# Dashboard HTML
+curl -s http://127.0.0.1:9000/dashboard | head -c 300
+# → <!doctype html>...<title>H200 RAG Dashboard — Manager :9000</title>...
+
+# Dashboard API — 11 models, 9 docker, 3 embeds, 2 loaded
+curl -s http://127.0.0.1:9000/api/dashboard | jq '.manager.models_loaded, (.models|length), (.docker|length), (.embeds|length)'
+# → 2  11  9  3
+
+# Model live health (gemma 5× 200)
+curl -s http://127.0.0.1:9000/api/dashboard | jq '.models[0].live_health[0]'
+# → {"backend":"http://127.0.0.1:8080","status":200,"body":{"status":"ok","model":"gemma-4-31b-1"}}
+
+# Run gemma-3 (available → loading)
+curl -s -X POST "http://127.0.0.1:9000/admin/models/load?model_id=gemma-3-27b" | jq
+# → {"status":"spawned","model":"gemma-3-27b","port":8086,"gpu":1,"pid":2290355}
+curl -s http://127.0.0.1:9000/admin/status | jq '.registry."gemma-3-27b"'
+# → {"status":"loading","backends":["http://127.0.0.1:8086"],"size_gb":16.5}
+
+# Edit
+curl -s -X PATCH "http://127.0.0.1:9000/admin/models/gemma-3-27b" -H "Content-Type: application/json" -d '{"notes":"test-dashboard-edit"}' | jq .meta.notes
+# → "test-dashboard-edit"
+
+# Stop
+curl -s -X POST "http://127.0.0.1:9000/admin/models/unload?model_id=gemma-3-27b" | jq
+# → {"status":"unloaded"}  (process 8086 killed, backends [])
+curl -s http://127.0.0.1:9000/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"gemma-4-31b","messages":[{"role":"user","content":"say hello one word"}],"max_tokens":10}' | jq .choices[0].message.content
+# → "Hello" (still works via dashboard playground)
+
+# OpenCode via dashboard's localhost base still works
+opencode models | grep h200-manager  # 11
+curl -s http://127.0.0.1:9000/v1/models | jq '.data[].id'  # 11
+```
+
+### How to open in browser
+
+- **SSH tunnel if remote:** `ssh -L 9000:127.0.0.1:9000 a.nikkhah@ai-gpu1`
+- **Then browse:** `http://localhost:9000/dashboard` — click Models → ▶ Run / ⏹ Stop / 💬 Test / ✎ Edit — all without CLI.
+
