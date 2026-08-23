@@ -80,7 +80,7 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
         "params": "30B/3B",
         "size_gb": 18.6,
         "quant": "Q4_K_M",
-        "path": "offline-prep/models/huggingface/Qwen_Qwen3-30B-A3B-GGUF/qwen3-30b-a3b-q4_k_m.gguf",
+        "path": "offline-prep/models/huggingface/Qwen_Qwen3-30B-A3B-GGUF/Qwen3-30B-A3B-Q4_K_M.gguf",
         "context": 8192,
         "license": "Apache-2.0",
         "benchmark_mean": 0.283,
