@@ -1,0 +1,30 @@
+# Vast.ai overlay — no proxy, no /splunk-data, uses existing Gemma at 18000
+# Use: docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.vast.yml up -d
+# On Vast, Gemma is external (llama-server :18000), so LLM services are not started here.
+# This file only overrides data-plane ports if needed and documents env.
+
+services:
+  redis:
+    container_name: redis-vast
+    ports: ["16379:6379"]
+  qdrant:
+    container_name: qdrant-vast
+    ports: ["16333:6333"]
+  pgvector:
+    container_name: pgvector-vast
+    ports: ["15432:5432"]
+    environment:
+      POSTGRES_PASSWORD: testpass
+  milvus:
+    container_name: milvus-vast
+    ports: ["19530:19530"]
+  open-webui:
+    container_name: webui-vast
+    image: ghcr.io/open-webui/open-webui:main
+    ports: ["13000:8080"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    environment:
+      WEBUI_AUTH: "false"
+      # Vast: point Open WebUI at Orchestrator, not Gemma directly
+      OPENAI_API_BASE_URL: http://host.docker.internal:8100/v1
+      OPENAI_API_KEY: sk-local-dev
