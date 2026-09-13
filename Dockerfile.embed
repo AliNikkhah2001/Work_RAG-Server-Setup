@@ -1,0 +1,27 @@
+# Embedding Service Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    sentence-transformers \
+    torch \
+    httpx \
+    pydantic
+
+# Copy the embed server script
+COPY scripts/services/embed_server.py ./
+
+# Expose port (will be set via environment)
+EXPOSE 8001
+
+# Run the service
+CMD ["python", "embed_server.py", "--model", "${MODEL_PATH}", "--model-id", "${MODEL_ID}", "--port", "${PORT}"]
