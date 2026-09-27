@@ -201,7 +201,10 @@ rr_counters: Dict[str, int] = {k:0 for k in MODEL_REGISTRY}
 spawned_processes: Dict[str, subprocess.Popen] = {}
 
 app = FastAPI(title="LLM Inference Manager", version="1.0.0", description="OpenAI-compatible gateway with session/history, metrics, multi-model load balancing")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+# T-C3: Fix CORS — explicit origins, no wildcard with credentials
+import os
+_cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:13000,http://127.0.0.1:13000").split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 # --------------------------------------------------------------------------
 # DB helpers
