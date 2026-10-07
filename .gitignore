@@ -33,5 +33,11 @@ deploy/monitoring/grafana-data/
 deploy/gateway/.htpasswd.public
 deploy/gateway/.public_pass
 
+# ===== LiteLLM secrets (never commit) =====
+litellm.env
+litellm-*.env
+.opencode/litellm.env
+
 # ===== LightRAG runtime storage =====
 rag_storage/
+llm_inference_manager/manager.db

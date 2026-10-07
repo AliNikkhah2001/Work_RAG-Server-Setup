@@ -42,3 +42,55 @@ services:
       SCARF_NO_ANALYTICS: "true"
       DO_NOT_TRACK: "true"
     ports: ["13000:8080"]
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--detailed_debug"]
+    ports: ["4000:4000"]
+    volumes:
+      - ../litellm.yaml:/app/config.yaml:ro
+    env_file:
+      - ../litellm.env
+    environment:
+      HTTP_PROXY: http://192.168.203.2:3128
+      HTTPS_PROXY: http://192.168.203.2:3128
+      NO_PROXY: localhost,127.0.0.1,host.docker.internal,redis,qdrant,pgvector,milvus,langfuse,grafana,prometheus,litellm
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Authorization: Bearer sk-litellm-local-dev-change-me' http://127.0.0.1:4000/health || wget -qO- http://127.0.0.1:4000/health/liveliness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # Triton-optimized champion (B: vLLM-GGUF reuse + A: TRT-LLM engine)
+  triton:
+    image: nvcr.io/nvidia/tritonserver:24.12-trtllm-python-py3
+    container_name: triton-test
+    ports: ["8004:8000", "8005:8001", "8006:8002"]
+    volumes:
+      - ./triton/model_repository:/models:ro
+      - ../offline-prep/models/huggingface:/hf:ro
+      - ../offline-prep/models/trt_engines:/engines:ro
+    command: ["tritonserver", "--model-repository=/models", "--log-verbose=1", "--metrics-port=8002", "--allow-metrics=true"]
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+    restart: unless-stopped
+
+  vllm-gemma-opt:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-gemma-opt
+    ports: ["8104:8000"]
+    volumes:
+      - ../offline-prep/models/huggingface/bartowski_google_gemma-4-31B-it-GGUF:/models:ro
+    command: ["--model", "/models/google_gemma-4-31B-it-Q4_K_M.gguf", "--load-format", "gguf", "--quantization", "gguf", "--host", "0.0.0.0", "--port", "8000", "--gpu-memory-utilization", "0.90", "--max-model-len", "8192", "--enable-prefix-caching"]
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+    restart: unless-stopped

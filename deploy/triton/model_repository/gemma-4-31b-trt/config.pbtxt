@@ -1,0 +1,19 @@
+# Triton TensorRT-LLM backend - requires HF safetensors download + trtllm-build engine (Option A: best future)
+# Engine is built from google/gemma-4-31b-it HF checkpoint -> FP8 engine at /models/gemma-4-31b-trt/1
+# See: scripts/build_trt_engine.sh
+name: "gemma-4-31b-trt"
+backend: "tensorrtllm"
+max_batch_size: 8
+input [
+  { name: "text_input" data_type: TYPE_STRING dims: [1] }
+  { name: "max_tokens" data_type: TYPE_INT32 dims: [1] }
+  { name: "temperature" data_type: TYPE_FP32 dims: [1] }
+  { name: "top_p" data_type: TYPE_FP32 dims: [1] }
+]
+output [ { name: "text_output" data_type: TYPE_STRING dims: [1] } ]
+parameters: { key: "gpt_model_type" value: { string_value: "gemma" } }
+parameters: { key: "gpt_model_path" value: { string_value: "/models/gemma-4-31b-trt/1" } }
+parameters: { key: "max_beam_width" value: { string_value: "1" } }
+parameters: { key: "decoupled_mode" value: { string_value: "true" } }
+instance_group [{ kind: KIND_GPU count: 1 gpus: [0] }]
+dynamic_batching { preferred_batch_size: [4, 8] max_queue_delay_microseconds: 5000 }

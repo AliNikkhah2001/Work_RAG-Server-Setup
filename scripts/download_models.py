@@ -69,6 +69,19 @@ TARGETS = [
      ["model-*.safetensors", "model.safetensors.index.json", "tokenizer*.json",
       "config.json", "generation_config.json", "chat_template.jinja",
       "README.md", "LICENSE"]),                                                   # ~755 GB  safetensors FP8 (141 shards)
+    # --- Triton TRT-LLM Option A: HF safetensors for engine build (priority: after gated quants) ---
+    ("google/gemma-4-31b-it",
+     ["model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json",
+      "README.md", "LICENSE"]),                                                  # ~31B BF16 (champion for TRT-LLM FP8)
+    ("google/gemma-3-27b-it",
+     ["model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json",
+      "README.md", "LICENSE"]),                                                  # ~16 GB BF16 (fallback TRT-LLM, smaller)
+    ("google/gemma-3-12b-it",
+     ["model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json",
+      "README.md", "LICENSE"]),                                                  # ~12 GB (fallback if 27b gated)
 ]
 
 # POLICY UPDATE 2026-08-19: >100GB exclusion lifted per user. All repos INCLUDED above.
