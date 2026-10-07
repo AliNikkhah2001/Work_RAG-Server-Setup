@@ -281,9 +281,13 @@ PANEL_HEALTH_PATH: Dict[str, str] = {
     "triton_grpc": "/v2/health/ready",
 }
 
-PUBLIC_CORS_ORIGINS = os.getenv("PUBLIC_CORS_ORIGINS", "*")
+# T-C3: Fix CORS — explicit origins, no wildcard with credentials (merged: PUBLIC_CORS_ORIGINS + secure default)
+PUBLIC_CORS_ORIGINS = os.getenv("PUBLIC_CORS_ORIGINS", os.getenv("CORS_ORIGINS", "http://localhost:13000,http://127.0.0.1:13000"))
+_cors_origins = [o.strip() for o in PUBLIC_CORS_ORIGINS.split(",") if o.strip() and o.strip() != "*"]
+if not _cors_origins:
+    _cors_origins = ["http://localhost:13000", "http://127.0.0.1:13000"]
 app = FastAPI(title="LLM Inference Manager", version="1.0.0", description="OpenAI-compatible gateway with session/history, metrics, multi-model load balancing")
-app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in PUBLIC_CORS_ORIGINS.split(",")], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 # --------------------------------------------------------------------------
 # DB helpers
