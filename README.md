@@ -297,5 +297,5 @@ components/server-setup/
 
 See parent repository `LICENSE` and the submodule's own obligations.
 <!-- TRITON-HOURLY-STATUS -->
-> **Triton hourly 2026-10-07T12:05:38+00:00** — GGUF 19G | HF gemma-4 0 | HF gemma-3 52K | Engine 0 | Manager {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec":281,"gpus":[{"index":0,"used_mib":35809,"total_mib":143771,"free_mib":107962,"util":0},{"index":1,"used_mib":28545,"total_mib":143771,"free_mib":115226,"util":0}],"models_loaded":2} | VLLM {"object":"list","data":[{"id":"gemma-4-31b-triton-vllm","object":"model","owned_by":"local"}]} | Triton {"status":"ok","model":"gemma-4-31b-triton-vllm"} | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+> **Triton hourly 2026-10-07T12:10:59+00:00** — GGUF 19G | HF gemma-4 0 | HF gemma-3 52K | Engine 0 | Manager {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec":602,"gpus":[{"index":0,"used_mib":35809,"total_mib":143771,"free_mib":107962,"util":0},{"index":1,"used_mib":28545,"total_mib":143771,"free_mib":115226,"util":0}],"models_loaded":2} | VLLM {"object":"list","data":[{"id":"gemma-4-31b-triton-vllm","object":"model","owned_by":"local"}]} | Triton {"status":"ok","model":"gemma-4-31b-triton-vllm"} | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
 
