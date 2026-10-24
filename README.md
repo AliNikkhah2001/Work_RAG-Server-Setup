@@ -405,266 +405,131 @@ components/server-setup/
 ## License
 
 See parent repository `LICENSE` and the submodule's own obligations.
-<!-- TRITON-HOURLY-STATUS -->
-> **Triton hourly 2026-10-24T09:08:48+00:00** — GGUF 19G | HF gemma-4 59G | HF gemma-3 52K | Engine 0 | Manager {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec":1156,"gpus":[{"index":0,"used_mib":137912,"total_mib":143771,"free_mib":5859,"util":0},{"index":1,"used_mib":2665,"total_mib":143771,"free_mib":141106,"util":0}],"models_loaded":2} | VLLM vllm down | Triton down
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
 
+## 12. Inference Optimization — TensorRT-LLM Gemma-4-31B champion
+
+### 12.1 Goal
+
+Maximize generation throughput of the champion `gemma-4-31b` model on a single
+NVIDIA H200 NVL (143 GiB VRAM) while keeping the full RAG stack intact
+(Orchestrator :8100 → Guardrails :8200 → LLM). The champion is served by
+TensorRT-LLM 1.3.0rc29 (`trtllm-serve`, OpenAI-compatible `:8010`) and is the
+ground-truth generator behind the RAG agent.
+
+### 12.2 Why LLM inference is memory-bandwidth bound
+
+Generating one token requires reading the entire set of model weights from VRAM
+(~62 GiB in BF16 for Gemma-4-31B text). On H200 NVL (~3.9 TB/s memory
+bandwidth) the single-stream ceiling is therefore roughly 60 tok/s, no matter
+how fast the compute is. Throughput only scales above that by **continuous
+batching**: many sequences share one weight read, so the weight bandwidth cost
+is amortized across the batch until memory bandwidth or power saturates.
+
+### 12.3 How the TRT-LLM optimization works
+
+| Mechanism | What it does | Effect in this setup |
+|---|---|---|
+| Continuous batching / iteration-level scheduler | New requests are appended as others finish; no head-of-line blocking, SMs stay full | Turns a flat ~58 tok/s single-slot backend into a multi-thousand tok/s aggregate |
+| Paged KV cache | KV stored in reusable blocks; no fragmentation, prefix reuse supported | Stable long-context (8192) serving at high concurrency |
+| CUDA graphs | Decode step captured for fixed batch sizes; removes CPU launch overhead per token | Fast path only for batch sizes in `cuda_graph_config`; off-graph concurrency collapses ~4× |
+| FlashInfer attention | Fused attention kernels supporting arbitrary head dims | Gemma-4 default MMHA asserts on `head_dim=512` (global layers); overridden to `FLASHINFER` |
+| FP8 KV cache | KV elements stored in 1 byte instead of 2 | ~4 GiB VRAM saved at conc-128; +15% throughput at 128 |
+| W8A8 weight FP8 (ModelOpt) | Weight elements stored in 1 byte instead of 2 | ~8.6 GiB VRAM saved; +34–63% throughput |
+| TP = 1 | Single H200 holds the whole model | No inter-GPU communication overhead |
+| KV budget | `kv_cache_free_gpu_memory_fraction=0.85`, `max_batch_size=128`, `max_num_tokens=16384`, `max_seq_len=8192` | Concurrency ceiling of 128 on one H200 |
+
+Champion attention options live in `scripts/trtllm_extra_options.yaml`:
+`attn_backend: FLASHINFER` + a dense decode `cuda_graph_config` covering batch
+sizes up to 128 (dense set, `mode: decode`). The launcher
+`scripts/serve_trtllm.sh` wraps `mpirun -n 1 trtllm-llmapi-launch trtllm-serve`
+with a composed CUDA 13.2 toolkit (FlashInfer JIT requires `nvcc` from CUDA ≥
+12.8) and the venv first on `PATH`.
+
+### 12.4 Blockers fixed to get TRT-LLM serving
+
+1. **MPI_Comm_spawn deadlock** — TRT-LLM's dynamic spawn hangs; fixed by
+   launching under `mpirun -n 1` + `trtllm-llmapi-launch` (spawn-proxy IPC path).
+2. **Bare `python3` in launcher** — `trtllm-llmapi-launch` calls
+   `python3 -m tensorrt_llm.llmapi.mgmn_leader_node`; fixed by putting the
+   venv first on `PATH`.
+3. **FlashInfer JIT nvcc too old** — needs `--compress-mode=size` (CUDA ≥ 12.8);
+   fixed by composing a CUDA 13.2 toolkit from pip packages (`nvidia/cu13`) and
+   exporting `CUDA_HOME`/`PATH`/`LD_LIBRARY_PATH`.
+4. **gemma-4 `head_dim=512` MMHA assert** — TRT-LLM MMHA kernel rejects
+   head size 512 (`tensorrt_llm/common/attentionOp.cpp:2954`); fixed by
+   `attn_backend: FLASHINFER` via `--extra_llm_api_options` (explicit options
+   win over model defaults).
+
+### 12.5 Known limits
+
+- **Batch-256 graph capture fails** — FlashInfer prefill workspace overflow
+  (needs 401 MiB, limit 335 MiB), so concurrency is capped at 128 on one H200
+  with 8192 sequence length.
+- **FP8 KV cache crashes unpatched** — FlashInfer's arch list `[10,11,12]`
+  excludes sm90 (H200); patched `flashinfer/jit/attention/modules.py` to
+  `[8,9,10,11,12]` plus `FLASHINFER_CUDA_ARCH_LIST=9.0a`.
+- **Weight FP8 needs modelopt** — `nvidia-modelopt` 0.47.0 W8A8 PTQ with 16
+  calibration samples produces arithmetically wrong output (e.g. `17*23 → 399`);
+  not production-ready until recalibrated with ≥128 samples and an accuracy
+  gate.
+- **Power capping** — H200 SW power cap settles after ~160 s: burst ~3.8k
+  tok/s, sustained ~2.9k tok/s at conc-128.
+- **VRAM is tight** — BF16 conc-128 uses ~137.9 GiB of 143.7 GiB.
+
+### 12.6 Benchmark results (same-run A/B)
+
+Same Persian long-form prompt, `max_tokens=256`, `temperature=0.3`, 5 repeats,
+tokens counted with the shared Gemma tokenizer (llama.cpp `:18000` returns no
+`usage`). Source JSONs: `logs/bench_bf16_vs_fp8kv.json`,
+`logs/bench_bf16_vs_wfp8.json`.
+
+| Concurrency | GGUF llama.cpp `:18000` | BF16 TRT-LLM `:8010` | FP8-KV `:8011` | Weight-FP8 `:8011` |
+|------------:|------------------------:|---------------------:|---------------:|-------------------:|
+| 1 | 57.6 | 52.5 | 49.9 (0.95×) | 77.6 (1.48×) |
+| 2 | — | 101.9 | 97.1 (0.95×) | 150.5 (1.48×) |
+| 4 | 59.1 | 202.3 | 193.1 (0.95×) | 295.7 (1.46×) |
+| 8 | 59.4 | 399.3 | 381.8 (0.96×) | 581.9 (1.46×) |
+| 16 | — | 770.8 | 748.9 (0.97×) | 1131.7 (1.46×) |
+| 32 | — | 1375.1 | 1370.0 (1.00×) | 1948.9 (1.39×) |
+| 64 | — | 2357.7 | 2363.9 (1.00×) | 3212.1 (1.34×) |
+| 128 | — | 3194.9 | 3658.6 (**1.15×**) | 4851.7 (**1.63×**) |
+
+![Aggregate throughput vs concurrency](docs/reports/trtllm_concurrency_throughput.png)
+
+![Speedup vs BF16 champion](docs/reports/trtllm_fp8_speedup.png)
+
+![VRAM footprint at conc-128](docs/reports/trtllm_vram.png)
+
+Single-stream: BF16 ~52 tok/s vs GGUF ~58 tok/s (near parity — GGUF is Q4
+quantized, TRT is BF16). Continuous batching gives roughly **55×–83×**
+aggregate speedup over the GGUF placeholder at high concurrency.
+
+### 12.7 How each optimization improved performance
+
+- **Continuous batching** is the dominant lever: without it the GGUF backend
+  processes one request at a time (~58 tok/s flat regardless of load); with it
+  the same GPU delivers >3000 tok/s aggregate at conc-128.
+- **CUDA graphs** remove per-token CPU launch overhead for graph-sized batches.
+  Because graphs only exist for configured batch sizes, a dense graph set
+  (≤128) is essential — off-graph concurrency runs eager and is ~4× slower.
+- **FlashInfer** makes the model runnable at all (default MMHA asserts on
+  gemma-4's `head_dim=512` global layers) and supplies fused kernels.
+- **FP8 KV cache** halves KV traffic → +15% at conc-128 with **zero quality
+  risk** (weights unchanged). Recommended as the next champion restart
+  (`TRTLLM_KV_DTYPE=fp8`).
+- **Weight FP8** halves weight traffic → +34–63% throughput, but the 16-sample
+  calibration checkpoint is numerically wrong; it must not be connected to the
+  RAG agent until recalibrated and accuracy-gated.
+
+### 12.8 Current deployment
+
+- **Champion (ground truth):** BF16 conc-128 on `:8010` (GPU0),
+  `kv_cache_dtype="auto"`, wired to the orchestrator via Guardrails
+  `UPSTREAM_LLM_BASE_URL=http://127.0.0.1:8010/v1`. E2E verified:
+  `finish: stop`, 5 citations on in-domain Persian queries.
+- **Validated variants** (throwaway `:8011` on GPU1, removed after testing):
+  FP8-KV (+15% at 128, safe) and Weight-FP8 (+63% at 128, quality-regressed).
+  Neither is promoted yet.
+
+<!-- TRITON-HOURLY-STATUS -->
+> **Triton hourly 2026-10-24T11:13:00+00:00** — champion: BF16 conc-128 Gemma-4-31b on :8010 (GPU0), RAG E2E verified (finish: stop, citations: 5); FP8-KV +15% at 128 validated on throwaway :8011; Weight-FP8 +63% but quality-regressed (not promoted).
