@@ -1,0 +1,88 @@
+# LiteLLM self-hosted OpenRouter config for H200 / Vast
+# Docs: https://docs.litellm.ai/docs/proxy/reliability (fallbacks) + /proxy/load_balancing
+# All secrets via litellm.env (never commit). See AGENTS.md:5.
+model_list:
+  # Self-hosted pool — Manager :9000 is the GPU control plane (llm_inference_manager/app.py:9000)
+  - model_name: self-gemma
+    litellm_params:
+      model: openai/gemma-4-31b
+      api_base: http://host.docker.internal:9000/v1
+      api_key: os.environ/MANAGER_API_KEY
+  - model_name: self-qwen
+    litellm_params:
+      model: openai/qwen2.5-7b
+      api_base: http://host.docker.internal:9000/v1
+      api_key: os.environ/MANAGER_API_KEY
+  - model_name: self-mizan
+    litellm_params:
+      model: openai/mizan-v3-3b
+      api_base: http://host.docker.internal:9000/v1
+      api_key: os.environ/MANAGER_API_KEY
+  # Cheap tier — SiliconFlow (Iran-reachable)
+  - model_name: cheap
+    litellm_params:
+      model: openai/qwen2.5-7b
+      api_base: https://api.siliconflow.cn/v1
+      api_key: os.environ/SILICONFLOW_API_KEY
+  - model_name: cheap
+    litellm_params:
+      model: openai/deepseek-chat
+      api_base: https://api.siliconflow.cn/v1
+      api_key: os.environ/SILICONFLOW_API_KEY
+  # Strong tier — OpenRouter multiplex (gpt/claude via one endpoint)
+  - model_name: strong
+    litellm_params:
+      model: openai/gpt-4o
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: strong
+    litellm_params:
+      model: openai/claude-3-5-sonnet
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_API_KEY
+  # Judge tier — used by Guardrails GUARD_JUDGE_MODEL=judge (config.py:28)
+  - model_name: judge
+    litellm_params:
+      model: openai/gemini-2.0-flash
+      api_base: https://generativelanguage.googleapis.com/v1
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: judge
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_base: https://api.openai.com/v1
+      api_key: os.environ/OPENAI_API_KEY
+  # Mizan decision tier — System-1 API for routing/judge/ambiguity (local, calibrated)
+  - model_name: mizan-decision
+    litellm_params:
+      model: openai/mizan-v3-3b
+      api_base: http://host.docker.internal:9000/v1
+      api_key: os.environ/MANAGER_API_KEY
+  - model_name: mizan-decision
+    litellm_params:
+      model: openai/gemini-2.0-flash
+      api_base: https://generativelanguage.googleapis.com/v1
+      api_key: os.environ/GEMINI_API_KEY
+  # Embeddings via local leaf (optional central alias)
+  - model_name: embed-small
+    litellm_params:
+      model: openai/multilingual-e5-small
+      api_base: http://host.docker.internal:8001/v1
+      api_key: dummy
+
+litellm_settings:
+  callbacks: ["langfuse", "prometheus"]
+  drop_params: true
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
+
+router_settings:
+  routing_strategy: usage-based-routing
+  num_retries: 3
+  timeout: 120
+  fallbacks:
+    - strong: [cheap, self-gemma]
+    - judge: [strong, self-gemma]
+    - cheap: [self-gemma]
+    - mizan-decision: [judge, self-gemma]
+  context_window_fallbacks:
+    - strong: [self-gemma]

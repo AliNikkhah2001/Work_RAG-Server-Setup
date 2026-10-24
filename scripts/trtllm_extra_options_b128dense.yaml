@@ -1,0 +1,13 @@
+# Extra LLM API options for gemma-4-31b on TensorRT-LLM (pytorch backend) —
+# dense decode CUDA-graph set up to batch 128 (the max the FlashInfer prefill
+# workspace allows; batch 256 capture overflows batch_prefill_tmp_v, needs
+# 401 MB vs 335 MB workspace). Fills the default graph gaps (33-63, 96) so any
+# concurrency up to 128 stays on the fast decode-graph path.
+#
+# attn_backend: gemma4 per-layer head_dim (sliding 256 / global 512); the default
+# TRTLLM MMHA backend asserts on 512, so use FLASHINFER.
+attn_backend: FLASHINFER
+cuda_graph_config:
+  mode: decode
+  batch_sizes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128]
+  max_batch_size: 128

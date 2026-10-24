@@ -95,3 +95,48 @@ Verified as of 2026-08-15. Update this file when new facts are learned; keep it 
 - **Public tunnels so far impossible** from this box: cloudflared quick-tunnel registry POST stalls (ignores env proxy; direct unroutable); localtunnel registers fine (control HTTPS) but its **raw-TCP data plane** is `ENETUNREACH`. Staged fallback gateways (auth'd `127.0.0.1:8089`, `/samples/` `/docs/` on 8088) wait on a working relay.vormer
 - **Disk note**: Mistral repo dir is 34G (multi-quant downloads Q3/Q4/Q5 from an earlier job); stale `*.incomplete` chunks accumulate across retries — clear `.cache/huggingface/download` of 0-byte files occasionally to reclaim a few GB.
 - **GPU 0 is half-reserved**: vllm `--gpu-memory-utilization 0.5` holds ~71GB of H200-0 for a 7B GGUF. Raise to 0.9 when serving bigger models; llama.cpp (GPU 1) uses ~4GB only.
+
+## Gemma-4 + TensorRT-LLM (2026-10-12)
+
+- **`gemma-4-31b` is arch `gemma4`** (`Gemma4ForConditionalGeneration`, hidden 5376, multimodal). Working engines: llama.cpp (current GGUF path), transformers ≥5.x, newer vLLM, SGLang main, and **tensorrt_llm `1.3.0rc*`** (PR #12932).
+- **`tensorrt_llm 1.2.1` CANNOT serve it** (no `gemma4` in its model registry, and its `transformers==4.57.3` cannot parse the config). Do not bother with 1.2.1 for Gemma 4.
+- **The `trtllm-build`/`convert_checkpoint.py` engine workflow is removed** for this model in 1.3.0. Use **`trtllm-serve`** (PyTorch backend) directly on the HF dir.
+- **`tensorrt_llm 1.3.0rc29` deps are a hard break from the shared venv** — needs `torch==2.14.0`, CUDA **13.2** (`cu132`), `numpy>=2`, `transformers==5.5.4`, `flashinfer-python==0.6.18`, `triton==3.8.0`. Build a **separate venv** (`offline-prep/venv-trtllm`); never upgrade the shared live venv's torch/numpy/transformers.
+- **`import tensorrt_llm` needs `LD_LIBRARY_PATH`** = every `site-packages/nvidia/*/lib` (+ `/usr/lib/x86_64-linux-gnu`). The wheel does not self-locate the CUDA-13 libs.
+- **NVIDIA driver mismatch (`NVMLError_LibRmVersionMismatch`)**: `unattended-upgrade` (2026-10-09) bumped userspace libs to `580.178.04` while the loaded kernel module stayed `580.173.02`; even `nvidia-smi` failed. Fix without reboot: stop all processes holding `/dev/nvidia*`, `rmmod nvidia_drm nvidia_modeset nvidia_uvm nvidia`, reload (kernel → `580.178.04`). Always capture service envs first.
+- **Proxy download speed is shared**: run one big `curl -C -` per artifact; concurrent pip + curl streams throttle each other (~85 KB/s–1 MB/s each). Pip's big wheels land in `/tmp/pip-unpack-*/` — clean stale `pip-unpack-*`/`pip-modern-metadata-*` dirs (mmin +25) to protect root `/`.
+
+## Gemma-4 + TensorRT-LLM 1.3.0rc29 actually SERVING (2026-10-13)
+
+The rc29 install was done 2026-10-12; the serving path had four independent blockers. All must be solved together. Launcher: `scripts/serve_trtllm.sh` (+ `scripts/trtllm_extra_options.yaml`).
+
+- **BLOCKER 1 — mpi4py dynamic `MPI_Comm_spawn` HANGS.** Running bare `trtllm-serve serve` makes TRT-LLM create a `MpiPoolSession` → `mpi4py.futures.MPIPoolExecutor` → `MPI_Comm_spawn`. On this host that handshake **deadlocks** (parent in `client_sync`/`bcast_send`, spawned worker in `server_sync`/`bcast_recv`, worker busy-spins one core forever; log stuck at `worker_initialization_wait`). A minimal `MPIPoolExecutor` script hangs identically → it is NOT a TRT-LLM bug, it is the OpenMPI 4.1.6 spawn path here. **`mpirun -n N` works fine** (MPI_Init under a launcher). Fix: launch under **`mpirun -n 1 ... trtllm-llmapi-launch trtllm-serve serve ...`**. The launcher sets `TLLM_SPAWN_PROXY_PROCESS=1`, so TRT-LLM uses the mgmn leader/worker + `RemoteMpiCommSessionClient` IPC path instead of `MPI_Comm_spawn`.
+- **BLOCKER 2 — `trtllm-llmapi-launch` hardcodes `python3`.** It runs `python3 -m tensorrt_llm.llmapi.mgmn_leader_node`; with the system `python3` this fails `ModuleNotFoundError: tensorrt_llm` and the leader dies (`exit 1`) → the serve hangs waiting for workers. Fix: put the venv first on `PATH` (`export PATH="$VENV/bin:$PATH"`).
+- **BLOCKER 3 — FlashInfer JIT nvcc too old.** All pytorch-backend startup compiles FlashInfer kernels (`sampling`, `gelu_tanh_and_mul`, `renorm`, `rope`) via ninja. The flags include `-Xfatbin=-compress-all --compress-mode=size` (CUDA ≥12.8). Host `/usr/bin/nvcc` is **CUDA 12.0** → `nvcc fatal : Unknown option '--compress-mode=size'` → `Ninja build failed` → `Executor worker returned error`. Fix: install pip CUDA-13 packages into the venv and compose a toolkit under `site-packages/nvidia/cu13/`:
+    - `pip install --no-deps --index-url https://pypi.nvidia.com nvidia-cuda-nvcc==13.2.86 nvidia-cuda-crt==13.2.86 nvidia-nvvm==13.2.86`
+    - (these unified `nvidia-*` names install nvcc+`crt/`+`nvvm/cicc` into `nvidia/cu13/{bin,include,lib,nvvm}`; runtime `nvidia-cuda-runtime` 13.2.75 already provided `include/`)
+    - set `CUDA_HOME=$VENV/lib/python3.12/site-packages/nvidia/cu13` and prepend `$CUDA_HOME/bin` to `PATH`, add `$CUDA_HOME/lib` to `LD_LIBRARY_PATH`.
+    - also make `ln -s libcudart.so.13 libcudart.so` in `$CUDA_HOME/lib` (linker looks for bare `-lcudart`).
+    - FlashInfer finds the toolkit via `CUDA_HOME`/`CUDA_PATH` first, else `which nvcc` (see `flashinfer/jit/cpp_ext.py:get_cuda_path`).
+- **BLOCKER 4 — Gemma4 per-layer `head_dim` vs MMHA.** `config.json` `text_config`: `head_dim=256` for `sliding_attention` layers, **`global_head_dim=512`** for `full_attention` layers (`num_global_key_value_heads=4`, `partial_rotary_factor=0.25`). The gemma4 default backend (`Gemma4ForConditionalGeneration.get_model_defaults` → `attn_backend="TRTLLM"`) uses the MMHA kernel which **asserts** `Head size 512 is not supported by MMHA` (`tensorrt_llm/common/attentionOp.cpp:2954`) during warmup. Fix: override with `attn_backend: FLASHINFER` via `--extra_llm_api_options <yaml>` (explicit options win over model defaults; confirm `attn_backend='FLASHINFER'` in the final "LLM args" log dump). `VANILLA` (pure torch) is the last-resort fallback.
+- **Result**: `trtllm-serve` serves `google_gemma-4-31b-it` on **GPU1 :8010**, ~136 GB GPU (110 GB weights + KV). Single-stream decode **~47–50 tok/s** (32 input tok, batch 1, FLASHINFER). Smoke test OK (`17*23 → 391`).
+- **Minor/harmless**: `Could not load AutoProcessor for Gemma4 ... manual fallback` (text runs fine); `MetaInitException ... Fallback to regular model init` (slow-path fallback, works); `flashinfer/cutile` "mismatched nvidia pip packages (tileiras 13.1.80 vs nvcc/nvvm 13.2.86)" is cutile-only noise; `torchao 0.15.0` cpp-ext skip warning.
+- **Self-kill gotcha (again)**: a single bash command that BOTH contains the literal substring `trtllm-serve` (e.g. the launch line) AND runs `pkill -f '[t]rtllm-serve'` will make pkill match its own shell's cmdline and kill the shell before launching. Keep the kill in a separate command whose cmdline only has the bracketed pattern.
+
+## TRT-LLM throughput tuning (2026-10-13)
+
+- **CUDA-graph batch-size cliff (biggest lever).** TRT-LLM captures decode CUDA graphs only for `cuda_graph_config.batch_sizes` (default `[1..32, 64, 128]`). Decode at any OTHER concurrency runs **eager** and throughput collapses ~4× (conc 48 ≈ 560 tok/s vs conc 64 ≈ 2400 tok/s; conc 96 ≈ 1050 vs conc 128 ≈ 3800). Fix: widen the list via `--extra_llm_api_options` (`cuda_graph_config: {mode: decode, batch_sizes: [...], max_batch_size: N}`). Choose real gaps (40/48/56/96), not every integer — a maximally dense set reserves more memory and trims the peak.
+- **Batch 256 decode graph capture fails**: FlashInfer prefill workspace overflow (`aligned_alloc ... batch_prefill_tmp_v 401 MB vs 335 MB available`). Practical ceiling is **128**.
+- **`--kv_cache_dtype fp8` crashes** this build at profiling: `RuntimeError: No supported CUDA architectures found for major versions [10, 11, 12]` (tensorrt_llm executor). BF16 KV works. (Weight FP8 would need `nvidia-modelopt` + a quantized checkpoint; none available offline.)
+- **Measure sustained, not burst.** H200 sustained load triggers `SW Power Capping`; batch-128 is ~3.8k tok/s on the first burst then settles to **~2.9k tok/s**. Single-shot measurements overstate.
+- **Serving recipe that works** (gemma-4-31b, 1 GPU): `mpirun -n 1 trtllm-llmapi-launch trtllm-serve serve <hf_dir> --backend pytorch --tp_size 1 --max_batch_size 128 --max_num_tokens 16384 --kv_cache_free_gpu_memory_fraction 0.85 --extra_llm_api_options scripts/trtllm_extra_options.yaml`. ~110 GB weights + KV on one 143 GB H200.
+- **Benchmarking caveat**: the `:18000` llama.cpp server is the single-slot `llama_chat_server.py` placeholder (no continuous batching) — flat ~58 tok/s aggregate at any concurrency. It returns no `usage`, so count output tokens with the gemma tokenizer for a fair vs-TRT comparison. `scripts/bench_trtllm_vs_llamacpp.py` does both and hits endpoints directly (the manager's Triton promotion would otherwise reroute all gemma traffic to one backend).
+
+## 2026-10-14 — FP8 benchmark verdict (conc-128 ground truth kept)
+- FP8-KV (same BF16 weights, `TRTLLM_KV_DTYPE=fp8` + flashinfer sm90a patch):
+  0.95x at conc-1..8, 1.00x at 32-64, **1.15x at conc-128** (3659 vs 3195 tok/s
+  same-run). Zero quality risk. Candidate for champion restart upgrade.
+- Weight-FP8 (ModelOpt W8A8, 16 calib samples, 32 GB ckpt): **1.34-1.63x**
+  throughput (4852 tok/s at 128) BUT arithmetically wrong (17*23->399).
+  Not production-ready; needs >=128-sample recalibration + accuracy gate.
+- RAG stays on BF16 conc-128 `:8010`. Details: `docs/history/014_*`.

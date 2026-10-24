@@ -64,17 +64,24 @@ JSONEOF
     echo -e "\n$MARKER\n$STATUS_LINE\n" >> "$ROOT/README.md"
   fi
 
-  # 4. git commit + push to main (rebase-safe)
+  # 4. git commit + push to main (rebase-safe, stashes dirty working tree)
   cd "$ROOT"
-  # stash local uncommitted triton work so pull never conflicts
+  # preserve dirty working tree (e.g. monitoring compose) across rebase - keep untracked logs out of stash
+  DIRTY=0
+  if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+    DIRTY=1
+    git stash push -m "daemon-stash $TS" 2>&1 | tee -a "$LOG" || true
+  fi
   git fetch origin main 2>&1 | tee -a "$LOG" || true
   git add README.md logs/triton_hourly_status.json logs/bench_compare*.json 2>/dev/null || true
   if ! git diff --cached --quiet 2>/dev/null; then
     git commit -m "triton hourly $TS GGUF=$GGUF_SIZE HF4=$HF_GEMMA4 engine=$ENGINE_SIZE [auto]" 2>&1 | tee -a "$LOG" || true
   fi
-  # rebase local ahead commits onto origin/main before push
   timeout 60 git pull --rebase origin main 2>&1 | tee -a "$LOG" || echo "[$TS] rebase failed, will retry" | tee -a "$LOG"
   timeout 60 git push origin main 2>&1 | tee -a "$LOG" || echo "[$TS] push failed (proxy), will retry next hour" | tee -a "$LOG"
+  if [ "$DIRTY" = "1" ]; then
+    git stash pop 2>&1 | tee -a "$LOG" || true
+  fi
   if git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
     echo "[$TS] no changes to push" | tee -a "$LOG"
   fi

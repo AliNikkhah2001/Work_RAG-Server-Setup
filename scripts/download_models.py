@@ -19,6 +19,19 @@ os.environ.update({"HTTP_PROXY": PROXY, "HTTPS_PROXY": PROXY,
                    "http_proxy": PROXY, "https_proxy": PROXY})
 
 BASE = Path("/splunk-data/v1/Work_RAG-Server-Setup/offline-prep")
+# Load HF_TOKEN from offline-prep/.hf_token if not already in env (gated Gemma needs it)
+try:
+    hf_tok_path = BASE / ".hf_token"
+    if hf_tok_path.exists() and not os.getenv("HF_TOKEN"):
+        txt = hf_tok_path.read_text().strip()
+        # file format is HF_TOKEN=hf_xxx
+        if "HF_TOKEN" in txt:
+            tok = txt.split("HF_TOKEN=")[-1].split()[0].strip().strip('"').strip("'")
+            if tok:
+                os.environ["HF_TOKEN"] = tok
+except Exception:
+    pass
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
 MODELS_DIR = BASE / "models" / "huggingface"
 LOG_DIR = BASE / "logs"
 
@@ -71,16 +84,16 @@ TARGETS = [
       "README.md", "LICENSE"]),                                                   # ~755 GB  safetensors FP8 (141 shards)
     # --- Triton TRT-LLM Option A: HF safetensors for engine build (priority: after gated quants) ---
     ("google/gemma-4-31b-it",
-     ["model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
-      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json",
-      "README.md", "LICENSE"]),                                                  # ~31B BF16 (champion for TRT-LLM FP8)
+     ["model-*.safetensors", "model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json", "chat_template.jinja", "processor_config.json",
+      "README.md", "LICENSE"]),                                                  # ~31B BF16 (champion for TRT-LLM FP8, 2 shards ~62GB)
     ("google/gemma-3-27b-it",
-     ["model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
-      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json",
+     ["model-*.safetensors", "model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json", "chat_template.jinja", "processor_config.json",
       "README.md", "LICENSE"]),                                                  # ~16 GB BF16 (fallback TRT-LLM, smaller)
     ("google/gemma-3-12b-it",
-     ["model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
-      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json",
+     ["model-*.safetensors", "model.safetensors*", "model.safetensors.index.json", "tokenizer*.json",
+      "config.json", "generation_config.json", "tokenizer_config.json", "special_tokens_map.json", "chat_template.jinja", "processor_config.json",
       "README.md", "LICENSE"]),                                                  # ~12 GB (fallback if 27b gated)
 ]
 
@@ -147,6 +160,7 @@ def main():
                         allow_patterns=patterns,
                         proxies={"http": PROXY, "https": PROXY},
                         max_workers=2,
+                        token=HF_TOKEN,
                     )
                     log.info(f"OK {repo} attempt={attempt}")
                     ok = True

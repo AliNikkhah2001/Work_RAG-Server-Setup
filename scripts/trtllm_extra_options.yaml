@@ -1,0 +1,21 @@
+# Extra LLM API options for gemma-4-31b on TensorRT-LLM (pytorch backend).
+# This is the CHAMPION / throughput config used for the live `:8010` server.
+#
+# attn_backend: gemma4 has per-layer head_dim (sliding 256 / full/global 512);
+# the gemma4 model default (`get_model_defaults` -> attn_backend=TRTLLM) uses the
+# MMHA kernel which ASSERTS `Head size 512 is not supported by MMHA`
+# (tensorrt_llm/common/attentionOp.cpp:2954). The explicit option overrides the
+# model default. (VANILLA is the last-resort fallback.)
+#
+# cuda_graph_config: TRT-LLM only captures decode CUDA graphs for the listed
+# batch sizes (default [1..32, 64, 128]); every other concurrency falls back to
+# EAGER decode and throughput collapses (measured: conc 48 -> ~560 tok/s vs
+# conc 64 -> ~2400 tok/s). This dense set keeps any concurrency up to 128 on the
+# fast graph path. Batch 256 capture is NOT possible: the FlashInfer prefill
+# workspace overflows (`batch_prefill_tmp_v` wants 401 MB vs 335 MB available),
+# so 128 is the practical ceiling.
+attn_backend: FLASHINFER
+cuda_graph_config:
+  mode: decode
+  batch_sizes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128]
+  max_batch_size: 128

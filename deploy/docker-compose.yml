@@ -33,14 +33,27 @@ services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: webui-test
+    env_file:
+      - /root/.config/rag/webui.env
     environment:
-      WEBUI_AUTH: "false"
+      WEBUI_AUTH: "true"
+      ENABLE_SIGNUP: "false"
       USE_OLLAMA_DOCKER: "false"
       USE_CUDA_DOCKER: "false"
       USE_EMBEDDING_MODEL_DOCKER: sentence-transformers/all-MiniLM-L6-v2
       RAG_EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
       SCARF_NO_ANALYTICS: "true"
       DO_NOT_TRACK: "true"
+      # Trust X-Forwarded-For from Nginx/WAF so real client IP is logged (fix for VAF/WAF public exposure)
+      FORWARDED_ALLOW_IPS: "*"
+      ENABLE_FORWARDED_ALLOW_IPS: "true"
+      # Wire to the RAG agent (Orchestrator)
+      OPENAI_API_BASE_URL: http://host.docker.internal:8100/v1
+      OPENAI_API_KEY: sk-local-dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - webui-test:/app/backend/data
     ports: ["13000:8080"]
 
   litellm:
@@ -94,3 +107,7 @@ services:
         reservations:
           devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
     restart: unless-stopped
+
+volumes:
+  webui-test:
+    external: true

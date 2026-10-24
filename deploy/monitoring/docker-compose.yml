@@ -44,6 +44,17 @@ services:
       - prometheus
     restart: unless-stopped
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger-test
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"
+      - "14250:14250"
+      - "4318:4317"
+    restart: unless-stopped
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.105.0
     container_name: otel-test
@@ -54,4 +65,6 @@ services:
       - "14317:4317"
       - "14318:4318"
       - "19092:9091"
+    depends_on:
+      - jaeger
     restart: unless-stopped

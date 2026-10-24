@@ -25,6 +25,8 @@ services:
     extra_hosts: ["host.docker.internal:host-gateway"]
     environment:
       WEBUI_AUTH: "false"
+      FORWARDED_ALLOW_IPS: "*"
+      ENABLE_FORWARDED_ALLOW_IPS: "true"
       # Vast: point Open WebUI at Orchestrator, not Gemma directly
       OPENAI_API_BASE_URL: http://host.docker.internal:8100/v1
       OPENAI_API_KEY: sk-local-dev

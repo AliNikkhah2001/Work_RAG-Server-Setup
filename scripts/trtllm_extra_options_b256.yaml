@@ -1,0 +1,16 @@
+# Extra LLM API options for gemma-4-31b on TensorRT-LLM (pytorch backend) —
+# throughput-maximizing variant used for the concurrency sweep.
+#
+# attn_backend: gemma4 uses per-layer head_dim (sliding 256 / global 512); the
+# default TRTLLM MMHA backend asserts on 512, so use FLASHINFER.
+#
+# cuda_graph_config: the default decode CUDA-graph batch sizes are
+# [1..32, 64, 128]. Any other concurrency (33-63, 96, etc.) falls back to eager
+# decode and throughput collapses (measured: conc 48 -> 550 tok/s vs conc 64 ->
+# 2450 tok/s). We add a denser set plus 160/192/224/256 to cover the sweep up to
+# the GPU's memory limit.
+attn_backend: FLASHINFER
+cuda_graph_config:
+  mode: decode
+  batch_sizes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256]
+  max_batch_size: 256

@@ -280,6 +280,7 @@ MODELS = {
     "microsoft/Phi-3-mini-4k-instruct-gguf": "Phi-3 Mini (Microsoft GGUF)",
     "BAAI/bge-small-en-v1.5": "BGE Small Embeddings",
     "sentence-transformers/all-MiniLM-L6-v2": "MiniLM Embeddings",
+    "Nimruz/Mizan-v3-3B-GGUF": "Mizan-v3-3B (Persian Decision Model)",
 }
 
 PROJECTS = [
