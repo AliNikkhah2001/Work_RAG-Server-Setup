@@ -38,7 +38,7 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
         "license": "Apache-2.0",
         "benchmark_mean": 0.663,
         "status": "loaded",
-        "backends": ["http://127.0.0.1:18000"],
+        "backends": ["http://127.0.0.1:8010"],
         "n_ctx": 8192,
         "notes": "Champion model - best Persian eval",
     },
@@ -843,7 +843,7 @@ def triton_demote():
         if cfg:
             cfg["backends"]=[]
             cfg["status"]="available"
-    return {"status":"demoted","note":"gemma-4-31b falls back to legacy 18000 pool"}
+    return {"status":"demoted","note":"gemma-4-31b demoted — no legacy fallback (18000 removed)"}
 
 @app.get("/admin/tokens")
 def list_tokens():

@@ -29,7 +29,8 @@ docker run -d \
   -v webui-test:/app/backend/data \
   --env-file /root/.config/rag/webui.env \
   -e WEBUI_AUTH=true \
-  -e ENABLE_SIGNUP=false \
+  -e ENABLE_SIGNUP=true \
+  -e DEFAULT_USER_ROLE=user \
   -e USE_OLLAMA_DOCKER=false \
   -e USE_CUDA_DOCKER=false \
   -e USE_EMBEDDING_MODEL_DOCKER=sentence-transformers/all-MiniLM-L6-v2 \

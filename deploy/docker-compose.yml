@@ -37,7 +37,8 @@ services:
       - /root/.config/rag/webui.env
     environment:
       WEBUI_AUTH: "true"
-      ENABLE_SIGNUP: "false"
+      ENABLE_SIGNUP: "true"
+      DEFAULT_USER_ROLE: "user"
       USE_OLLAMA_DOCKER: "false"
       USE_CUDA_DOCKER: "false"
       USE_EMBEDDING_MODEL_DOCKER: sentence-transformers/all-MiniLM-L6-v2

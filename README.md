@@ -532,4 +532,27 @@ aggregate speedup over the GGUF placeholder at high concurrency.
   Neither is promoted yet.
 
 <!-- TRITON-HOURLY-STATUS -->
-> **Triton hourly 2026-10-24T11:13:00+00:00** — champion: BF16 conc-128 Gemma-4-31b on :8010 (GPU0), RAG E2E verified (finish: stop, citations: 5); FP8-KV +15% at 128 validated on throwaway :8011; Weight-FP8 +63% but quality-regressed (not promoted).
+> **Triton hourly 2026-10-25T09:12:10+00:00** — GGUF 19G | HF gemma-4 59G | HF gemma-3 52K | Engine 0 | Manager {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec":87759,"gpus":[{"index":0,"used_mib":140664,"total_mib":143771,"free_mib":3107,"util":0},{"index":1,"used_mib":2947,"total_mib":143771,"free_mib":140824,"util":0}],"models_loaded":3} | VLLM vllm down | Triton down
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+ | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
