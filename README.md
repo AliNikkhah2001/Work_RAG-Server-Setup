@@ -532,5 +532,4 @@ aggregate speedup over the GGUF placeholder at high concurrency.
   Neither is promoted yet.
 
 <!-- TRITON-HOURLY-STATUS -->
-> **Triton hourly 2026-10-28T12:20:16+00:00** — GGUF 19G | HF gemma-4 59G | HF gemma-3 52K | Engine 0 | Manager {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec":358245,"gpus":[{"index":0,"used_mib":31535,"total_mib":143771,"free_mib":112236,"util":0},{"index":1,"used_mib":134577,"total_mib":143771,"free_mib":9194,"util":0}],"models_loaded":3} | VLLM vllm down | Triton down
- | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+> **Triton hourly 2026-10-28T13:34:10+00:00** — GGUF 19G | HF gemma-4 59G | HF gemma-3 52K | Engine 0 | Manager {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec":362678,"gpus":[{"index":0,"used_mib":31535,"total_mib":143771,"free_mib":112236,"util":0},{"index":1,"used_mib":134577,"total_mib":143771,"free_mib":9194,"util":0}],"models_loaded":3} | VLLM vllm down | Triton  | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
