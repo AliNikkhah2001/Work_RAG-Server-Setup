@@ -21,7 +21,7 @@ services:
   # ── KB Retrieval ──
   kb-test:
     build:
-      context: ../../Work_Credit-RAG_Phase1
+      context: /splunk-data/v1/Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
     container_name: rag-kb-test
     ports:
@@ -34,8 +34,8 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models/huggingface:/models:ro
-      - ./data:/data:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
+      - /splunk-data/v1/Work_Credit-RAG_Phase1/data:/data:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
   # ── Guardrails ──
   guardrails-test:
     build:
-      context: ../../Work_Credit-RAG_Phase1
+      context: /splunk-data/v1/Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
     container_name: rag-guardrails-test
     ports:
@@ -57,8 +57,8 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ./policies:/app/policies:ro
-      - ./kb:/app/kb:ro
+      - /splunk-data/v1/Work_Credit-RAG_Phase1/components/guardrails/policies:/app/policies:ro
+      - /splunk-data/v1/Work_Credit-RAG_Phase1/components/guardrails/kb:/app/kb:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -69,7 +69,7 @@ services:
   # ── Orchestrator ──
   orchestrator-test:
     build:
-      context: ../../Work_Credit-RAG_Phase1
+      context: /splunk-data/v1/Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
     container_name: rag-orchestrator-test
     ports:
@@ -94,7 +94,7 @@ services:
   # ── Tracing ──
   tracing-test:
     build:
-      context: ../../Work_Credit-RAG_Phase1
+      context: /splunk-data/v1/Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
     container_name: rag-tracing-test
     ports:
@@ -105,7 +105,7 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ./logs/tracing:/tmp
+      - /splunk-data/v1/Work_Credit-RAG_Phase1/logs:/tmp
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -113,7 +113,7 @@ services:
   # ── LLM Manager ──
   manager-test:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.manager
     container_name: rag-manager-test
     ports:
@@ -124,8 +124,8 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ./data/manager.db:/data/manager.db
-      - ./logs/manager:/logs
+      - /splunk-data/v1/Work_RAG-Server-Setup/data/manager.db:/data/manager.db
+      - /splunk-data/v1/Work_RAG-Server-Setup/logs:/logs
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -133,7 +133,7 @@ services:
   # ── Gemma Backends ×5 ──
   gemma-test-8085:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8085
     ports:
@@ -148,7 +148,7 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
     deploy:
       resources:
         reservations:
@@ -159,7 +159,7 @@ services:
 
   gemma-test-8086:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8086
     ports:
@@ -174,7 +174,7 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
     deploy:
       resources:
         reservations:
@@ -185,7 +185,7 @@ services:
 
   gemma-test-8087:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8087
     ports:
@@ -200,7 +200,7 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
     deploy:
       resources:
         reservations:
@@ -211,7 +211,7 @@ services:
 
   gemma-test-8088:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8088
     ports:
@@ -226,7 +226,7 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
     deploy:
       resources:
         reservations:
@@ -237,7 +237,7 @@ services:
 
   gemma-test-8089:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8089
     ports:
@@ -252,7 +252,7 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
     deploy:
       resources:
         reservations:
@@ -264,7 +264,7 @@ services:
   # ── Embedding Servers ×3 ──
   embed-test-8004:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-test-8004
     ports:
@@ -276,12 +276,12 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models/huggingface:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
     restart: unless-stopped
 
   embed-test-8005:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-test-8005
     ports:
@@ -293,12 +293,12 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models/huggingface:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
     restart: unless-stopped
 
   embed-test-8006:
     build:
-      context: ../..
+      context: /splunk-data/v1/Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-test-8006
     ports:
@@ -310,7 +310,7 @@ services:
       - PYTHONPATH=/app:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
-      - ../../offline-prep/models/huggingface:/models:ro
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
     restart: unless-stopped
 
 networks:
