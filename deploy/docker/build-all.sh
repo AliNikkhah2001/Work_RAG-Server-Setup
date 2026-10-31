@@ -11,7 +11,7 @@
 set -euo pipefail
 
 REGISTRY="${1:-local-h200:5000}"
-SHA=$(cd Work_Credit-RAG_Phase1 && git rev-parse --short HEAD 2>/dev/null || echo "latest")
+SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
 TAG="${SHA}"
 
 echo "=== RAG Docker Image Build ==="
@@ -30,49 +30,54 @@ if ! docker info | grep -i nvidia >/dev/null 2>&1; then
     echo "WARNING: NVIDIA container toolkit not detected. Gemma builds may fail at runtime."
 fi
 
+# Build contexts
+PARENT_CTX="."                              # Work_Credit-RAG_Phase1 (has submodules)
+SETUP_CTX="../Work_RAG-Server-Setup"        # Work_RAG-Server-Setup (has Dockerfiles + offline-prep)
+DOCKER_DIR="$SETUP_CTX/deploy/docker"
+
 # ── Services in Work_Credit-RAG_Phase1 (submodules) ──
 echo "[1/7] Building KB (port 8000)..."
 docker build \
     -t "${REGISTRY}/rag-kb:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb \
-    .
+    -f "$DOCKER_DIR/Dockerfile.kb" \
+    "$PARENT_CTX"
 
 echo "[2/7] Building Guardrails (port 8200)..."
 docker build \
     -t "${REGISTRY}/rag-guardrails:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails \
-    .
+    -f "$DOCKER_DIR/Dockerfile.guardrails" \
+    "$PARENT_CTX"
 
 echo "[3/7] Building Orchestrator (port 8100)..."
 docker build \
     -t "${REGISTRY}/rag-orchestrator:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator \
-    .
+    -f "$DOCKER_DIR/Dockerfile.orchestrator" \
+    "$PARENT_CTX"
 
 echo "[4/7] Building Tracing (port 3000)..."
 docker build \
     -t "${REGISTRY}/rag-tracing:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing \
-    .
+    -f "$DOCKER_DIR/Dockerfile.tracing" \
+    "$PARENT_CTX"
 
 # ── Services in Work_RAG-Server-Setup ──
 echo "[5/7] Building LLM Manager (port 9000)..."
 docker build \
     -t "${REGISTRY}/rag-manager:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.manager \
-    Work_RAG-Server-Setup
+    -f "$DOCKER_DIR/Dockerfile.manager" \
+    "$SETUP_CTX"
 
 echo "[6/7] Building Gemma (ports 8080-8084)..."
 docker build \
     -t "${REGISTRY}/rag-gemma:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.gemma \
-    Work_RAG-Server-Setup
+    -f "$DOCKER_DIR/Dockerfile.gemma" \
+    "$SETUP_CTX"
 
 echo "[7/7] Building Embed (ports 8001-8003)..."
 docker build \
     -t "${REGISTRY}/rag-embed:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.embed \
-    Work_RAG-Server-Setup
+    -f "$DOCKER_DIR/Dockerfile.embed" \
+    "$SETUP_CTX"
 
 echo ""
 echo "=== Build Complete ==="

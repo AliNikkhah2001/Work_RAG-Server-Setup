@@ -3,16 +3,11 @@
 # Ports: 8080-8084 (one container per GPU/backend)
 # GPU: Required (nvidia-container-toolkit)
 # Build context: Work_RAG-Server-Setup
-# Mounts host site-packages as volume at runtime to bypass proxy
+# Mounts host site-packages and CUDA libs as volumes at runtime
 
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+FROM python:3.12-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.12 \
-    python3.12-pip \
-    curl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
 # Copy backend script
 COPY scripts/services/llama_chat_server.py ./
@@ -29,6 +24,7 @@ ENV N_CTX=8192
 ENV N_GPU_LAYERS=-1
 ENV CUDA_VISIBLE_DEVICES=0
 ENV PYTHONPATH=/app:/host-site-packages
+ENV LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
 
 VOLUME ["/models"]
 
