@@ -3,18 +3,29 @@
 # Port: 8000
 # Build context: Work_Credit-RAG_Phase1 (parent repo root)
 
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# System dependencies
+# System dependencies (proxy-aware)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Python dependencies
+# Python dependencies (proxy-aware)
 RUN pip install --no-cache-dir \
     fastapi \
     uvicorn \
