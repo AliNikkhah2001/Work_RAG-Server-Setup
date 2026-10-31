@@ -1,0 +1,28 @@
+# Large data directories (mounted at runtime, not needed in image)
+offline-prep/models/
+offline-prep/docker-images/
+offline-prep/logs/
+offline-prep/sample-projects/
+offline-prep/.state.json
+offline-prep/.retry_queue.json
+offline-prep/import_report.txt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Git
+.git/
+.gitmodules
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log

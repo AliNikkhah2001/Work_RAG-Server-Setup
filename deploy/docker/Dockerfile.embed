@@ -8,12 +8,6 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# System dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy host's pre-installed Python packages (bypasses proxy hash issues)
 COPY --chown=raguser:raguser offline-prep/venv/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 
