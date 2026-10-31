@@ -2,8 +2,9 @@
 # Used for Phase 1-2 validation WITHOUT touching running production processes.
 # All services run on alternate ports to avoid collisions with host venvs.
 #
+# Uses pre-built images from local-h200:5000 registry.
+#
 # Build from: Work_Credit-RAG_Phase1 (parent repo root)
-#   docker compose -f Work_RAG-Server-Setup/deploy/docker/docker-compose.test.yml build
 #   docker compose -f Work_RAG-Server-Setup/deploy/docker/docker-compose.test.yml up -d
 #
 # Test ports:
@@ -20,12 +21,10 @@
 services:
   # ── KB Retrieval ──
   kb-test:
-    build:
-      context: /splunk-data/v1/Work_Credit-RAG_Phase1
-      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
+    image: local-h200:5000/rag-kb:b1d48b6
     container_name: rag-kb-test
     ports:
-      - "8100:8000"
+      - "8500:8000"
     environment:
       - KB_DB_URL=postgresql+asyncpg://postgres:postgres@host.docker.internal:5432/kb_manager
       - KB_REDIS_URL=redis://host.docker.internal:16379/0
@@ -42,14 +41,12 @@ services:
 
   # ── Guardrails ──
   guardrails-test:
-    build:
-      context: /splunk-data/v1/Work_Credit-RAG_Phase1
-      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
+    image: local-h200:5000/rag-guardrails:b1d48b6
     container_name: rag-guardrails-test
     ports:
-      - "8201:8200"
+      - "8501:8200"
     environment:
-      - UPSTREAM_LLM_BASE_URL=http://host.docker.internal:9001/v1
+      - UPSTREAM_LLM_BASE_URL=http://host.docker.internal:8504/v1
       - UPSTREAM_LLM_MODEL=gemma-4-31b
       - GUARDRAILS_HOST=0.0.0.0
       - GUARDRAILS_PORT=8200
@@ -68,16 +65,14 @@ services:
 
   # ── Orchestrator ──
   orchestrator-test:
-    build:
-      context: /splunk-data/v1/Work_Credit-RAG_Phase1
-      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
+    image: local-h200:5000/rag-orchestrator:b1d48b6
     container_name: rag-orchestrator-test
     ports:
-      - "8101:8100"
+      - "8502:8100"
     environment:
-      - KB_BASE_URL=http://host.docker.internal:8100
-      - GUARDRAILS_BASE_URL=http://host.docker.internal:8201
-      - LANGFUSE_HOST=http://host.docker.internal:3001
+      - KB_BASE_URL=http://host.docker.internal:8500
+      - GUARDRAILS_BASE_URL=http://host.docker.internal:8501
+      - LANGFUSE_HOST=http://host.docker.internal:8503
       - PORT=8100
       - PYTHONPATH=/app:/host-site-packages
     volumes:
@@ -93,12 +88,10 @@ services:
 
   # ── Tracing ──
   tracing-test:
-    build:
-      context: /splunk-data/v1/Work_Credit-RAG_Phase1
-      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
+    image: local-h200:5000/rag-tracing:b1d48b6
     container_name: rag-tracing-test
     ports:
-      - "3001:3000"
+      - "8503:3000"
     environment:
       - PORT=3000
       - TRACES_FILE=/tmp/langfuse_traces_test.jsonl
@@ -112,12 +105,10 @@ services:
 
   # ── LLM Manager ──
   manager-test:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.manager
+    image: local-h200:5000/rag-manager:b1d48b6
     container_name: rag-manager-test
     ports:
-      - "9001:9000"
+      - "8504:9000"
     environment:
       - PORT=9000
       - MANAGER_DB_PATH=/data/manager.db
@@ -132,12 +123,10 @@ services:
 
   # ── Gemma Backends ×5 ──
   gemma-test-8085:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.gemma
+    image: local-h200:5000/rag-gemma:b1d48b6
     container_name: rag-gemma-test-8085
     ports:
-      - "8085:8080"
+      - "8505:8080"
     environment:
       - MODEL_PATH=/models/gemma-4-31b.gguf
       - MODEL_ID=gemma-4-31b
@@ -146,6 +135,7 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/app:/host-site-packages
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
@@ -158,12 +148,10 @@ services:
     restart: unless-stopped
 
   gemma-test-8086:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.gemma
+    image: local-h200:5000/rag-gemma:b1d48b6
     container_name: rag-gemma-test-8086
     ports:
-      - "8086:8080"
+      - "8506:8080"
     environment:
       - MODEL_PATH=/models/gemma-4-31b.gguf
       - MODEL_ID=gemma-4-31b
@@ -172,6 +160,7 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
       - PYTHONPATH=/app:/host-site-packages
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
@@ -184,12 +173,10 @@ services:
     restart: unless-stopped
 
   gemma-test-8087:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.gemma
+    image: local-h200:5000/rag-gemma:b1d48b6
     container_name: rag-gemma-test-8087
     ports:
-      - "8087:8080"
+      - "8507:8080"
     environment:
       - MODEL_PATH=/models/gemma-4-31b.gguf
       - MODEL_ID=gemma-4-31b
@@ -198,6 +185,7 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/app:/host-site-packages
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
@@ -210,12 +198,10 @@ services:
     restart: unless-stopped
 
   gemma-test-8088:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.gemma
+    image: local-h200:5000/rag-gemma:b1d48b6
     container_name: rag-gemma-test-8088
     ports:
-      - "8088:8080"
+      - "8508:8080"
     environment:
       - MODEL_PATH=/models/gemma-4-31b.gguf
       - MODEL_ID=gemma-4-31b
@@ -224,6 +210,7 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
       - PYTHONPATH=/app:/host-site-packages
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
@@ -236,12 +223,10 @@ services:
     restart: unless-stopped
 
   gemma-test-8089:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.gemma
+    image: local-h200:5000/rag-gemma:b1d48b6
     container_name: rag-gemma-test-8089
     ports:
-      - "8089:8080"
+      - "8509:8080"
     environment:
       - MODEL_PATH=/models/gemma-4-31b.gguf
       - MODEL_ID=gemma-4-31b
@@ -250,6 +235,7 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/app:/host-site-packages
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
@@ -263,12 +249,10 @@ services:
 
   # ── Embedding Servers ×3 ──
   embed-test-8004:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.embed
+    image: local-h200:5000/rag-embed:b1d48b6
     container_name: rag-embed-test-8004
     ports:
-      - "8004:8001"
+      - "8510:8001"
     environment:
       - MODEL_PATH=/models
       - MODEL_ID=multilingual-e5-small
@@ -280,12 +264,10 @@ services:
     restart: unless-stopped
 
   embed-test-8005:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.embed
+    image: local-h200:5000/rag-embed:b1d48b6
     container_name: rag-embed-test-8005
     ports:
-      - "8005:8001"
+      - "8511:8001"
     environment:
       - MODEL_PATH=/models
       - MODEL_ID=BAAI/bge-m3
@@ -297,12 +279,10 @@ services:
     restart: unless-stopped
 
   embed-test-8006:
-    build:
-      context: /splunk-data/v1/Work_RAG-Server-Setup
-      dockerfile: deploy/docker/Dockerfile.embed
+    image: local-h200:5000/rag-embed:b1d48b6
     container_name: rag-embed-test-8006
     ports:
-      - "8006:8001"
+      - "8512:8001"
     environment:
       - MODEL_PATH=/models
       - MODEL_ID=paraphrase-multilingual-MiniLM-L12-v2
