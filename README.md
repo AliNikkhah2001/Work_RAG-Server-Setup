@@ -133,12 +133,12 @@ This component owns **hardware, model lifecycle, container infrastructure, and f
 ```mermaid
 flowchart TB
     subgraph GPU[H200 host — 2× H200 NVL 143GB]
-        E1[embed_server e5-small :8001<br/>384-d]
-        E2[embed_server bge-m3 :8002<br/>1024-d]
-        E3[embed_server MiniLM :8003<br/>384-d]
-        G1[Gemma-4-31B ×5 :8080-8084<br/>llama.cpp]
+        E1[embed_server e5-small :8001 384-d]
+        E2[embed_server bge-m3 :8002 1024-d]
+        E3[embed_server MiniLM :8003 384-d]
+        G1[Gemma-4-31B ×5 :8080-8084 llama.cpp]
         QW[Qwen2.5-7B :8090]
-        MG[LLM Inference Manager :9000<br/>OpenAI-compatible gateway<br/>11-model registry, round-robin]
+        MG[LLM Inference Manager :9000 OpenAI-compatible gateway 11-model registry, round-robin]
         DS[DeepSeek-V4-Flash :9001]
     end
 
