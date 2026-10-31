@@ -2,39 +2,23 @@
 # Source: scripts/services/embed_server.py
 # Ports: 8001-8003 (one container per model)
 # Build context: Work_RAG-Server-Setup
+# Copies host's pre-installed Python packages to bypass corporate proxy
 
-FROM python:3.11-slim
-
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
-ARG NO_PROXY=localhost,127.0.0.1
-
-ENV HTTP_PROXY=${HTTP_PROXY}
-ENV HTTPS_PROXY=${HTTPS_PROXY}
-ENV NO_PROXY=${NO_PROXY}
-ENV http_proxy=${HTTP_PROXY}
-ENV https_proxy=${HTTPS_PROXY}
-ENV no_proxy=${NO_PROXY}
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# System dependencies (proxy-aware)
+# System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Python dependencies (proxy-aware, CPU-only torch)
-RUN pip install --no-cache-dir --ignore-hashes --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org torch --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir --ignore-hashes --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org \
-    fastapi \
-    uvicorn \
-    sentence-transformers \
-    httpx \
-    pydantic
+# Copy host's pre-installed Python packages (bypasses proxy hash issues)
+COPY --chown=raguser:raguser offline-prep/venv/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 
 # Copy embed server script
-COPY scripts/services/embed_server.py ./
+COPY --chown=raguser:raguser scripts/services/embed_server.py ./
 
 # Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
@@ -44,6 +28,7 @@ USER raguser
 ENV MODEL_PATH=/models
 ENV MODEL_ID=multilingual-e5-small
 ENV PORT=8001
+ENV PYTHONPATH=/app
 
 VOLUME ["/models"]
 
