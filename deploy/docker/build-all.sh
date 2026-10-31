@@ -34,45 +34,45 @@ fi
 echo "[1/7] Building KB (port 8000)..."
 docker build \
     -t "${REGISTRY}/rag-kb:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb \
+    -f ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb \
     .
 
 echo "[2/7] Building Guardrails (port 8200)..."
 docker build \
     -t "${REGISTRY}/rag-guardrails:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails \
+    -f ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails \
     .
 
 echo "[3/7] Building Orchestrator (port 8100)..."
 docker build \
     -t "${REGISTRY}/rag-orchestrator:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator \
+    -f ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator \
     .
 
 echo "[4/7] Building Tracing (port 3000)..."
 docker build \
     -t "${REGISTRY}/rag-tracing:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing \
+    -f ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing \
     .
 
 # ── Services in Work_RAG-Server-Setup ──
 echo "[5/7] Building LLM Manager (port 9000)..."
 docker build \
     -t "${REGISTRY}/rag-manager:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.manager \
-    Work_RAG-Server-Setup
+    -f ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.manager \
+    ../Work_RAG-Server-Setup
 
 echo "[6/7] Building Gemma (ports 8080-8084)..."
 docker build \
     -t "${REGISTRY}/rag-gemma:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.gemma \
-    Work_RAG-Server-Setup
+    -f ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.gemma \
+    ../Work_RAG-Server-Setup
 
 echo "[7/7] Building Embed (ports 8001-8003)..."
 docker build \
     -t "${REGISTRY}/rag-embed:${TAG}" \
-    -f Work_RAG-Server-Setup/deploy/docker/Dockerfile.embed \
-    Work_RAG-Server-Setup
+    -f ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.embed \
+    ../Work_RAG-Server-Setup
 
 echo ""
 echo "=== Build Complete ==="

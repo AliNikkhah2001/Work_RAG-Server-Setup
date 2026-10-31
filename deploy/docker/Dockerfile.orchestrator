@@ -15,13 +15,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Python dependencies
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    langgraph \
+    langfuse \
+    python-multipart \
+    httpx \
+    pydantic
 
 # Copy Orchestrator source from submodule
 COPY components/orchestrator/src/work_rag_orchestrator ./work_rag_orchestrator
-COPY components/orchestrator/requirements.txt ./orch-requirements.txt
-RUN pip install --no-cache-dir -r orch-requirements.txt
 
 # Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app

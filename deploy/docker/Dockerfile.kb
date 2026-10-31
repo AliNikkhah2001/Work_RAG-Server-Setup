@@ -15,16 +15,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Python dependencies
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn \
+    sqlalchemy \
+    asyncpg \
+    sentence-transformers \
+    jinja2 \
+    python-multipart \
+    httpx \
+    pydantic
 
 # Copy KB manager source from submodule
 COPY components/knowledgebase/kb-manager/kb_manager ./kb_manager
-COPY components/knowledgebase/kb-manager/requirements.txt ./kb-requirements.txt
-RUN pip install --no-cache-dir -r kb-requirements.txt
-
-# Copy data and models volumes (mounted at runtime)
-VOLUME ["/data", "/models"]
 
 # Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
