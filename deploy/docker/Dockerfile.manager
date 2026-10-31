@@ -1,0 +1,50 @@
+# LLM Inference Manager Dockerfile
+# Source: llm_inference_manager/app.py
+# Port: 9000
+# Build context: Work_RAG-Server-Setup
+
+FROM python:3.11-slim
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
+WORKDIR /app
+
+# System dependencies (proxy-aware)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies (proxy-aware)
+COPY llm_inference_manager/requirements.txt ./
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org -r requirements.txt
+
+# Copy application code
+COPY llm_inference_manager/app.py ./
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV PORT=9000
+ENV MANAGER_DB_PATH=/data/manager.db
+
+VOLUME ["/data", "/logs"]
+
+EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+
+CMD ["python", "app.py"]

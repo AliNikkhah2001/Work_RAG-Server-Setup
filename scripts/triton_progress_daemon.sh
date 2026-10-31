@@ -18,11 +18,17 @@ hf_size() {
   if [ -d "$dir" ]; then du -sh "$dir" 2>/dev/null | cut -f1; else echo "0"; fi
 }
 
-# helper: triton health
+# helper: triton health — MUST be single-line: multi-line output made the
+# README STATUS_LINE wrap, and the patcher below only replaced the first
+# line, so " | triton 8004: down" continuation lines accumulated every hour
 triton_health() {
-  curl -s http://127.0.0.1:8104/health 2>&1 | head -c 200 || echo "down"
-  echo -n " | triton 8004: "
-  curl -s http://127.0.0.1:8004/v2/health/ready 2>&1 | head -c 80 || echo "down"
+  local vllm triton
+  vllm="$(curl -s http://127.0.0.1:8104/health 2>/dev/null | head -c 200 || true)"
+  vllm="$(printf '%s' "$vllm" | tr -d '\r\n')"
+  triton="$(curl -s http://127.0.0.1:8004/v2/health/ready 2>/dev/null | head -c 80 || true)"
+  triton="$(printf '%s' "$triton" | tr -d '\r\n')"
+  [ -z "$triton" ] && triton="down"
+  printf '%s | triton 8004: %s' "$vllm" "$triton"
 }
 
 while true; do
@@ -35,9 +41,13 @@ while true; do
   HF_GEMMA3=$(hf_size "$ROOT/offline-prep/models/huggingface/google_gemma-3-27b-it")
   ENGINE_SIZE=$(hf_size "$ROOT/offline-prep/models/trt_engines/gemma-4-31b_fp8")
   BENCH=$(ls -t logs/bench_compare*.json 2>/dev/null | head -n1 || echo "none")
-  MANAGER_HEALTH=$(curl -s http://127.0.0.1:9000/health 2>&1 | head -c 300 || echo "manager down")
-  VLLM_HEALTH=$(curl -s http://127.0.0.1:8104/v1/models 2>&1 | head -c 300 || echo "vllm down")
-  TRITON_HEALTH=$(triton_health 2>&1 | head -c 400)
+  MANAGER_HEALTH="$(curl -s http://127.0.0.1:9000/health 2>/dev/null | head -c 300 | tr -d '\r\n' || true)"
+  [ -z "$MANAGER_HEALTH" ] && MANAGER_HEALTH="manager down"
+  VLLM_HEALTH="$(curl -s http://127.0.0.1:8104/v1/models 2>/dev/null | head -c 300 | tr -d '\r\n' || true)"
+  [ -z "$VLLM_HEALTH" ] && VLLM_HEALTH="vllm down"
+  TRITON_HEALTH="$(triton_health 2>/dev/null | head -c 400 || true)"
+  TRITON_HEALTH="$(printf '%s' "$TRITON_HEALTH" | tr -d '\r\n')"
+  [ -z "$TRITON_HEALTH" ] && TRITON_HEALTH="triton down"
 
   # 2. write status file for dashboard
   cat > "$ROOT/logs/triton_hourly_status.json" <<JSONEOF
@@ -55,13 +65,19 @@ while true; do
 JSONEOF
 
   # 3. patch README.md Triton section (idempotent)
+  # STATUS_LINE is guaranteed single-line (all health vars sanitized above);
+  # the awk replaces the ENTIRE block between the marker and the next blank
+  # line, so stale/multi-line leftovers can never accumulate.
   MARKER="<!-- TRITON-HOURLY-STATUS -->"
   STATUS_LINE="> **Triton hourly $TS** — GGUF $GGUF_SIZE | HF gemma-4 $HF_GEMMA4 | HF gemma-3 $HF_GEMMA3 | Engine $ENGINE_SIZE | Manager $MANAGER_HEALTH | VLLM $VLLM_HEALTH | Triton $TRITON_HEALTH | Bench $BENCH"
   if grep -q "$MARKER" "$ROOT/README.md" 2>/dev/null; then
-    # replace line after marker
-    awk -v line="$STATUS_LINE" -v m="$MARKER" 'index($0,m){print; print line; skip=1; next} skip && /^> \*\*Triton hourly/{next} {print}' "$ROOT/README.md" > /tmp/readme.tmp && mv /tmp/readme.tmp "$ROOT/README.md"
+    awk -v line="$STATUS_LINE" -v m="$MARKER" '
+      index($0,m){print; print line; skip=1; next}
+      skip && /^$/{skip=0; print; next}
+      skip{next}
+      {print}' "$ROOT/README.md" > /tmp/readme.tmp && mv /tmp/readme.tmp "$ROOT/README.md"
   else
-    echo -e "\n$MARKER\n$STATUS_LINE\n" >> "$ROOT/README.md"
+    printf '\n%s\n%s\n\n' "$MARKER" "$STATUS_LINE" >> "$ROOT/README.md"
   fi
 
   # 4. git commit + push to main (rebase-safe, stashes dirty working tree)

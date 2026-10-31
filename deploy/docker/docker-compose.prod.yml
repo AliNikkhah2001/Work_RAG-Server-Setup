@@ -1,0 +1,357 @@
+# Docker Compose — Production
+# Used for Phase 4 cutover. Services run on the SAME ports as current production.
+#
+# Build from: Work_Credit-RAG_Phase1 (parent repo root)
+#   docker compose -f Work_RAG-Server-Setup/deploy/docker/docker-compose.prod.yml build
+#   docker compose -f Work_RAG-Server-Setup/deploy/docker/docker-compose.prod.yml up -d
+#
+# Production ports (unchanged):
+#   KB:        8000
+#   Guardrails: 8200
+#   Orchestrator: 8100
+#   Tracing:   3000
+#   Manager:   9000
+#   Gemma ×5:  8080-8084
+#   Embed ×3:  8001-8003
+#   Open WebUI: 13000 (existing container, not managed here)
+#   Redis:     16379 (existing container, not managed here)
+
+services:
+  # ── KB Retrieval ──
+  kb:
+    build:
+      context: ../../Work_Credit-RAG_Phase1
+      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
+    container_name: rag-kb
+    ports:
+      - "8000:8000"
+    environment:
+      - KB_DB_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/kb_manager
+      - KB_REDIS_URL=redis://127.0.0.1:16379/0
+      - KB_REDIS_TTL=600
+      - PORT=8000
+    volumes:
+      - rag-data:/data
+      - rag-models:/models:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Guardrails ──
+  guardrails:
+    build:
+      context: ../../Work_Credit-RAG_Phase1
+      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
+    container_name: rag-guardrails
+    ports:
+      - "8200:8200"
+    environment:
+      - UPSTREAM_LLM_BASE_URL=http://127.0.0.1:9000/v1
+      - UPSTREAM_LLM_MODEL=gemma-4-31b
+      - GUARDRAILS_HOST=0.0.0.0
+      - GUARDRAILS_PORT=8200
+      - PORT=8200
+    volumes:
+      - rag-policies:/app/policies:ro
+      - rag-kb:/app/kb:ro
+    restart: unless-stopped
+    depends_on:
+      manager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8200/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Orchestrator ──
+  orchestrator:
+    build:
+      context: ../../Work_Credit-RAG_Phase1
+      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
+    container_name: rag-orchestrator
+    ports:
+      - "8100:8100"
+    environment:
+      - KB_BASE_URL=http://127.0.0.1:8000
+      - GUARDRAILS_BASE_URL=http://127.0.0.1:8200
+      - LANGFUSE_HOST=http://127.0.0.1:3000
+      - PORT=8100
+    restart: unless-stopped
+    depends_on:
+      kb:
+        condition: service_healthy
+      guardrails:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Tracing ──
+  tracing:
+    build:
+      context: ../../Work_Credit-RAG_Phase1
+      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
+    container_name: rag-tracing
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - TRACES_FILE=/tmp/langfuse_traces.jsonl
+    volumes:
+      - rag-traces:/tmp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/api/public/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── LLM Manager ──
+  manager:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.manager
+    container_name: rag-manager
+    ports:
+      - "9000:9000"
+    environment:
+      - PORT=9000
+      - MANAGER_DB_PATH=/data/manager.db
+    volumes:
+      - rag-manager-db:/data
+      - rag-manager-logs:/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Gemma Backends ×5 ──
+  gemma-8080:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-8080
+    ports:
+      - "8080:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - rag-models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  gemma-8081:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-8081
+    ports:
+      - "8081:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=1
+    volumes:
+      - rag-models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  gemma-8082:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-8082
+    ports:
+      - "8082:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - rag-models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  gemma-8083:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-8083
+    ports:
+      - "8083:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=1
+    volumes:
+      - rag-models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  gemma-8084:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-8084
+    ports:
+      - "8084:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - rag-models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Embedding Servers ×3 ──
+  embed-8001:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.embed
+    container_name: rag-embed-8001
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_PATH=/models
+      - MODEL_ID=multilingual-e5-small
+      - PORT=8001
+    volumes:
+      - rag-models:/models:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  embed-8002:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.embed
+    container_name: rag-embed-8002
+    ports:
+      - "8002:8001"
+    environment:
+      - MODEL_PATH=/models
+      - MODEL_ID=BAAI/bge-m3
+      - PORT=8001
+    volumes:
+      - rag-models:/models:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  embed-8003:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.embed
+    container_name: rag-embed-8003
+    ports:
+      - "8003:8001"
+    environment:
+      - MODEL_PATH=/models
+      - MODEL_ID=paraphrase-multilingual-MiniLM-L12-v2
+      - PORT=8001
+    volumes:
+      - rag-models:/models:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  rag-prod:
+    driver: bridge
+
+volumes:
+  rag-data:
+  rag-models:
+  rag-policies:
+  rag-kb:
+  rag-traces:
+  rag-manager-db:
+  rag-manager-logs:

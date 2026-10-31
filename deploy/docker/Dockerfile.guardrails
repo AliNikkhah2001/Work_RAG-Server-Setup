@@ -1,0 +1,61 @@
+# Guardrails Service Dockerfile
+# Source: components/guardrails/src/work_rag_guardrails/api.py
+# Port: 8200
+# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+
+FROM python:3.11-slim
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
+WORKDIR /app
+
+# System dependencies (proxy-aware)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies (proxy-aware)
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org \
+    fastapi \
+    uvicorn \
+    transformers \
+    torch \
+    python-multipart \
+    httpx \
+    pydantic
+
+# Copy Guardrails source from submodule
+COPY components/guardrails/src/work_rag_guardrails ./work_rag_guardrails
+
+# Copy policies and allowlists
+COPY components/guardrails/policies ./policies
+COPY components/guardrails/kb ./kb
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV UPSTREAM_LLM_BASE_URL=http://127.0.0.1:9000/v1
+ENV UPSTREAM_LLM_MODEL=gemma-4-31b
+ENV GUARDRAILS_HOST=0.0.0.0
+ENV GUARDRAILS_PORT=8200
+ENV PORT=8200
+
+EXPOSE 8200
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+
+CMD ["python", "-m", "uvicorn", "work_rag_guardrails.api:create_app --factory", "--host", "0.0.0.0", "--port", "8200"]

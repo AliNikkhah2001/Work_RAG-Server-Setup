@@ -1,0 +1,55 @@
+# Embedding Service Dockerfile
+# Source: scripts/services/embed_server.py
+# Ports: 8001-8003 (one container per model)
+# Build context: Work_RAG-Server-Setup
+
+FROM python:3.11-slim
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
+WORKDIR /app
+
+# System dependencies (proxy-aware)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies (proxy-aware, CPU-only torch)
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org \
+    fastapi \
+    uvicorn \
+    sentence-transformers \
+    httpx \
+    pydantic
+
+# Copy embed server script
+COPY scripts/services/embed_server.py ./
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV MODEL_PATH=/models
+ENV MODEL_ID=multilingual-e5-small
+ENV PORT=8001
+
+VOLUME ["/models"]
+
+EXPOSE 8001
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+
+CMD ["python", "embed_server.py", "--model", "${MODEL_PATH}", "--model-id", "${MODEL_ID}", "--port", "${PORT}"]

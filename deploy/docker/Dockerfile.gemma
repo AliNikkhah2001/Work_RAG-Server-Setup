@@ -1,0 +1,56 @@
+# Gemma Backend Service Dockerfile (llama.cpp)
+# Source: scripts/services/llama_chat_server.py
+# Ports: 8080-8084 (one container per GPU/backend)
+# GPU: Required (nvidia-container-toolkit)
+# Build context: Work_RAG-Server-Setup
+
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-pip \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org \
+    fastapi \
+    uvicorn \
+    llama-cpp-python \
+    httpx \
+    pydantic
+
+# Copy backend script
+COPY scripts/services/llama_chat_server.py ./
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV MODEL_PATH=/models/gemma-4-31b.gguf
+ENV MODEL_ID=gemma-4-31b
+ENV PORT=8080
+ENV N_CTX=8192
+ENV N_GPU_LAYERS=-1
+ENV CUDA_VISIBLE_DEVICES=0
+
+VOLUME ["/models"]
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+
+CMD ["python3", "llama_chat_server.py", "--model", "${MODEL_PATH}", "--host", "0.0.0.0", "--port", "${PORT}", "--n-ctx", "${N_CTX}", "--n-gpu-layers", "${N_GPU_LAYERS}", "--model-id", "${MODEL_ID}"]

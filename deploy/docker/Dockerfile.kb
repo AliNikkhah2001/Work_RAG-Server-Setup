@@ -1,0 +1,59 @@
+# KB Retrieval Service Dockerfile
+# Source: components/knowledgebase/kb-manager/kb_manager/web/app.py
+# Port: 8000
+# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+
+FROM python:3.11-slim
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
+WORKDIR /app
+
+# System dependencies (proxy-aware)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies (proxy-aware, CPU-only torch)
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org \
+    fastapi \
+    uvicorn \
+    sqlalchemy \
+    asyncpg \
+    sentence-transformers \
+    jinja2 \
+    python-multipart \
+    httpx \
+    pydantic
+
+# Copy KB manager source from submodule
+COPY components/knowledgebase/kb-manager/kb_manager ./kb_manager
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV KB_DB_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/kb_manager
+ENV KB_REDIS_URL=redis://127.0.0.1:16379/0
+ENV KB_REDIS_TTL=600
+ENV PORT=8000
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+
+CMD ["python", "-m", "uvicorn", "kb_manager.web.app:app", "--host", "0.0.0.0", "--port", "8000"]

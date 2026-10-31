@@ -1,0 +1,50 @@
+# Tracing Fallback Collector Dockerfile
+# Source: components/tracing/app.py
+# Port: 3000
+# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+
+FROM python:3.11-slim
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY=localhost,127.0.0.1
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+ENV http_proxy=${HTTP_PROXY}
+ENV https_proxy=${HTTPS_PROXY}
+ENV no_proxy=${NO_PROXY}
+
+WORKDIR /app
+
+# System dependencies (proxy-aware)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies (proxy-aware)
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --trusted-host download.pytorch.org \
+    fastapi \
+    uvicorn
+
+# Copy tracing source from parent repo (not a submodule)
+COPY components/tracing ./tracing
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV PORT=3000
+ENV TRACES_FILE=/tmp/langfuse_traces.jsonl
+
+VOLUME ["/tmp"]
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/api/public/health || exit 1
+
+CMD ["python", "-m", "uvicorn", "tracing.app:app", "--host", "0.0.0.0", "--port", "3000"]
