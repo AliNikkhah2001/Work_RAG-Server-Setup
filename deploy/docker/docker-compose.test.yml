@@ -1,0 +1,285 @@
+# Docker Compose — Test (Alt Ports)
+# Used for Phase 1-2 validation WITHOUT touching running production processes.
+# All services run on alternate ports to avoid collisions with host venvs.
+#
+# Build from: Work_Credit-RAG_Phase1 (parent repo root)
+#   docker compose -f Work_RAG-Server-Setup/deploy/docker/docker-compose.test.yml build
+#   docker compose -f Work_RAG-Server-Setup/deploy/docker/docker-compose.test.yml up -d
+#
+# Test ports:
+#   KB:        8100 (prod: 8000)
+#   Guardrails: 8201 (prod: 8200)
+#   Orchestrator: 8101 (prod: 8100)
+#   Tracing:   3001 (prod: 3000)
+#   Manager:   9001 (prod: 9000)
+#   Gemma ×5:  8085-8089 (prod: 8080-8084)
+#   Embed ×3:  8004-8006 (prod: 8001-8003)
+
+services:
+  # ── KB Retrieval ──
+  kb-test:
+    build:
+      context: ..
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
+    container_name: rag-kb-test
+    ports:
+      - "8100:8000"
+    environment:
+      - KB_DB_URL=postgresql+asyncpg://postgres:postgres@host.docker.internal:5432/kb_manager
+      - KB_REDIS_URL=redis://host.docker.internal:16379/0
+      - KB_REDIS_TTL=600
+      - PORT=8000
+    volumes:
+      - ../../offline-prep/models/huggingface:/models:ro
+      - ./data:/data:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ── Guardrails ──
+  guardrails-test:
+    build:
+      context: ..
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
+    container_name: rag-guardrails-test
+    ports:
+      - "8201:8200"
+    environment:
+      - UPSTREAM_LLM_BASE_URL=http://host.docker.internal:9001/v1
+      - UPSTREAM_LLM_MODEL=gemma-4-31b
+      - GUARDRAILS_HOST=0.0.0.0
+      - GUARDRAILS_PORT=8200
+      - PORT=8200
+    volumes:
+      - ./policies:/app/policies:ro
+      - ./kb:/app/kb:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      manager-test:
+        condition: service_healthy
+
+  # ── Orchestrator ──
+  orchestrator-test:
+    build:
+      context: ..
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
+    container_name: rag-orchestrator-test
+    ports:
+      - "8101:8100"
+    environment:
+      - KB_BASE_URL=http://host.docker.internal:8100
+      - GUARDRAILS_BASE_URL=http://host.docker.internal:8201
+      - LANGFUSE_HOST=http://host.docker.internal:3001
+      - PORT=8100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      kb-test:
+        condition: service_healthy
+      guardrails-test:
+        condition: service_healthy
+
+  # ── Tracing ──
+  tracing-test:
+    build:
+      context: ..
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
+    container_name: rag-tracing-test
+    ports:
+      - "3001:3000"
+    environment:
+      - PORT=3000
+      - TRACES_FILE=/tmp/langfuse_traces_test.jsonl
+    volumes:
+      - ./logs/tracing:/tmp
+    restart: unless-stopped
+
+  # ── LLM Manager ──
+  manager-test:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.manager
+    container_name: rag-manager-test
+    ports:
+      - "9001:9000"
+    environment:
+      - PORT=9000
+      - MANAGER_DB_PATH=/data/manager.db
+    volumes:
+      - ./data/manager.db:/data/manager.db
+      - ./logs/manager:/logs
+    restart: unless-stopped
+
+  # ── Gemma Backends ×5 ──
+  gemma-test-8085:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-test-8085
+    ports:
+      - "8085:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ../../offline-prep/models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  gemma-test-8086:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-test-8086
+    ports:
+      - "8086:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=1
+    volumes:
+      - ../../offline-prep/models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  gemma-test-8087:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-test-8087
+    ports:
+      - "8087:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ../../offline-prep/models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  gemma-test-8088:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-test-8088
+    ports:
+      - "8088:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=1
+    volumes:
+      - ../../offline-prep/models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  gemma-test-8089:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.gemma
+    container_name: rag-gemma-test-8089
+    ports:
+      - "8089:8080"
+    environment:
+      - MODEL_PATH=/models/gemma-4-31b.gguf
+      - MODEL_ID=gemma-4-31b
+      - PORT=8080
+      - N_CTX=8192
+      - N_GPU_LAYERS=-1
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ../../offline-prep/models:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # ── Embedding Servers ×3 ──
+  embed-test-8004:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.embed
+    container_name: rag-embed-test-8004
+    ports:
+      - "8004:8001"
+    environment:
+      - MODEL_PATH=/models
+      - MODEL_ID=multilingual-e5-small
+      - PORT=8001
+    volumes:
+      - ../../offline-prep/models/huggingface:/models:ro
+    restart: unless-stopped
+
+  embed-test-8005:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.embed
+    container_name: rag-embed-test-8005
+    ports:
+      - "8005:8001"
+    environment:
+      - MODEL_PATH=/models
+      - MODEL_ID=BAAI/bge-m3
+      - PORT=8001
+    volumes:
+      - ../../offline-prep/models/huggingface:/models:ro
+    restart: unless-stopped
+
+  embed-test-8006:
+    build:
+      context: Work_RAG-Server-Setup
+      dockerfile: deploy/docker/Dockerfile.embed
+    container_name: rag-embed-test-8006
+    ports:
+      - "8006:8001"
+    environment:
+      - MODEL_PATH=/models
+      - MODEL_ID=paraphrase-multilingual-MiniLM-L12-v2
+      - PORT=8001
+    volumes:
+      - ../../offline-prep/models/huggingface:/models:ro
+    restart: unless-stopped
+
+networks:
+  rag-test:
+    driver: bridge

@@ -1,0 +1,38 @@
+# Tracing Fallback Collector Dockerfile
+# Source: components/tracing/app.py
+# Port: 3000
+# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy tracing source from parent repo (not a submodule)
+COPY components/tracing ./tracing
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV PORT=3000
+ENV TRACES_FILE=/tmp/langfuse_traces.jsonl
+
+VOLUME ["/tmp"]
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/api/public/health || exit 1
+
+CMD ["python", "-m", "uvicorn", "tracing.app:app", "--host", "0.0.0.0", "--port", "3000"]

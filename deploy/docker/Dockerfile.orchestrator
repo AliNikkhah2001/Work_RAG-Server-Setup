@@ -1,0 +1,41 @@
+# Orchestrator (LangGraph) Service Dockerfile
+# Source: components/orchestrator/src/work_rag_orchestrator/api.py
+# Port: 8100
+# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy Orchestrator source from submodule
+COPY components/orchestrator/src/work_rag_orchestrator ./work_rag_orchestrator
+COPY components/orchestrator/requirements.txt ./orch-requirements.txt
+RUN pip install --no-cache-dir -r orch-requirements.txt
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV KB_BASE_URL=http://127.0.0.1:8000
+ENV GUARDRAILS_BASE_URL=http://127.0.0.1:8200
+ENV LANGFUSE_HOST=http://127.0.0.1:3000
+ENV PORT=8100
+
+EXPOSE 8100
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+
+CMD ["python", "-m", "uvicorn", "work_rag_orchestrator.api:create_app --factory", "--host", "0.0.0.0", "--port", "8100"]

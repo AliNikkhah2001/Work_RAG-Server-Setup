@@ -1,0 +1,39 @@
+# LLM Inference Manager Dockerfile
+# Source: llm_inference_manager/app.py
+# Port: 9000
+# Build context: Work_RAG-Server-Setup
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies
+COPY llm_inference_manager/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY llm_inference_manager/app.py ./
+
+# Non-root user
+RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
+USER raguser
+
+# Environment
+ENV PORT=9000
+ENV MANAGER_DB_PATH=/data/manager.db
+
+VOLUME ["/data", "/logs"]
+
+EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+
+CMD ["python", "app.py"]
