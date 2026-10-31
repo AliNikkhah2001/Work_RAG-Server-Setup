@@ -22,7 +22,7 @@ services:
   # ── KB Retrieval ──
   kb:
     build:
-      context: .
+      context: ../../Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
     container_name: rag-kb
     ports:
@@ -48,7 +48,7 @@ services:
   # ── Guardrails ──
   guardrails:
     build:
-      context: .
+      context: ../../Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
     container_name: rag-guardrails
     ports:
@@ -78,7 +78,7 @@ services:
   # ── Orchestrator ──
   orchestrator:
     build:
-      context: .
+      context: ../../Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
     container_name: rag-orchestrator
     ports:
@@ -107,7 +107,7 @@ services:
   # ── Tracing ──
   tracing:
     build:
-      context: .
+      context: ../../Work_Credit-RAG_Phase1
       dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
     container_name: rag-tracing
     ports:
@@ -130,7 +130,7 @@ services:
   # ── LLM Manager ──
   manager:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.manager
     container_name: rag-manager
     ports:
@@ -154,7 +154,7 @@ services:
   # ── Gemma Backends ×5 ──
   gemma-8080:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8080
     ports:
@@ -184,7 +184,7 @@ services:
 
   gemma-8081:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8081
     ports:
@@ -214,7 +214,7 @@ services:
 
   gemma-8082:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8082
     ports:
@@ -244,7 +244,7 @@ services:
 
   gemma-8083:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8083
     ports:
@@ -274,7 +274,7 @@ services:
 
   gemma-8084:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8084
     ports:
@@ -305,7 +305,7 @@ services:
   # ── Embedding Servers ×3 ──
   embed-8001:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-8001
     ports:
@@ -328,7 +328,7 @@ services:
 
   embed-8002:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-8002
     ports:
@@ -351,7 +351,7 @@ services:
 
   embed-8003:
     build:
-      context: Work_RAG-Server-Setup
+      context: ../..
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-8003
     ports:
