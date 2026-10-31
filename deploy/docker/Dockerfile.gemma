@@ -3,15 +3,19 @@
 # Ports: 8080-8084 (one container per GPU/backend)
 # GPU: Required (nvidia-container-toolkit)
 # Build context: Work_RAG-Server-Setup
-# Copies host's pre-installed Python packages to bypass corporate proxy
+# Mounts host site-packages as volume at runtime to bypass proxy
 
 FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
-# Copy host's pre-installed Python packages (bypasses proxy hash issues)
-COPY --chown=raguser:raguser offline-prep/venv/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-pip \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy backend script
-COPY --chown=raguser:raguser scripts/services/llama_chat_server.py ./
+COPY scripts/services/llama_chat_server.py ./
 
 # Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
@@ -24,7 +28,7 @@ ENV PORT=8080
 ENV N_CTX=8192
 ENV N_GPU_LAYERS=-1
 ENV CUDA_VISIBLE_DEVICES=0
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/host-site-packages
 
 VOLUME ["/models"]
 

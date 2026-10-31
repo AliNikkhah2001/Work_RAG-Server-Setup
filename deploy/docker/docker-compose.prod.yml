@@ -15,13 +15,15 @@
 #   Embed ×3:  8001-8003
 #   Open WebUI: 13000 (existing container, not managed here)
 #   Redis:     16379 (existing container, not managed here)
+#
+# Mount host site-packages as /host-site-packages:ro for Python dependencies
 
 services:
   # ── KB Retrieval ──
   kb:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.kb
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
     container_name: rag-kb
     ports:
       - "8000:8000"
@@ -30,7 +32,9 @@ services:
       - KB_REDIS_URL=redis://127.0.0.1:16379/0
       - KB_REDIS_TTL=600
       - PORT=8000
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-data:/data
       - rag-models:/models:ro
     restart: unless-stopped
@@ -44,8 +48,8 @@ services:
   # ── Guardrails ──
   guardrails:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.guardrails
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
     container_name: rag-guardrails
     ports:
       - "8200:8200"
@@ -55,7 +59,9 @@ services:
       - GUARDRAILS_HOST=0.0.0.0
       - GUARDRAILS_PORT=8200
       - PORT=8200
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-policies:/app/policies:ro
       - rag-kb:/app/kb:ro
     restart: unless-stopped
@@ -72,8 +78,8 @@ services:
   # ── Orchestrator ──
   orchestrator:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.orchestrator
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
     container_name: rag-orchestrator
     ports:
       - "8100:8100"
@@ -82,6 +88,9 @@ services:
       - GUARDRAILS_BASE_URL=http://127.0.0.1:8200
       - LANGFUSE_HOST=http://127.0.0.1:3000
       - PORT=8100
+      - PYTHONPATH=/app:/host-site-packages
+    volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
     restart: unless-stopped
     depends_on:
       kb:
@@ -98,15 +107,17 @@ services:
   # ── Tracing ──
   tracing:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.tracing
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
     container_name: rag-tracing
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
       - TRACES_FILE=/tmp/langfuse_traces.jsonl
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-traces:/tmp
     restart: unless-stopped
     healthcheck:
@@ -119,7 +130,7 @@ services:
   # ── LLM Manager ──
   manager:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.manager
     container_name: rag-manager
     ports:
@@ -127,7 +138,9 @@ services:
     environment:
       - PORT=9000
       - MANAGER_DB_PATH=/data/manager.db
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-manager-db:/data
       - rag-manager-logs:/logs
     restart: unless-stopped
@@ -141,7 +154,7 @@ services:
   # ── Gemma Backends ×5 ──
   gemma-8080:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8080
     ports:
@@ -153,7 +166,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     deploy:
       resources:
@@ -169,7 +184,7 @@ services:
 
   gemma-8081:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8081
     ports:
@@ -181,7 +196,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     deploy:
       resources:
@@ -197,7 +214,7 @@ services:
 
   gemma-8082:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8082
     ports:
@@ -209,7 +226,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     deploy:
       resources:
@@ -225,7 +244,7 @@ services:
 
   gemma-8083:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8083
     ports:
@@ -237,7 +256,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     deploy:
       resources:
@@ -253,7 +274,7 @@ services:
 
   gemma-8084:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-8084
     ports:
@@ -265,7 +286,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     deploy:
       resources:
@@ -282,7 +305,7 @@ services:
   # ── Embedding Servers ×3 ──
   embed-8001:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-8001
     ports:
@@ -291,7 +314,9 @@ services:
       - MODEL_PATH=/models
       - MODEL_ID=multilingual-e5-small
       - PORT=8001
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     restart: unless-stopped
     healthcheck:
@@ -303,7 +328,7 @@ services:
 
   embed-8002:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-8002
     ports:
@@ -312,7 +337,9 @@ services:
       - MODEL_PATH=/models
       - MODEL_ID=BAAI/bge-m3
       - PORT=8001
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     restart: unless-stopped
     healthcheck:
@@ -324,7 +351,7 @@ services:
 
   embed-8003:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-8003
     ports:
@@ -333,7 +360,9 @@ services:
       - MODEL_PATH=/models
       - MODEL_ID=paraphrase-multilingual-MiniLM-L12-v2
       - PORT=8001
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - rag-models:/models:ro
     restart: unless-stopped
     healthcheck:

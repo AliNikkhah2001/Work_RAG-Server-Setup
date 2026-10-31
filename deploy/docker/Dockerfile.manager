@@ -2,17 +2,14 @@
 # Source: llm_inference_manager/app.py
 # Port: 9000
 # Build context: Work_RAG-Server-Setup
-# Copies host's pre-installed Python packages to bypass corporate proxy
+# Mounts host site-packages as volume at runtime to bypass proxy
 
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy host's pre-installed Python packages (bypasses proxy hash issues)
-COPY --chown=raguser:raguser offline-prep/venv/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-
 # Copy application code
-COPY --chown=raguser:raguser llm_inference_manager/app.py ./
+COPY llm_inference_manager/app.py ./
 
 # Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
@@ -21,7 +18,7 @@ USER raguser
 # Environment
 ENV PORT=9000
 ENV MANAGER_DB_PATH=/data/manager.db
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/host-site-packages
 
 VOLUME ["/data", "/logs"]
 

@@ -14,13 +14,15 @@
 #   Manager:   9001 (prod: 9000)
 #   Gemma ×5:  8085-8089 (prod: 8080-8084)
 #   Embed ×3:  8004-8006 (prod: 8001-8003)
+#
+# Mount host site-packages as /host-site-packages:ro for Python dependencies
 
 services:
   # ── KB Retrieval ──
   kb-test:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.kb
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
     container_name: rag-kb-test
     ports:
       - "8100:8000"
@@ -29,7 +31,9 @@ services:
       - KB_REDIS_URL=redis://host.docker.internal:16379/0
       - KB_REDIS_TTL=600
       - PORT=8000
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models/huggingface:/models:ro
       - ./data:/data:ro
     extra_hosts:
@@ -39,8 +43,8 @@ services:
   # ── Guardrails ──
   guardrails-test:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.guardrails
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
     container_name: rag-guardrails-test
     ports:
       - "8201:8200"
@@ -50,7 +54,9 @@ services:
       - GUARDRAILS_HOST=0.0.0.0
       - GUARDRAILS_PORT=8200
       - PORT=8200
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ./policies:/app/policies:ro
       - ./kb:/app/kb:ro
     extra_hosts:
@@ -63,8 +69,8 @@ services:
   # ── Orchestrator ──
   orchestrator-test:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.orchestrator
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
     container_name: rag-orchestrator-test
     ports:
       - "8101:8100"
@@ -73,6 +79,9 @@ services:
       - GUARDRAILS_BASE_URL=http://host.docker.internal:8201
       - LANGFUSE_HOST=http://host.docker.internal:3001
       - PORT=8100
+      - PYTHONPATH=/app:/host-site-packages
+    volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -85,22 +94,26 @@ services:
   # ── Tracing ──
   tracing-test:
     build:
-      context: ../..
-      dockerfile: deploy/docker/Dockerfile.tracing
+      context: .
+      dockerfile: Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
     container_name: rag-tracing-test
     ports:
       - "3001:3000"
     environment:
       - PORT=3000
       - TRACES_FILE=/tmp/langfuse_traces_test.jsonl
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ./logs/tracing:/tmp
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   # ── LLM Manager ──
   manager-test:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.manager
     container_name: rag-manager-test
     ports:
@@ -108,15 +121,19 @@ services:
     environment:
       - PORT=9000
       - MANAGER_DB_PATH=/data/manager.db
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ./data/manager.db:/data/manager.db
       - ./logs/manager:/logs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   # ── Gemma Backends ×5 ──
   gemma-test-8085:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8085
     ports:
@@ -128,7 +145,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models:/models:ro
     deploy:
       resources:
@@ -140,7 +159,7 @@ services:
 
   gemma-test-8086:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8086
     ports:
@@ -152,7 +171,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models:/models:ro
     deploy:
       resources:
@@ -164,7 +185,7 @@ services:
 
   gemma-test-8087:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8087
     ports:
@@ -176,7 +197,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models:/models:ro
     deploy:
       resources:
@@ -188,7 +211,7 @@ services:
 
   gemma-test-8088:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8088
     ports:
@@ -200,7 +223,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models:/models:ro
     deploy:
       resources:
@@ -212,7 +237,7 @@ services:
 
   gemma-test-8089:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.gemma
     container_name: rag-gemma-test-8089
     ports:
@@ -224,7 +249,9 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models:/models:ro
     deploy:
       resources:
@@ -237,7 +264,7 @@ services:
   # ── Embedding Servers ×3 ──
   embed-test-8004:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-test-8004
     ports:
@@ -246,13 +273,15 @@ services:
       - MODEL_PATH=/models
       - MODEL_ID=multilingual-e5-small
       - PORT=8001
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models/huggingface:/models:ro
     restart: unless-stopped
 
   embed-test-8005:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-test-8005
     ports:
@@ -261,13 +290,15 @@ services:
       - MODEL_PATH=/models
       - MODEL_ID=BAAI/bge-m3
       - PORT=8001
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models/huggingface:/models:ro
     restart: unless-stopped
 
   embed-test-8006:
     build:
-      context: ../..
+      context: Work_RAG-Server-Setup
       dockerfile: deploy/docker/Dockerfile.embed
     container_name: rag-embed-test-8006
     ports:
@@ -276,7 +307,9 @@ services:
       - MODEL_PATH=/models
       - MODEL_ID=paraphrase-multilingual-MiniLM-L12-v2
       - PORT=8001
+      - PYTHONPATH=/app:/host-site-packages
     volumes:
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - ../../offline-prep/models/huggingface:/models:ro
     restart: unless-stopped
 

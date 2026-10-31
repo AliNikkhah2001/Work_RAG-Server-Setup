@@ -2,17 +2,14 @@
 # Source: scripts/services/embed_server.py
 # Ports: 8001-8003 (one container per model)
 # Build context: Work_RAG-Server-Setup
-# Copies host's pre-installed Python packages to bypass corporate proxy
+# Mounts host site-packages as volume at runtime to bypass proxy
 
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy host's pre-installed Python packages (bypasses proxy hash issues)
-COPY --chown=raguser:raguser offline-prep/venv/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-
 # Copy embed server script
-COPY --chown=raguser:raguser scripts/services/embed_server.py ./
+COPY scripts/services/embed_server.py ./
 
 # Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
@@ -22,7 +19,7 @@ USER raguser
 ENV MODEL_PATH=/models
 ENV MODEL_ID=multilingual-e5-small
 ENV PORT=8001
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/host-site-packages
 
 VOLUME ["/models"]
 

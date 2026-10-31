@@ -1,22 +1,19 @@
 # Guardrails Service Dockerfile
 # Source: components/guardrails/src/work_rag_guardrails/api.py
 # Port: 8200
-# Build context: Work_RAG-Server-Setup
-# Copies host's pre-installed Python packages to bypass corporate proxy
+# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+# Mounts host site-packages as volume at runtime to bypass proxy
 
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy host's pre-installed Python packages (bypasses proxy hash issues)
-COPY --chown=raguser:raguser offline-prep/venv/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-
 # Copy Guardrails source from submodule
-COPY --chown=raguser:raguser components/guardrails/src/work_rag_guardrails ./work_rag_guardrails
+COPY components/guardrails/src/work_rag_guardrails ./work_rag_guardrails
 
 # Copy policies and allowlists
-COPY --chown=raguser:raguser components/guardrails/policies ./policies
-COPY --chown=raguser:raguser components/guardrails/kb ./kb
+COPY components/guardrails/policies ./policies
+COPY components/guardrails/kb ./kb
 
 # Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
@@ -28,7 +25,7 @@ ENV UPSTREAM_LLM_MODEL=gemma-4-31b
 ENV GUARDRAILS_HOST=0.0.0.0
 ENV GUARDRAILS_PORT=8200
 ENV PORT=8200
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/host-site-packages
 
 EXPOSE 8200
 
