@@ -4,6 +4,8 @@
 # GPU: Required (nvidia-container-toolkit)
 # Build context: Work_RAG-Server-Setup
 
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG NO_PROXY=localhost,127.0.0.1
@@ -14,8 +16,6 @@ ENV NO_PROXY=${NO_PROXY}
 ENV http_proxy=${HTTP_PROXY}
 ENV https_proxy=${HTTPS_PROXY}
 ENV no_proxy=${NO_PROXY}
-
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 \
