@@ -7,7 +7,7 @@ Provisioning, local model/embedding services, **Gemma LLM inference manager**, O
 <!-- docs-toc:start -->
 ## Documentation Index
 
-> Auto-generated from this repository's tracked Markdown notes (**84** files). Refresh with `python scripts/gen_readme_toc.py` — the `docs-toc` workflow does this automatically on push.
+> Auto-generated from this repository's tracked Markdown notes (**86** files). Refresh with `python scripts/gen_readme_toc.py` — the `docs-toc` workflow does this automatically on push.
 
 ### Repository root
 
@@ -36,6 +36,7 @@ Provisioning, local model/embedding services, **Gemma LLM inference manager**, O
 
 ### `docs/`
 
+- [DevOps, Containerization & Production Deployment Report](docs/DEVOPS_CONTAINERIZATION_REPORT.md) — 1. Executive Summary
 - [RAG Server — Documentation Index](docs/README.md) — A self-hosted RAG + inference platform on 2× NVIDIA H200 NVL (281 GiB total VRAM), 1 TB RAM,
 - [RAG Server — System Report & Runbook](docs/REPORT.md) — GATEWAY = http://192.168.96.82:8088 (nginx, also on 192.168.177.10:8088). Firewall open, but run curl --noproxy '' when testing locally (the shell's…
 - [Findings — Environment Facts & Gotchas](docs/findings.md) — Verified as of 2026-08-15. Update this file when new facts are learned; keep it current.
@@ -65,6 +66,7 @@ Provisioning, local model/embedding services, **Gemma LLM inference manager**, O
 - [014 — 2026-10-14 — FP8 variants benchmarked vs BF16 conc-128 champion](docs/history/014_2026-10-14_fp8_kv_weight_benchmark.md) — same Persian long-form prompt, max_tokens=256, temperature=0.3,
 - [Execution History](docs/history/README.md) — Detailed, dated record of every installation and notable finding during this RAG server setup. This is the authoritative history — .state.json, logs,…
 - [Manager OpenAPI Curls — verified 2026-08-23](docs/manager_openapi_curls.md) — Base: http://127.0.0.1:9000 (local) or http://192.168.96.82:9000 (from Docker) or http://host.docker.internal:9000 (inside container). Auth: Authoriz…
+- [Containerization Migration Plan — Work_RAG-Server-Setup (H200 Production)](docs/migration/containerization-report.md) — All 8 production services currently run as bare host processes (venvs) or individual Docker containers on the H200 server. This plan containerizes ev…
 - [Plan Deliverables](docs/plan.md) — Machine-parseable checklist (the progress dashboard reads the [x]/[ ] markers).
 - [README Runbook Outline (implemented 2026-08-23)](docs/reports/README_runbook_outline.md) — 0 Quick Start, 1 Hardware/Proxy, 2 Repo Layout, 3 Venv/Requirements, 4 Model Files (17), 5 Docker, 6 Embeds, 7 LLMs (11), 8 Manager, 9 OpenCode, 10 B…
 - [Persian LLM Evaluation Report](docs/reports/persian_eval_report.md) — Generated: 2026-08-19 09:18 UTC
