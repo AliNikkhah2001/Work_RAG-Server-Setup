@@ -1,7 +1,7 @@
 # Tracing Fallback Collector Dockerfile
 # Source: components/tracing/app.py
 # Port: 3000
-# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+# Build context: Work_RAG-Server-Setup
 # Copies host's pre-installed Python packages to bypass corporate proxy
 
 FROM python:3.12-slim

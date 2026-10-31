@@ -20,8 +20,8 @@ services:
   # ── KB Retrieval ──
   kb:
     build:
-      context: ../../Work_Credit-RAG_Phase1
-      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.kb
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.kb
     container_name: rag-kb
     ports:
       - "8000:8000"
@@ -44,8 +44,8 @@ services:
   # ── Guardrails ──
   guardrails:
     build:
-      context: ../../Work_Credit-RAG_Phase1
-      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.guardrails
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.guardrails
     container_name: rag-guardrails
     ports:
       - "8200:8200"
@@ -72,8 +72,8 @@ services:
   # ── Orchestrator ──
   orchestrator:
     build:
-      context: ../../Work_Credit-RAG_Phase1
-      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.orchestrator
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.orchestrator
     container_name: rag-orchestrator
     ports:
       - "8100:8100"
@@ -98,8 +98,8 @@ services:
   # ── Tracing ──
   tracing:
     build:
-      context: ../../Work_Credit-RAG_Phase1
-      dockerfile: ../Work_RAG-Server-Setup/deploy/docker/Dockerfile.tracing
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.tracing
     container_name: rag-tracing
     ports:
       - "3000:3000"

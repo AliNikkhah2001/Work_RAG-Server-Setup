@@ -1,7 +1,7 @@
 # Guardrails Service Dockerfile
 # Source: components/guardrails/src/work_rag_guardrails/api.py
 # Port: 8200
-# Build context: Work_Credit-RAG_Phase1 (parent repo root)
+# Build context: Work_RAG-Server-Setup
 # Copies host's pre-installed Python packages to bypass corporate proxy
 
 FROM python:3.12-slim
