@@ -1,21 +1,16 @@
 # KB Retrieval Service Dockerfile
-# Source: components/knowledgebase/kb-manager/kb_manager/web/app.py
-# Port: 8000
-# Build context: Work_Credit-RAG_Phase1 (parent repo root)
-# Mounts host site-packages as volume at runtime to bypass proxy
-
+# Port: 8000 | Build context: Work_Credit-RAG_Phase1
 FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy KB manager source from submodule
 COPY components/knowledgebase/kb-manager/kb_manager ./kb_manager
 
-# Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
 USER raguser
 
-# Environment
 ENV KB_DB_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/kb_manager
 ENV KB_REDIS_URL=redis://127.0.0.1:16379/0
 ENV KB_REDIS_TTL=600

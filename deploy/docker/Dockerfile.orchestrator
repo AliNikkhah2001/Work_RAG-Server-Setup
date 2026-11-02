@@ -1,21 +1,16 @@
 # Orchestrator (LangGraph) Service Dockerfile
-# Source: components/orchestrator/src/work_rag_orchestrator/api.py
-# Port: 8100
-# Build context: Work_Credit-RAG_Phase1 (parent repo root)
-# Mounts host site-packages as volume at runtime to bypass proxy
-
+# Port: 8100 | Build context: Work_Credit-RAG_Phase1
 FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy Orchestrator source from submodule
 COPY components/orchestrator/src/work_rag_orchestrator ./work_rag_orchestrator
 
-# Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
 USER raguser
 
-# Environment
 ENV KB_BASE_URL=http://127.0.0.1:8000
 ENV GUARDRAILS_BASE_URL=http://127.0.0.1:8200
 ENV LANGFUSE_HOST=http://127.0.0.1:3000

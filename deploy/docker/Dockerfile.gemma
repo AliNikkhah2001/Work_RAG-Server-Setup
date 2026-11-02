@@ -1,22 +1,16 @@
-# Gemma Backend Service Dockerfile (llama.cpp)
-# Source: scripts/services/llama_chat_server.py
-# Ports: 8080-8084 (one container per GPU/backend)
-# GPU: Required (nvidia-container-toolkit)
-# Build context: Work_RAG-Server-Setup
-# Mounts host site-packages and CUDA libs as volumes at runtime
-
+# Gemma Backend Service Dockerfile
+# Ports: 8080-8084 | Build context: Work_RAG-Server-Setup
 FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy backend script
 COPY scripts/services/llama_chat_server.py ./
 
-# Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
 USER raguser
 
-# Environment
 ENV MODEL_PATH=/models/gemma-4-31b.gguf
 ENV MODEL_ID=gemma-4-31b
 ENV PORT=8080

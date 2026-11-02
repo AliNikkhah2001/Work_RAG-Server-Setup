@@ -1,25 +1,8 @@
 # Docker Compose — Test (Alt Ports)
-# Used for Phase 1-2 validation WITHOUT touching running production processes.
-# All services run on alternate ports to avoid collisions with host venvs.
-#
-# Uses pre-built images from local-h200:5000 registry.
-#
-# Build from: Work_Credit-RAG_Phase1 (parent repo root)
-#   docker compose -f Work_RAG-Server-Setup/deploy/docker/docker-compose.test.yml up -d
-#
-# Test ports:
-#   KB:        8100 (prod: 8000)
-#   Guardrails: 8201 (prod: 8200)
-#   Orchestrator: 8101 (prod: 8100)
-#   Tracing:   3001 (prod: 3000)
-#   Manager:   9001 (prod: 9000)
-#   Gemma ×5:  8085-8089 (prod: 8080-8084)
-#   Embed ×3:  8004-8006 (prod: 8001-8003)
-#
-# Mount host site-packages as /host-site-packages:ro for Python dependencies
+# Alt ports: 8500-8512 (zero impact on production)
+# Uses pre-built images from local-h200:5000
 
 services:
-  # ── KB Retrieval ──
   kb-test:
     image: local-h200:5000/rag-kb:b1d48b6
     container_name: rag-kb-test
@@ -39,7 +22,6 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
-  # ── Guardrails ──
   guardrails-test:
     image: local-h200:5000/rag-guardrails:b1d48b6
     container_name: rag-guardrails-test
@@ -63,7 +45,6 @@ services:
       manager-test:
         condition: service_healthy
 
-  # ── Orchestrator ──
   orchestrator-test:
     image: local-h200:5000/rag-orchestrator:b1d48b6
     container_name: rag-orchestrator-test
@@ -86,7 +67,6 @@ services:
       guardrails-test:
         condition: service_healthy
 
-  # ── Tracing ──
   tracing-test:
     image: local-h200:5000/rag-tracing:b1d48b6
     container_name: rag-tracing-test
@@ -103,7 +83,6 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
-  # ── LLM Manager ──
   manager-test:
     image: local-h200:5000/rag-manager:b1d48b6
     container_name: rag-manager-test
@@ -121,7 +100,6 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
-  # ── Gemma Backends ×5 ──
   gemma-test-8085:
     image: local-h200:5000/rag-gemma:b1d48b6
     container_name: rag-gemma-test-8085
@@ -135,10 +113,11 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/app:/host-site-packages
-      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
+      - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
     deploy:
       resources:
         reservations:
@@ -160,10 +139,11 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
       - PYTHONPATH=/app:/host-site-packages
-      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
+      - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
     deploy:
       resources:
         reservations:
@@ -185,10 +165,11 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/app:/host-site-packages
-      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
+      - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
     deploy:
       resources:
         reservations:
@@ -210,10 +191,11 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
       - PYTHONPATH=/app:/host-site-packages
-      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
+      - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
     deploy:
       resources:
         reservations:
@@ -235,10 +217,11 @@ services:
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONPATH=/app:/host-site-packages
-      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs
+      - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
+      - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
     deploy:
       resources:
         reservations:
@@ -247,7 +230,6 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
-  # ── Embedding Servers ×3 ──
   embed-test-8004:
     image: local-h200:5000/rag-embed:b1d48b6
     container_name: rag-embed-test-8004

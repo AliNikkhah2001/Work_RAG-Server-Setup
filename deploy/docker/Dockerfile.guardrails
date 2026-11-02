@@ -1,25 +1,18 @@
 # Guardrails Service Dockerfile
-# Source: components/guardrails/src/work_rag_guardrails/api.py
-# Port: 8200
-# Build context: Work_Credit-RAG_Phase1 (parent repo root)
-# Mounts host site-packages as volume at runtime to bypass proxy
-
+# Port: 8200 | Build context: Work_Credit-RAG_Phase1
 FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy Guardrails source from submodule
 COPY components/guardrails/src/work_rag_guardrails ./work_rag_guardrails
-
-# Copy policies and allowlists
 COPY components/guardrails/policies ./policies
 COPY components/guardrails/kb ./kb
 
-# Non-root user
 RUN useradd -m -u 1000 raguser && chown -R raguser:raguser /app
 USER raguser
 
-# Environment
 ENV UPSTREAM_LLM_BASE_URL=http://127.0.0.1:9000/v1
 ENV UPSTREAM_LLM_MODEL=gemma-4-31b
 ENV GUARDRAILS_HOST=0.0.0.0
