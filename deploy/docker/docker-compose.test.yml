@@ -13,7 +13,7 @@ services:
       - KB_REDIS_URL=redis://host.docker.internal:16379/0
       - KB_REDIS_TTL=600
       - PORT=8000
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
@@ -33,7 +33,7 @@ services:
       - GUARDRAILS_HOST=0.0.0.0
       - GUARDRAILS_PORT=8200
       - PORT=8200
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_Credit-RAG_Phase1/components/guardrails/policies:/app/policies:ro
@@ -54,12 +54,12 @@ services:
       - HF_HUB_OFFLINE=1
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface/sentence-transformers_paraphrase-multilingual-MiniLM-L12-v2:/root/.cache/huggingface/hub/models--sentence-transformers--paraphrase-multilingual-MiniLM-L12-v2/snapshots/latest:ro
       - TRANSFORMERS_OFFLINE=1
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
       - KB_BASE_URL=http://host.docker.internal:8500
       - GUARDRAILS_BASE_URL=http://host.docker.internal:8501
       - LANGFUSE_HOST=http://host.docker.internal:8503
       - PORT=8100
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
     extra_hosts:
@@ -79,7 +79,7 @@ services:
     environment:
       - PORT=3000
       - TRACES_FILE=/tmp/langfuse_traces_test.jsonl
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_Credit-RAG_Phase1/logs:/tmp
@@ -95,7 +95,7 @@ services:
     environment:
       - PORT=9000
       - MANAGER_DB_PATH=/data/manager.db
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/data/manager.db:/data/manager.db
@@ -116,7 +116,7 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
@@ -141,7 +141,7 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
@@ -166,7 +166,7 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
@@ -191,7 +191,7 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=1
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
@@ -216,7 +216,7 @@ services:
       - N_CTX=8192
       - N_GPU_LAYERS=-1
       - CUDA_VISIBLE_DEVICES=0
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
@@ -239,7 +239,7 @@ services:
       - MODEL_ID=multilingual-e5-small
       - MODEL_PATH=/models/intfloat_multilingual-e5-small
       - PORT=8001
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
@@ -255,7 +255,7 @@ services:
       - MODEL_ID=BAAI/bge-m3
       - MODEL_PATH=/models/BAAI_bge-m3
       - PORT=8001
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
@@ -271,7 +271,7 @@ services:
       - MODEL_ID=paraphrase-multilingual-MiniLM-L12-v2
       - MODEL_PATH=/models/sentence-transformers_paraphrase-multilingual-MiniLM-L12-v2
       - PORT=8001
-      - PYTHONPATH=/app:/host-site-packages
+      - PYTHONPATH=/app:/app/scripts:/host-site-packages
     volumes:
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface:/models:ro
