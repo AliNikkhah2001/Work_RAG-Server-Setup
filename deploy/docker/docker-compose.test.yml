@@ -9,7 +9,7 @@ services:
     ports:
       - "8500:8000"
     environment:
-      - KB_DB_URL=postgresql+asyncpg://postgres:postgres@host.docker.internal:15432/kb_manager
+      - KB_DB_URL=postgresql+asyncpg://postgres:testpass@host.docker.internal:15432/kb_manager
       - KB_REDIS_URL=redis://host.docker.internal:16379/0
       - KB_REDIS_TTL=600
       - PORT=8000
@@ -116,6 +116,7 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
+      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
@@ -143,6 +144,7 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
+      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
@@ -170,6 +172,7 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
+      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
@@ -197,6 +200,7 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
+      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
@@ -224,6 +228,7 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
+      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro

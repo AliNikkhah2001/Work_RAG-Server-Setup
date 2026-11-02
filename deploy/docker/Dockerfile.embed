@@ -21,4 +21,4 @@ EXPOSE 8001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:'+str(__import__('os').environ.get('PORT','8001'))+'/health')" || exit 1
 
-CMD ["python", "embed_server.py", "--model", "${MODEL_PATH}", "--model-id", "${MODEL_ID}", "--port", "${PORT}"]
+CMD python embed_server.py --model ${MODEL_PATH} --model-id ${MODEL_ID} --port ${PORT}
