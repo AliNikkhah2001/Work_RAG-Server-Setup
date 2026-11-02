@@ -51,6 +51,10 @@ services:
     ports:
       - "8502:8100"
     environment:
+      - HF_HUB_OFFLINE=1
+      - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models/huggingface/sentence-transformers_paraphrase-multilingual-MiniLM-L12-v2:/root/.cache/huggingface/hub/models--sentence-transformers--paraphrase-multilingual-MiniLM-L12-v2/snapshots/latest:ro
+      - TRANSFORMERS_OFFLINE=1
+      - PYTHONPATH=/app:/host-site-packages
       - KB_BASE_URL=http://host.docker.internal:8500
       - GUARDRAILS_BASE_URL=http://host.docker.internal:8501
       - LANGFUSE_HOST=http://host.docker.internal:8503
