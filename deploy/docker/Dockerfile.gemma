@@ -2,8 +2,6 @@
 # Ports: 8080-8084 | Build context: Work_RAG-Server-Setup
 FROM python:3.12-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 COPY scripts/services/llama_chat_server.py ./
@@ -25,6 +23,6 @@ VOLUME ["/models"]
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://127.0.0.1:${PORT}/health || exit 1
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:'+str(__import__('os').environ.get('PORT','8080'))+'/health')" || exit 1
 
 CMD ["python3", "llama_chat_server.py", "--model", "${MODEL_PATH}", "--host", "0.0.0.0", "--port", "${PORT}", "--n-ctx", "${N_CTX}", "--n-gpu-layers", "${N_GPU_LAYERS}", "--model-id", "${MODEL_ID}"]
