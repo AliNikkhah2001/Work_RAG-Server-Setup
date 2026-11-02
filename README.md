@@ -7,7 +7,7 @@ Provisioning, local model/embedding services, **Gemma LLM inference manager**, O
 <!-- docs-toc:start -->
 ## Documentation Index
 
-> Auto-generated from this repository's tracked Markdown notes (**86** files). Refresh with `python scripts/gen_readme_toc.py` — the `docs-toc` workflow does this automatically on push.
+> Auto-generated from this repository's tracked Markdown notes (**87** files). Refresh with `python scripts/gen_readme_toc.py` — the `docs-toc` workflow does this automatically on push.
 
 ### Repository root
 
@@ -36,6 +36,7 @@ Provisioning, local model/embedding services, **Gemma LLM inference manager**, O
 
 ### `docs/`
 
+- [Containerization, Scaling & DevOps Report](docs/CONTAINERIZATION_DEVOPS_REPORT.md) — This report provides a complete containerization, scaling, and DevOps architecture for the Work Credit RAG Platform running on a 2× H200 NVL host. It…
 - [DevOps, Containerization & Production Deployment Report](docs/DEVOPS_CONTAINERIZATION_REPORT.md) — 1. Executive Summary
 - [RAG Server — Documentation Index](docs/README.md) — A self-hosted RAG + inference platform on 2× NVIDIA H200 NVL (281 GiB total VRAM), 1 TB RAM,
 - [RAG Server — System Report & Runbook](docs/REPORT.md) — GATEWAY = http://192.168.96.82:8088 (nginx, also on 192.168.177.10:8088). Firewall open, but run curl --noproxy '' when testing locally (the shell's…
