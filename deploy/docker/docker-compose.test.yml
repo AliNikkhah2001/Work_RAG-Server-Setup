@@ -28,7 +28,7 @@ services:
     ports:
       - "8501:8200"
     environment:
-      - UPSTREAM_LLM_BASE_URL=http://host.docker.internal:8504/v1
+      - UPSTREAM_LLM_BASE_URL=http://host.docker.internal:9000/v1
       - UPSTREAM_LLM_MODEL=gemma-4-31b
       - GUARDRAILS_HOST=0.0.0.0
       - GUARDRAILS_PORT=8200
@@ -116,14 +116,11 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
-      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
+      - /usr/lib/x86_64-linux-gnu/libcrypto.so.3:/usr/lib/x86_64-linux-gnu/libcrypto.so.3:ro
+      - /usr/lib/x86_64-linux-gnu/libssl.so.3:/usr/lib/x86_64-linux-gnu/libssl.so.3:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
-    deploy:
-      resources:
-        reservations:
-          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -144,14 +141,11 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
-      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
+      - /usr/lib/x86_64-linux-gnu/libcrypto.so.3:/usr/lib/x86_64-linux-gnu/libcrypto.so.3:ro
+      - /usr/lib/x86_64-linux-gnu/libssl.so.3:/usr/lib/x86_64-linux-gnu/libssl.so.3:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
-    deploy:
-      resources:
-        reservations:
-          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -172,14 +166,11 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
-      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
+      - /usr/lib/x86_64-linux-gnu/libcrypto.so.3:/usr/lib/x86_64-linux-gnu/libcrypto.so.3:ro
+      - /usr/lib/x86_64-linux-gnu/libssl.so.3:/usr/lib/x86_64-linux-gnu/libssl.so.3:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
-    deploy:
-      resources:
-        reservations:
-          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -200,14 +191,11 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
-      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
+      - /usr/lib/x86_64-linux-gnu/libcrypto.so.3:/usr/lib/x86_64-linux-gnu/libcrypto.so.3:ro
+      - /usr/lib/x86_64-linux-gnu/libssl.so.3:/usr/lib/x86_64-linux-gnu/libssl.so.3:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
-    deploy:
-      resources:
-        reservations:
-          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -228,14 +216,11 @@ services:
       - LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
     volumes:
       - /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libgomp.so.1:ro
-      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
+      - /usr/lib/x86_64-linux-gnu/libcrypto.so.3:/usr/lib/x86_64-linux-gnu/libcrypto.so.3:ro
+      - /usr/lib/x86_64-linux-gnu/libssl.so.3:/usr/lib/x86_64-linux-gnu/libssl.so.3:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/venv/lib/python3.12/site-packages:/host-site-packages:ro
       - /splunk-data/v1/Work_RAG-Server-Setup/offline-prep/models:/models:ro
       - /usr/local/cuda-12.4/lib64:/host-cuda-libs:ro
-    deploy:
-      resources:
-        reservations:
-          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -248,6 +233,7 @@ services:
     environment:
       - MODEL_PATH=/models
       - MODEL_ID=multilingual-e5-small
+      - MODEL_PATH=/models/intfloat_multilingual-e5-small
       - PORT=8001
       - PYTHONPATH=/app:/host-site-packages
     volumes:
@@ -263,6 +249,7 @@ services:
     environment:
       - MODEL_PATH=/models
       - MODEL_ID=BAAI/bge-m3
+      - MODEL_PATH=/models/BAAI_bge-m3
       - PORT=8001
       - PYTHONPATH=/app:/host-site-packages
     volumes:
@@ -278,6 +265,7 @@ services:
     environment:
       - MODEL_PATH=/models
       - MODEL_ID=paraphrase-multilingual-MiniLM-L12-v2
+      - MODEL_PATH=/models/sentence-transformers_paraphrase-multilingual-MiniLM-L12-v2
       - PORT=8001
       - PYTHONPATH=/app:/host-site-packages
     volumes:
