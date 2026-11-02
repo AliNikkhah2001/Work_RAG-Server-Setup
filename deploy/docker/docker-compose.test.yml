@@ -9,7 +9,7 @@ services:
     ports:
       - "8500:8000"
     environment:
-      - KB_DB_URL=postgresql+asyncpg://postgres:postgres@host.docker.internal:5432/kb_manager
+      - KB_DB_URL=postgresql+asyncpg://postgres:postgres@host.docker.internal:15432/kb_manager
       - KB_REDIS_URL=redis://host.docker.internal:16379/0
       - KB_REDIS_TTL=600
       - PORT=8000
