@@ -2,8 +2,6 @@
 # Ports: 8080-8084 | Build context: Work_RAG-Server-Setup
 FROM python:3.12-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 COPY scripts/services/llama_chat_server.py ./
@@ -18,7 +16,7 @@ ENV N_CTX=8192
 ENV N_GPU_LAYERS=-1
 ENV CUDA_VISIBLE_DEVICES=0
 ENV PYTHONPATH=/app:/host-site-packages
-ENV LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/usr/local/cuda-12.4/lib64:/host-cuda-libs:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
 VOLUME ["/models"]
 
