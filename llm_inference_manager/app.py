@@ -11,7 +11,7 @@ from datetime import datetime
 import httpx
 import uvicorn
 from fastapi import FastAPI, Request, Header, HTTPException, Depends
-from fastapi.responses import JSONResponse, HTMLResponse, Response
+from fastapi.responses import JSONResponse, HTMLResponse, Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -326,13 +326,29 @@ async def proxy_chat(model_id: str, payload: dict):
     cfg = MODEL_REGISTRY.get(base_id) or MODEL_REGISTRY.get(model_id) or {}
     backends = cfg.get("backends", [backend])
     last_err = None
+    is_stream = payload.get("stream", False)
+    
     for attempt_backend in [backend] + [b for b in backends if b != backend]:
         try:
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
-                r = await client.post(f"{attempt_backend}/v1/chat/completions", json=payload)
-                if r.status_code!=200:
-                    raise HTTPException(status_code=r.status_code, detail=r.text)
-                return r.json()
+                if is_stream:
+                    # Stream SSE from backend to client
+                    async with client.stream(
+                        "POST",
+                        f"{attempt_backend}/v1/chat/completions",
+                        json=payload,
+                    ) as resp:
+                        resp.raise_for_status()
+                        async def stream_gen():
+                            async for chunk in resp.aiter_text():
+                                if chunk:
+                                    yield chunk
+                        return StreamingResponse(stream_gen(), media_type="text/event-stream")
+                else:
+                    r = await client.post(f"{attempt_backend}/v1/chat/completions", json=payload)
+                    if r.status_code != 200:
+                        raise HTTPException(status_code=r.status_code, detail=r.text)
+                    return r.json()
         except httpx.ConnectError as e:
             last_err = f"backend {attempt_backend} unreachable: {e}"
             continue
@@ -340,79 +356,6 @@ async def proxy_chat(model_id: str, payload: dict):
             last_err = f"backend {attempt_backend} timeout: {e}"
             continue
     raise HTTPException(status_code=502, detail=f"All backends for {model_id} unreachable. Tried {backends}. Last: {last_err}. Use POST /admin/models/load or check 8080-8084.")
-
-# --------------------------------------------------------------------------
-# API: models
-# --------------------------------------------------------------------------
-@app.get("/metrics", response_class=Response)
-def metrics_prom():
-    # minimal Prometheus exposition for manager — scraped by prometheus:9090
-    lines=[]
-    lines.append("# HELP manager_uptime_seconds Manager uptime")
-    lines.append("# TYPE manager_uptime_seconds gauge")
-    lines.append(f"manager_uptime_seconds {int(time.time()-START_TIME)}")
-    lines.append("# HELP manager_models_loaded Number of loaded models (backends >0)")
-    lines.append("# TYPE manager_models_loaded gauge")
-    lines.append(f"manager_models_loaded {sum(1 for m in MODEL_REGISTRY.values() if m['backends'])}")
-    lines.append("# HELP manager_models_live Number of models with at least one healthy backend")
-    lines.append("# TYPE manager_models_live gauge")
-    # live count from last probe not stored; compute via quick sync probe? use 0 for now
-    lines.append(f"manager_models_live 0")
-    # gpu
-    for g in gpu_info():
-        if "index" in g:
-            lines.append(f'manager_gpu_used_mib{{gpu="{g["index"]}"}} {g["used_mib"]}')
-            lines.append(f'manager_gpu_util{{gpu="{g["index"]}"}} {g["util"]}')
-    return Response(content="\n".join(lines)+"\n", media_type="text/plain")
-
-@app.get("/health")
-def health():
-    return {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec": int(time.time()-START_TIME), "gpus":gpu_info(),"models_loaded": sum(1 for m in MODEL_REGISTRY.values() if m["backends"]) }
-
-@app.get("/v1/models")
-def list_models():
-    data=[]
-    for mid, cfg in MODEL_REGISTRY.items():
-        data.append({
-            "id": mid,
-            "object": "model",
-            "created": 0,
-            "owned_by": cfg["creator"],
-            "meta": {
-                "name": cfg["name"],
-                "family": cfg["family"],
-                "params": cfg["params"],
-                "size_gb": cfg["size_gb"],
-                "quant": cfg["quant"],
-                "context": cfg.get("context"),
-                "benchmark_mean": cfg.get("benchmark_mean"),
-                "status": cfg.get("status"),
-                "backends": cfg.get("backends"),
-                "path": cfg.get("path"),
-            }
-        })
-    return {"object":"list","data":data}
-
-@app.get("/v1/models/{model_id}")
-def get_model(model_id: str):
-    cfg=MODEL_REGISTRY.get(model_id)
-    if not cfg:
-        raise HTTPException(404, "model not found")
-    return {"id":model_id,"object":"model","owned_by":cfg["creator"],"meta":cfg,"backends":cfg.get("backends"),"gpus":gpu_info()}
-
-# --------------------------------------------------------------------------
-# OpenAI-compatible chat
-# --------------------------------------------------------------------------
-class ChatReq(BaseModel):
-    model: str = Field(default="gemma-4-31b")
-    messages: List[Dict[str, Any]]
-    max_tokens: int = 512
-    temperature: float = 0.7
-    top_p: float = 1.0
-    stream: bool = False
-    session_id: Optional[str] = None
-
-@app.post("/v1/chat/completions")
 async def chat_completions(req: ChatReq, authorized=Depends(verify_token)):
     start=time.time()
     # session handling: inject full history if session_id provided
