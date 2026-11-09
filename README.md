@@ -439,3 +439,7 @@ curl -s -X POST "http://127.0.0.1:9000/admin/triton/promote?backend=trt&url=http
 
 See parent repository `LICENSE` and the submodule's own obligations.
 
+
+<!-- TRITON-HOURLY-STATUS -->
+> **Triton hourly 2026-11-09T20:07:47+00:00** — GGUF 19G | HF gemma-4 59G | HF gemma-3 52K | Engine 0 | Manager {"detail":"Not Found"} | VLLM vllm down | Triton  | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+
