@@ -25,12 +25,17 @@ This component owns hardware bootstrapping, model lifecycle, container infrastru
 
 The topology below matches the production code in `llm_inference_manager/app.py` (the `MODEL_REGISTRY` and Triton promotion logic) and `scripts/services/`.
 
+#### Detailed technical view — host processes and Docker containers
+
+### Caption: Service topology — detailed technical view: H200 host processes + Docker data plane containers (docker-compose.yml)
+
 ```mermaid
 flowchart TB
-    subgraph HOST["H200 host — 2x H200 NVL"]
+    subgraph HOST_PROCS["H200 host — host processes (bare metal / venv)"]
         MG[Manager :9000 — OpenAI gateway, MODEL_REGISTRY, Triton promotion]
         TRT[TRT-LLM champion gemma-4-31b :8010 — GPU1]
-        LLAMA[llama.cpp backends — dynamic spawn :8085-8100; 5x Gemma supervisor :8080-8084]
+        GEMMA[llama.cpp 5x Gemma supervisor :8080-8084 — GPU0/GPU1]
+        DYN[llama.cpp dynamic backends :8085-8100]
         QW[Qwen2.5-7B :8090]
         DS[DeepSeek-V4-Flash :9001 — standalone]
         E1[e5-small :8001 — 384-d]
@@ -38,24 +43,55 @@ flowchart TB
         E3[MiniLM :8003 — 384-d]
     end
 
-    subgraph CONT["Docker data plane + monitoring"]
-        WUI[Open WebUI :13000]
-        MIL[Milvus :19530]
-        QDR[Qdrant :16333]
-        PG[(pgvector :15432)]
-        RD[(Redis :16379)]
-        GRAF[Grafana :13001]
-        PROM[Prometheus :19090]
+    subgraph DOCKER["Docker data plane — docker-compose.yml"]
+        subgraph REDIS["redis container — :16379"]
+            R[redis:7-alpine — 16379:6379]
+        end
+        subgraph QDRANT["qdrant container — :16333"]
+            Q[qdrant/qdrant:latest — 16333:6333]
+        end
+        subgraph PGVECTOR["pgvector container — :15432"]
+            P[pgvector/pgvector:pg16 — 15432:5432]
+        end
+        subgraph MILVUS["milvus container — :19530"]
+            M[milvusdb/milvus:latest — 19530:19530]
+        end
+        subgraph WEBUI["open-webui container — :13000"]
+            W[ghcr.io/open-webui/open-webui:main — 13000:8080]
+        end
     end
 
     MG -.->|promote champion| TRT
-    MG --> LLAMA
+    MG --> GEMMA
+    MG --> DYN
     MG --> QW
     MG --> DS
-    WUI --> MG
-    E1 -.-> WUI
-    E2 -.-> WUI
-    E3 -.-> WUI
+    W --> MG
+    E1 -.-> W
+    E2 -.-> W
+    E3 -.-> W
+```
+
+#### High-level black box view — abstraction boundary
+
+### Caption: Service topology — high-level black box view (H200 host vs Docker data plane)
+
+```mermaid
+flowchart TB
+    subgraph HOST["H200 host — bare metal / venv (black box)"]
+        MG[Manager :9000 — OpenAI gateway]
+        INF[LLM backends — Gemma / TRT-LLM / DeepSeek / Qwen]
+        EMB[Embedding services :8001-8003]
+    end
+
+    subgraph DOCKER_PLANE["Docker containers — docker-compose.yml (black box)"]
+        DP[Data plane — Redis / Qdrant / pgvector / Milvus / Open WebUI]
+    end
+
+    MG -.-> INF
+    MG --> EMB
+    DP -.-> MG
+    EMB -.-> DP
 ```
 
 **Code truth (validated against `app.py`):**
@@ -69,19 +105,65 @@ flowchart TB
 
 Request flow (matches the MVP path: Orchestrator → Guardrails → Manager → Gemma):
 
+#### Detailed technical view — MVP request flow with Docker data plane
+
+### Caption: MVP integration point — detailed technical view (Orchestrator → Guardrails → Manager → Gemma + Docker data plane)
+
 ```mermaid
 flowchart LR
-    ORCH[Orchestrator :8100]
-    GR[Guardrails :8200]
-    MG[Manager :9000]
-    KB[KB Manager :8000]
-    EMB[Embedding services :8001-8003]
-    GEM[Gemma-4-31B champion :8010]
+    subgraph HOST["H200 host — host processes"]
+        ORCH[Orchestrator :8100 — LangGraph RAG]
+        GR[Guardrails :8200 — input/output rails]
+        MG[Manager :9000 — OpenAI gateway, MODEL_REGISTRY]
+        KB[KB Manager :8000 — hybrid search]
+        EMB[Embedding services :8001-8003 — e5/bge/MiniLM]
+        GEM[Gemma-4-31B TRT-LLM champion :8010 — GPU1]
+    end
 
+    subgraph DOCKER["Docker containers — docker-compose.yml"]
+        subgraph WEBUI["open-webui container — :13000"]
+            W[Open WebUI frontend]
+        end
+        subgraph VS["Vector stores — Docker containers"]
+            MIL[Milvus :19530]
+            QDR[Qdrant :16333]
+            PG[pgvector :15432]
+        end
+        RD[Redis :16379 — cache / queue]
+    end
+
+    W -->|chat request| ORCH
     ORCH -->|input rails| GR
     GR -->|OpenAI /v1/chat/completions| MG
     MG -->|Triton promotion| GEM
+    ORCH -->|retrieve| KB
     KB -->|embeddings| EMB
+    KB -.->|store/query| MIL
+    KB -.->|store/query| QDR
+    KB -.->|store/query| PG
+    EMB -.->|cache| RD
+```
+
+#### High-level black box view — MVP abstraction boundary
+
+### Caption: MVP integration point — high-level black box view (host vs Docker boundary)
+
+```mermaid
+flowchart LR
+    subgraph HOST["H200 host (black box)"]
+        API[Orchestrator :8100]
+        MG[Manager :9000]
+        LLM[Gemma champion :8010]
+    end
+
+    subgraph DOCKER["Docker containers (black box)"]
+        UI[Open WebUI :13000]
+        DS[Data plane — Redis / Qdrant / pgvector / Milvus]
+    end
+
+    UI --> API
+    API --> MG
+    MG --> LLM
 ```
 
 The Manager exposes `/v1/chat/completions`, `/v1/completions`, `/v1/models`, `/health`, and admin endpoints (`/admin/models/load`, `/admin/models/unload`, `/admin/triton/promote`, `/admin/triton/status`). All outbound HTTP to localhost backends uses `httpx.AsyncClient(timeout=120, trust_env=False)` so calls do not route through the corporate Squid proxy.
