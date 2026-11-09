@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dana — Work RAG Server Setup Overview</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:'default',securityLevel:'loose'});</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="logo">
+      <span class="mark">&#9733;</span>
+      <strong>Dana</strong><span>&#8226;Server Setup</span>
+    </a>
+    <nav>
+      <ul>
+        <li><a href="index.html" class="active">Overview</a></li>
+        <li><a href="high-level.html">High-Level Detail</a></li>
+        <li><a href="technical.html">Technical Detail</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <span class="repo-badge">Work_RAG-Server-Setup</span>
+    <h1>Work RAG Server Setup — H200 Offline RAG Environment</h1>
+    <p class="lead">Provisioning, local model/embedding services, the <strong>Gemma LLM Inference Manager</strong> gateway, Open WebUI, and infrastructure for the Work Credit RAG platform. Runs on an NVIDIA H200 host (2× H200 NVL, 281 GiB VRAM) behind a corporate Squid proxy (<code>http://192.168.203.2:3128</code>). Working directory: <code>/splunk-data/v1/Work_RAG-Server-Setup</code>.</p>
+    <div class="btn-group">
+      <a href="high-level.html" class="btn">High-Level Architecture</a>
+      <a href="technical.html" class="btn btn-outline">In-Depth Technical Detail</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>1. Summary</h2>
+    <p>This component owns hardware bootstrapping, model lifecycle, container infrastructure, and frontend wiring. It is responsible for:</p>
+    <ul>
+      <li>Bootstrapping an H200 GPU host behind a corporate Squid proxy (<code>start.sh</code> + <code>offline_prepare_cli.py</code>).</li>
+      <li>Running <strong>embedding microservices</strong> (multilingual-e5-small, bge-m3, MiniLM) on ports 8001–8003.</li>
+      <li>Running the <strong>LLM Inference Manager</strong> gateway (port 9000), an OpenAI-compatible frontend in front of the llama.cpp backends and the TensorRT-LLM Gemma-4-31B champion.</li>
+      <li>A Docker <strong>data plane</strong> (Milvus/Qdrant/pgvector/Redis/Open WebUI) plus a <strong>monitoring stack</strong> (Prometheus/Grafana/OTel).</li>
+      <li>A <strong>Persian 7-task benchmark harness</strong> with generated reports and plots.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Core Services at a Glance</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h4>Embedding Services</h4>
+        <p>One FastAPI + sentence_transformers server per model, exposing OpenAI-compatible <code>/v1/embeddings</code>.</p>
+        <ul>
+          <li>8001 — multilingual-e5-small (384-d)</li>
+          <li>8002 — bge-m3 (1024-d)</li>
+          <li>8003 — MiniLM (384-d)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>LLM Inference Manager</h4>
+        <p>OpenAI-compatible gateway on port 9000 backed by SQLite (<code>manager.db</code>). Supports MODEL_REGISTRY, round-robin, Triton promotion, session memory.</p>
+      </div>
+      <div class="card">
+        <h4>Docker Data Plane</h4>
+        <p>redis :16379, qdrant :16333, pgvector :15432, milvus :19530, open-webui :13000.</p>
+      </div>
+      <div class="card">
+        <h4>TRT-LLM Champion</h4>
+        <p>gemma-4-31b served by TensorRT-LLM 1.3.0rc29 on GPU1 port 8010. BF16, max_batch_size=128.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quick Links</h2>
+    <div class="nav-cards">
+      <a href="high-level.html" class="nav-card">
+        <h4>High-Level Detail</h4>
+        <p>Abstraction boundary views of the H200 host vs Docker data plane, plus the high-level MVP request flow.</p>
+        <span class="arrow">&#8594;</span>
+      </a>
+      <a href="technical.html" class="nav-card">
+        <h4>Technical Detail</h4>
+        <p>Full host-process and Docker-container topology, core service internals, port map, run/verify steps, and gotchas.</p>
+        <span class="arrow">&#8594;</span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="brand"><strong>Dana</strong><span>&#8226;Server Setup</span></div>
+    <p>&copy; 2026 Work Credit RAG Platform &middot; Built for GitHub Pages &middot; <a href="index.html">Dana</a> documentation theme</p>
+  </div>
+</footer>
+
+</body>
+</html>
