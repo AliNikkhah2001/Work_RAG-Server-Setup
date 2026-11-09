@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dana — Work RAG Server Setup Technical Detail</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:'default',securityLevel:'loose'});</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="logo">
+      <span class="mark">&#9733;</span>
+      <strong>Dana</strong><span>&#8226;Server Setup</span>
+    </a>
+    <nav>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="high-level.html">High-Level Detail</a></li>
+        <li><a href="technical.html" class="active">Technical Detail</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <span class="repo-badge">Work_Credit-RAG_Phase1 / components/server-setup</span>
+    <h1>In-Depth Technical Detail</h1>
+    <p class="lead">Full host-process and Docker-container topology, core service internals, port map, run/verify steps, and known gotchas. Validated against <code>llm_inference_manager/app.py</code> and <code>scripts/services/*.py</code>.</p>
+  </section>
+
+  <section>
+    <h2>2.1 Service Topology — Detailed Technical View</h2>
+    <p>The topology below matches the production code in <code>llm_inference_manager/app.py</code> (the <code>MODEL_REGISTRY</code> and Triton promotion logic) and <code>scripts/services/</code>.</p>
+
+    <div class="diagram-card">
+      <h4>Diagram: H200 host processes + Docker data plane containers (docker-compose.yml)</h4>
+      <div class="mermaid" id="topo-detailed">
+        flowchart TB
+            subgraph HOST_PROCS["H200 host — host processes (bare metal / venv)"]
+                MG[Manager :9000 — OpenAI gateway, MODEL_REGISTRY, Triton promotion]
+                TRT[TRT-LLM champion gemma-4-31b :8010 — GPU1]
+                GEMMA[llama.cpp 5x Gemma supervisor :8080-8084 — GPU0/GPU1]
+                DYN[llama.cpp dynamic backends :8085-8100]
+                QW[Qwen2.5-7B :8090]
+                DS[DeepSeek-V4-Flash :9001 — standalone]
+                E1[e5-small :8001 — 384-d]
+                E2[bge-m3 :8002 — 1024-d]
+                E3[MiniLM :8003 — 384-d]
+            end
+
+            subgraph DOCKER["Docker data plane — docker-compose.yml"]
+                subgraph REDIS["redis container — :16379"]
+                    R[redis:7-alpine — 16379:6379]
+                end
+                subgraph QDRANT["qdrant container — :16333"]
+                    Q[qdrant/qdrant:latest — 16333:6333]
+                end
+                subgraph PGVECTOR["pgvector container — :15432"]
+                    P[pgvector/pgvector:pg16 — 15432:5432]
+                end
+                subgraph MILVUS["milvus container — :19530"]
+                    M[milvusdb/milvus:latest — 19530:19530]
+                end
+                subgraph WEBUI["open-webui container — :13000"]
+                    W[ghcr.io/open-webui/open-webui:main — 13000:8080]
+                end
+            end
+
+            MG -.->|promote champion| TRT
+            MG --> GEMMA
+            MG --> DYN
+            MG --> QW
+            MG --> DS
+            W --> MG
+            E1 -.-> W
+            E2 -.-> W
+            E3 -.-> W
+      </div>
+      <div class="diagram-caption">
+        <strong>Caption:</strong> Service topology — detailed technical view: H200 host processes + Docker data plane containers (docker-compose.yml).
+        <ul>
+          <li><strong>Host processes (bare metal / venv):</strong> Manager :9000 (OpenAI gateway, MODEL_REGISTRY, Triton promotion); TRT-LLM champion gemma-4-31b :8010 on GPU1; llama.cpp 5× Gemma supervisor :8080–8084 (GPU0/GPU1); llama.cpp dynamic backends :8085–8100; Qwen2.5-7B :8090; DeepSeek-V4-Flash :9001 (standalone); embeddings e5-small :8001, bge-m3 :8002, MiniLM :8003.</li>
+          <li><strong>Docker containers:</strong> redis :16379 (redis:7-alpine), qdrant :16333 (qdrant/qdrant:latest), pgvector :15432 (pgvector/pgvector:pg16), milvus :19530 (milvusdb/milvus:latest), open-webui :13000 (ghcr.io/open-webui/open-webui:main).</li>
+          <li>Manager promotes the TRT-LLM champion and connects to Gemma, dynamic backends, Qwen, and DeepSeek.</li>
+          <li>Open WebUI calls the Manager; each embedding service writes to Open WebUI.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Code truth (validated against app.py)</h4>
+      <ul>
+        <li><code>MODEL_REGISTRY</code> contains two entries: <code>gemma-4-31b</code> and <code>gemma-4-31b-triton-trt</code>. The gateway does <strong>not</strong> hard-code an 11-model pool; backends are registered dynamically.</li>
+        <li><code>_triton_promoted_backend()</code> promotes <code>gemma-4-31b</code> to the Triton/TRT-LLM pool when a backend is registered (<code>/admin/triton/promote</code>), otherwise falls back to the llama.cpp pool.</li>
+        <li><code>POST /admin/models/load</code> spawns <code>scripts/services/llama_chat_server.py</code> on a free port in <code>8085–8100</code>, picking the GPU with most free VRAM.</li>
+        <li>The 5× Gemma llama.cpp supervisor (<code>scripts/services/gemma_supervisor.sh</code>) runs independently on <code>:8080–8084</code> (GPU0 → 8080/8082/8084, GPU1 → 8081/8083) with an auto-restart loop. It is started separately and is <strong>not</strong> part of <code>MODEL_REGISTRY</code> until loaded via the manager.</li>
+        <li><code>deepseek_server.py</code> (<code>:9001</code>) is a standalone FastAPI wrapper; it is <strong>not</strong> registered in <code>MODEL_REGISTRY</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>2.2 MVP Integration Point — Detailed Technical View</h2>
+    <p>Request flow (matches the MVP path: Orchestrator → Guardrails → Manager → Gemma):</p>
+
+    <div class="diagram-card">
+      <h4>Diagram: MVP request flow with Docker data plane</h4>
+      <div class="mermaid" id="mvp-detailed">
+        flowchart LR
+            subgraph HOST["H200 host — host processes"]
+                ORCH[Orchestrator :8100 — LangGraph RAG]
+                GR[Guardrails :8200 — input/output rails]
+                MG[Manager :9000 — OpenAI gateway, MODEL_REGISTRY]
+                KB[KB Manager :8000 — hybrid search]
+                EMB[Embedding services :8001-8003 — e5/bge/MiniLM]
+                GEM[Gemma-4-31B TRT-LLM champion :8010 — GPU1]
+            end
+
+            subgraph DOCKER["Docker containers — docker-compose.yml"]
+                subgraph WEBUI["open-webui container — :13000"]
+                    W[Open WebUI frontend]
+                end
+                subgraph VS["Vector stores — Docker containers"]
+                    MIL[Milvus :19530]
+                    QDR[Qdrant :16333]
+                    PG[pgvector :15432]
+                end
+                RD[Redis :16379 — cache / queue]
+            end
+
+            W -->|chat request| ORCH
+            ORCH -->|input rails| GR
+            GR -->|OpenAI /v1/chat/completions| MG
+            MG -->|Triton promotion| GEM
+            ORCH -->|retrieve| KB
+            KB -->|embeddings| EMB
+            KB -.->|store/query| MIL
+            KB -.->|store/query| QDR
+            KB -.->|store/query| PG
+            EMB -.->|cache| RD
+      </div>
+      <div class="diagram-caption">
+        <strong>Caption:</strong> MVP integration point — detailed technical view (Orchestrator → Guardrails → Manager → Gemma + Docker data plane).
+        <ul>
+          <li><strong>Open WebUI</strong> (:13000) sends the chat request to the <strong>Orchestrator</strong> (:8100, LangGraph RAG).</li>
+          <li>The Orchestrator applies <strong>Guardrails</strong> (:8200) input rails.</li>
+          <li>Guardrails calls the <strong>Manager</strong> (:9000) OpenAI <code>/v1/chat/completions</code>.</li>
+          <li>The Manager promotes the Gemma-4-31B TRT-LLM champion on :8010 (GPU1).</li>
+          <li>The Orchestrator retrieves from <strong>KB Manager</strong> (:8000), which uses embedding services (:8001–8003) and stores/queries vector stores (Milvus :19530, Qdrant :16333, pgvector :15432).</li>
+          <li>Embedding services use <strong>Redis</strong> (:16379) as cache/queue.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2.3 TRT-LLM Gemma-4-31B Champion (Production)</h2>
+    <p>The champion model <code>gemma-4-31b</code> is served by <strong>TensorRT-LLM 1.3.0rc29</strong> via <code>trtllm-serve</code> (PyTorch backend, <code>tp_size=1</code>) on GPU1 port <code>:8010</code>, launched by <code>scripts/serve_trtllm.sh</code>. It is promoted in the Manager (<code>POST /admin/triton/promote?backend=trt&url=http://127.0.0.1:8010</code>) and wired to the orchestrator through Guardrails (<code>UPSTREAM_LLM_BASE_URL=http://127.0.0.1:8010/v1</code>).</p>
+
+    <h3>Launcher fixes (all required, encoded in scripts/serve_trtllm.sh)</h3>
+    <ol>
+      <li><code>mpirun -n 1 trtllm-llmapi-launch trtllm-serve serve</code> — avoids the OpenMPI <code>MPI_Comm_spawn</code> deadlock; uses the spawn-proxy IPC path.</li>
+      <li>Venv (<code>offline-prep/venv-trtllm</code>) first on <code>PATH</code> — <code>trtllm-llmapi-launch</code> calls bare <code>python3 -m tensorrt_llm.llmapi.mgmn_leader_node</code>.</li>
+      <li>Composed CUDA 13.2 toolkit from pip packages (<code>nvidia-cuda-nvcc==13.2.86</code>, <code>nvidia-cuda-crt==13.2.86</code>, <code>nvidia-nvvm==13.2.86</code>) under <code>site-packages/nvidia/cu13/</code> — FlashInfer JIT needs <code>--compress-mode=size</code> (CUDA ≥ 12.8); host <code>nvcc</code> is CUDA 12.0.</li>
+      <li><code>attn_backend: FLASHINFER</code> via <code>scripts/trtllm_extra_options.yaml</code> — the default TRTLLM MMHA kernel asserts on Gemma-4's <code>global_head_dim=512</code>; FlashInfer tolerates it.</li>
+    </ol>
+
+    <p><strong>Champion config:</strong> BF16, <code>max_batch_size=128</code>, <code>max_num_tokens=16384</code>, <code>max_seq_len=8192</code>, <code>kv_cache_free_gpu_memory_fraction=0.85</code>, <code>CUDA_VISIBLE_DEVICES=1</code>. CUDA graphs are captured only for configured batch sizes (≤ 128); batch-256 graph capture fails (FlashInfer prefill workspace overflow), so 128 is the practical concurrency ceiling.</p>
+
+    <div class="caution">
+      <strong>Benchmark read-out</strong> (same Persian long-form prompt, <code>max_tokens=256</code>, <code>temperature=0.3</code>, 5 repeats, tokens counted with the shared Gemma tokenizer):<br>
+      • Single-stream near parity: GGUF llama.cpp ~58 tok/s vs TRT-LLM BF16 ~50 tok/s (GGUF is Q4 quantized; TRT is BF16).<br>
+      • Continuous batching: TRT-LLM aggregate scales to ~3874 tok/s at concurrency 128 (~67× the flat ~58 tok/s GGUF placeholder, which does not batch).<br>
+      • FP8-KV (<code>TRTLLM_KV_DTYPE=fp8</code>): ~0.95× at low concurrency, <strong>+15% at conc-128</strong>, zero quality risk (weights unchanged) — the next safe champion restart upgrade.<br>
+      • Weight-FP8 (ModelOpt W8A8, 16-sample PTQ): +34–63% throughput but arithmetically wrong (<code>17*23 → 399</code> vs BF16 <code>391</code>) — <strong>not production-ready</strong>; needs ≥128-sample recalibration plus an accuracy gate before connecting to the RAG agent.
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Core Services</h2>
+
+    <h3>3.1 Embedding services (<code>scripts/services/embed_server.py</code> → <code>Dockerfile.embed</code>)</h3>
+    <p>One FastAPI + <code>sentence_transformers.SentenceTransformer</code> server per model, exposing OpenAI-compatible <code>/v1/embeddings</code> (plus <code>/v1/models</code>, <code>/health</code>). L2-normalized float32 vectors.</p>
+    <table>
+      <thead><tr><th>Port</th><th>Model</th><th>Dim</th><th>HF repo</th></tr></thead>
+      <tbody>
+        <tr><td>8001</td><td>multilingual-e5-small</td><td>384</td><td>intfloat/multilingual-e5-small</td></tr>
+        <tr><td>8002</td><td>bge-m3</td><td>1024</td><td>BAAI/bge-m3</td></tr>
+        <tr><td>8003</td><td>paraphrase-multilingual-MiniLM-L12-v2</td><td>384</td><td>sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2</td></tr>
+      </tbody>
+    </table>
+    <pre>curl -s http://127.0.0.1:8001/health   # {"status":"ok","model":"multilingual-e5-small","dim":384}
+curl -s -X POST http://127.0.0.1:8001/v1/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{"input":"گزارش اعتباری","model":"multilingual-e5-small"}'</pre>
+
+    <h3>3.2 LLM Inference Manager gateway (<code>llm_inference_manager/app.py</code>, port 9000)</h3>
+    <p>A single OpenAI-compatible gateway (<code>uvicorn.run(app, host="0.0.0.0", port=9000)</code>) backed by SQLite (<code>manager.db</code>).</p>
+    <p><strong>Registry (MODEL_REGISTRY, app.py:27):</strong> two entries — <code>gemma-4-31b</code> (GGUF Q4_K_M, 19.6 GB) and <code>gemma-4-31b-triton-trt</code> (TRT-LLM FP8 engine). Backends are registered dynamically; the production champion routes to <code>:8010</code> via Triton promotion.</p>
+    <ul>
+      <li>Round-robin (<code>pick_backend</code>, <code>rr_counters</code>) over each model's <code>backends</code> list. Alias <code>gemma-4-31b-1</code> → <code>gemma-4-31b</code>; unknown <code>gemma*</code> falls back to the <code>gemma-4-31b</code> pool.</li>
+      <li><strong>Triton promotion</strong> (<code>_triton_promoted_backend</code>): <code>gemma-4-31b</code> routes to the optimized Triton/TRT-LLM pool when backends exist, with automatic fallback to the llama.cpp pool.</li>
+      <li>Session memory via SQLite: tables <code>chat_sessions</code>, <code>messages</code>, <code>metrics</code>, <code>api_tokens</code>; injects full history when <code>session_id</code> is provided.</li>
+      <li>Metrics (per-model latency) via <code>/admin/metrics</code> and <code>/api/metrics/summary</code>.</li>
+      <li>On-demand model loading: <code>POST /admin/models/load</code> spawns <code>llama_chat_server.py</code> on a free port <code>8085–8100</code>, auto-picks the GPU with most free memory; <code>POST /admin/models/unload</code> terminates.</li>
+      <li>Auth: <code>verify_token</code> — anonymous allowed in local dev; Bearer token must match an <code>api_tokens</code> row (seeded <code>sk-local-dev</code>) or <code>LITELLM_MASTER_KEY</code>.</li>
+      <li>Critical proxy fix: <code>httpx.AsyncClient(timeout=120, trust_env=False)</code> bypasses Squid for localhost backends (<code>app.py:301</code>, <code>app.py:331</code>).</li>
+      <li>Serves a single-file HTML dashboard (<code>/</code>, <code>/dashboard</code>) and OpenAPI docs at <code>/docs</code>.</li>
+    </ul>
+    <pre># Model chat
+curl -s http://127.0.0.1:9000/v1/chat/completions -X POST \
+  -H "Content-Type: application/json" -H "Authorization: Bearer sk-local-dev" \
+  -d '{"model":"gemma-4-31b","messages":[{"role":"user","content":"سلام"}]}'
+
+# Admin status + Triton promotion
+curl -s http://127.0.0.1:9000/admin/status | jq
+curl -s -X POST "http://127.0.0.1:9000/admin/triton/promote?backend=trt&url=http://127.0.0.1:8010" | jq</pre>
+
+    <h3>3.3 llama.cpp chat server (<code>scripts/services/llama_chat_server.py</code>)</h3>
+    <p>Minimal OpenAI-compatible per-backend server: <code>/v1/models</code>, <code>/health</code>, <code>/v1/chat/completions</code>, <code>/v1/completions</code>. Backed by <code>llama_cpp.Llama(model_path, n_ctx, n_gpu_layers=-1)</code>. Launched by <code>gemma_supervisor.sh</code> (5× Gemma on 8080–8084) and by the Manager's <code>/admin/models/load</code> (ports 8085–8100).</p>
+
+    <h3>3.4 DeepSeek-V4-Flash wrapper (<code>scripts/services/deepseek_server.py</code>, port 9001)</h3>
+    <p>Standalone FastAPI wrapper for DeepSeek-V4-Flash (FP8 MoE 685B) on port 9001. Not registered in <code>MODEL_REGISTRY</code>; run independently. Requires the separate <code>offline-prep/venv-deepseek</code> (torch 2.8.0+cu128 float8).</p>
+  </section>
+
+  <section>
+    <h2>4. Port Map</h2>
+    <table>
+      <thead><tr><th>Port</th><th>Service</th></tr></thead>
+      <tbody>
+        <tr><td>8001 / 8002 / 8003</td><td>embeddings (e5-small / bge-m3 / MiniLM)</td></tr>
+        <tr><td>8080–8084</td><td>5× Gemma-4-31B (llama.cpp, <code>gemma_supervisor.sh</code>)</td></tr>
+        <tr><td>8085–8100</td><td>dynamic llama.cpp backends (Manager <code>/admin/models/load</code>)</td></tr>
+        <tr><td>8090</td><td>Qwen2.5-7B</td></tr>
+        <tr><td>9000</td><td><strong>LLM Inference Manager gateway</strong> (OpenAI-compatible)</td></tr>
+        <tr><td>9001</td><td>DeepSeek-V4-Flash wrapper (standalone)</td></tr>
+        <tr><td>13000</td><td>Open WebUI (Docker)</td></tr>
+        <tr><td>15432</td><td>pgvector (Docker)</td></tr>
+        <tr><td>16333 / 16334</td><td>Qdrant (Docker)</td></tr>
+        <tr><td>16379</td><td>Redis (Docker)</td></tr>
+        <tr><td>19530</td><td>Milvus (Docker)</td></tr>
+        <tr><td>13001 / 19090</td><td>Grafana / Prometheus (Docker)</td></tr>
+        <tr><td>14317 / 14318 / 19092</td><td>OTel gRPC / HTTP / prometheus export</td></tr>
+        <tr><td>9101</td><td>GPU metrics exporter (host, <code>nvidia-smi</code> → Prometheus)</td></tr>
+        <tr><td>8010</td><td>TRT-LLM Gemma-4-31B champion (<code>serve_trtllm.sh</code>, GPU1)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. Data Plane & Monitoring (<code>deploy/</code>)</h2>
+    <h3>5.1 docker-compose (<code>deploy/docker-compose.yml</code>)</h3>
+    <table>
+      <thead><tr><th>Container</th><th>Port</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>redis</td><td>16379</td><td>cache / queue</td></tr>
+        <tr><td>qdrant</td><td>16333</td><td>vector store</td></tr>
+        <tr><td>pgvector</td><td>15432</td><td>postgres + pgvector</td></tr>
+        <tr><td>milvus</td><td>19530</td><td>vector store (standalone, embedded etcd+MinIO)</td></tr>
+        <tr><td>open-webui</td><td>13000</td><td>UI (<code>WEBUI_AUTH=false</code>)</td></tr>
+      </tbody>
+    </table>
+    <p><code>deploy/setup_data_plane.py</code> idempotently creates the <strong><code>rag_docs</code></strong> collection (dim 384, COSINE) across the vector stores and writes <code>deploy/data_plane_status.json</code>.</p>
+
+    <h3>5.2 Monitoring (<code>deploy/monitoring/</code>)</h3>
+    <table>
+      <thead><tr><th>Service</th><th>Port</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Prometheus</td><td>19090</td><td>scrapes GPU <code>:9101</code>, node <code>:19100</code>, 15s</td></tr>
+        <tr><td>Grafana</td><td>13001</td><td>auto-provisioned Prometheus datasource</td></tr>
+        <tr><td>OTel collector</td><td>14317/14318/19092</td><td>OTLP gRPC/HTTP + prometheus export</td></tr>
+      </tbody>
+    </table>
+
+    <h3>5.3 Gateway (<code>deploy/gateway/</code>)</h3>
+    <p>Nginx landing pages for <code>:8088</code> reverse-proxying <code>/vllm/</code>, <code>/llama/</code>, <code>/embeddings/</code>, <code>/webui/</code>, <code>/grafana/</code>, <code>/prometheus/</code>, <code>/qdrant/</code>, <code>/milvus/</code>, <code>/docs/</code>. Test locally with <code>curl --noproxy '*'</code> to avoid routing through Squid.</p>
+  </section>
+
+  <section>
+    <h2>6. Offline Provisioning Behind the Proxy</h2>
+    <table>
+      <thead><tr><th>Script</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>start.sh</code></td><td>Bootstraps Ubuntu: apt deps, Docker (+ daemon proxy), venv, launches <code>offline_prepare_cli.py</code> in tmux</td></tr>
+        <tr><td><code>proxy_setup.sh</code></td><td>Persists Squid proxy env + apt + git + docker daemon config</td></tr>
+        <tr><td><code>fix_env.sh</code></td><td>Rebuilds a broken <code>prep_venv</code> (python3.12 + huggingface-hub + transformers)</td></tr>
+        <tr><td><code>offline_prepare_cli.py</code></td><td>Self-healing downloader/installer: state machine + retry queue; downloads Docker images, CUDA/torch wheels, HF models, sample projects (Dify, AnythingLLM, RAGFlow, LightRAG)</td></tr>
+      </tbody>
+    </table>
+    <p>All work relative to <code>offline-prep/</code> (gitignored: models, tars, wheels, venvs, logs). <code>offline_prepare_cli.py:19</code> sets <code>BASE_DIR = Path(__file__).resolve().parent / "offline-prep"</code>.</p>
+    <pre>export http_proxy=http://192.168.203.2:3128 https_proxy=http://192.168.203.2:3128
+export no_proxy="localhost,127.0.0.1" NO_PROXY="localhost,127.0.0.1"
+source proxy_setup.sh</pre>
+  </section>
+
+  <section>
+    <h2>7. Libraries & Versions</h2>
+    <p>Installed in the master venv <code>offline-prep/venv</code> (Python 3.12.3):</p>
+    <table>
+      <thead><tr><th>Package</th><th>Version</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Python</td><td>3.12.3</td><td>runtime</td></tr>
+        <tr><td>fastapi</td><td>0.141.1</td><td>manager / embed / chat servers</td></tr>
+        <tr><td>uvicorn</td><td>0.52.1</td><td>ASGI server</td></tr>
+        <tr><td>httpx</td><td>0.28.1</td><td>backend proxy client (<code>trust_env=False</code>)</td></tr>
+        <tr><td>llama-cpp-python</td><td>0.3.34</td><td>GGUF inference (<code>n_gpu_layers=-1</code>)</td></tr>
+        <tr><td>sentence-transformers</td><td>5.7.0</td><td>embedding servers</td></tr>
+        <tr><td>torch</td><td>2.4.0+cu124</td><td>CUDA runtime</td></tr>
+        <tr><td>vllm</td><td>0.6.1.post1</td><td>GGUF serving</td></tr>
+        <tr><td>flash-attn</td><td>2.6.3</td><td>attention kernels</td></tr>
+        <tr><td>transformers</td><td>4.44.0</td><td>HF model loading</td></tr>
+        <tr><td>faiss-gpu-cu12</td><td>1.14.1.post1</td><td>vector search</td></tr>
+        <tr><td>matplotlib</td><td>3.11.1</td><td>benchmark plots</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Isolated TRT-LLM venv</strong> <code>offline-prep/venv-trtllm</code> (Python 3.12.3): <code>tensorrt_llm==1.3.0rc29</code>, <code>torch==2.14.0</code> (cu132), <code>transformers==5.5.4</code>, <code>flashinfer-python==0.6.18</code>, <code>triton==3.8.0</code>, <code>numpy>=2,<2.4</code>, <code>torchao>=0.14.1,<0.16.0</code>, plus composed CUDA 13.2 toolkit.</p>
+  </section>
+
+  <section>
+    <h2>8. Run / Verify</h2>
+    <pre># 1. Provision the host (first time)
+bash start.sh                 # then interact with offline-prep CLI in tmux: offline_prep
+
+# 2. Proxy (every shell)
+export http_proxy=http://192.168.203.2:3128 https_proxy=http://192.168.203.2:3128
+export no_proxy="localhost,127.0.0.1" NO_PROXY="localhost,127.0.0.1"
+source proxy_setup.sh
+
+# 3. Start services
+nvidia-smi                    # expect 2x H200
+offline-prep/venv/bin/python3.12 -m pip install -r requirements.txt
+docker compose -f deploy/docker-compose.yml up -d
+offline-prep/venv/bin/python3.12 scripts/services/embed_server.py \
+  --model offline-prep/models/huggingface/intfloat_multilingual-e5-small \
+  --model-id multilingual-e5-small --port 8001 &
+bash scripts/services/gemma_supervisor.sh  # 5x Gemma 8080-8084
+offline-prep/venv/bin/python3.12 llm_inference_manager/app.py &  # port 9000
+
+# 4. Verify
+curl -s http://127.0.0.1:9000/health | jq
+curl -s http://127.0.0.1:9000/v1/models | jq '.data[].id'
+bash llm_inference_manager/test_manager.sh    # curl suite -> logs/manager_test_*.json
+
+# 5. Champion (TRT-LLM) — separate venv, GPU1 :8010
+bash scripts/serve_trtllm.sh                  # TRTLLM_VENV=offline-prep/venv-trtllm
+curl -s http://127.0.0.1:8010/v1/models | jq
+curl -s -X POST "http://127.0.0.1:9000/admin/triton/promote?backend=trt&url=http://127.0.0.1:8010" | jq</pre>
+  </section>
+
+  <section>
+    <h2>9. Changelog (Version Summary)</h2>
+    <table>
+      <thead><tr><th>Version</th><th>Summary</th></tr></thead>
+      <tbody>
+        <tr><td>v1.0 (current, production)</td><td>H200 host bootstrapped; Manager :9000 gateway with <code>MODEL_REGISTRY</code>, Triton promotion, SQLite sessions/metrics; 5× Gemma llama.cpp on 8080–8084 + Qwen2.5-7B 8090; embeds 8001–8003 live; Docker data plane + monitoring up; TRT-LLM Gemma-4-31B champion on :8010 (GPU1) promoted as ground truth for RAG; Persian 7-task benchmark + docs site.</td></tr>
+        <tr><td>v0.x (history)</td><td>Initial offline prep (2026-08-10), manual installs & Docker (2026-08-11), environment stabilization (2026-08-15), models & inference services (2026-08-15), GGUF/Persian evaluation (2026-08-15 to 2026-08-17), TRT-LLM bring-up & driver fix (2026-10-12), TRT-LLM serving (2026-10-13), champion concurrency sweep & promotion (2026-10-13), FP8 KV / weight-FP8 benchmark (2026-10-14). Full per-session detail lives in <code>docs/history/</code>.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>10. Known Gotchas</h2>
+    <div class="caution">
+      <ul>
+        <li><code>offline-prep/venv/bin/python3.12 -m pip</code> — never bare <code>pip</code> (venv entry-point shebangs point at the stale <code>/ai-gpu1/...</code> mount). Use <code>python3.12 -m pip</code>.</li>
+        <li><code>.state.json</code> / <code>.retry_queue.json</code> under <code>offline-prep/</code> are stale — treat as history, not current truth.</li>
+        <li><code>numpy</code>/<code>scipy</code> conflict — pin <code>scipy==1.13.1</code>; do not upgrade numpy past 1.26.4 while vLLM 0.6.1.post1 is in use.</li>
+        <li>Localhost calls must bypass the Squid proxy — <code>trust_env=False</code> in the Manager (<code>app.py:301</code>, <code>app.py:331</code>) and <code>no_proxy=localhost,127.0.0.1</code> for local <code>curl</code> (<code>curl --noproxy '*'</code>).</li>
+        <li>TRT-LLM requires the isolated <code>venv-trtllm</code>; never upgrade the shared live venv's torch/numpy/transformers.</li>
+        <li>Batch-256 CUDA graph capture fails (FlashInfer prefill workspace overflow) — concurrency capped at 128 on one H200.</li>
+        <li>Weight-FP8 (16-sample ModelOpt checkpoint) is numerically wrong — not production-ready.</li>
+        <li>Power capping: batch-128 throughput bursts ~3.8k tok/s then settles ~2.9k tok/s sustained (~160 s).</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="brand"><strong>Dana</strong><span>&#8226;Server Setup</span></div>
+    <p>&copy; 2026 Work Credit RAG Platform &middot; Built for GitHub Pages &middot; <a href="index.html">Dana</a> documentation theme</p>
+  </div>
+</footer>
+
+</body>
+</html>

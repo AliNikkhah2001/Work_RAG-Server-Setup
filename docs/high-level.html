@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dana — Work RAG Server Setup High-Level Detail</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:'default',securityLevel:'loose'});</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="logo">
+      <span class="mark">&#9733;</span>
+      <strong>Dana</strong><span>&#8226;Server Setup</span>
+    </a>
+    <nav>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="high-level.html" class="active">High-Level Detail</a></li>
+        <li><a href="technical.html">Technical Detail</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <span class="repo-badge">Work_Credit-RAG_Phase1 / components/server-setup</span>
+    <h1>High-Level Architecture Detail</h1>
+    <p class="lead">Abstraction-boundary views separating the H200 host (bare metal / venv) from the Docker data plane, and the high-level MVP request flow.</p>
+  </section>
+
+  <section>
+    <h2>2.1 Service Topology — High-Level Black Box View</h2>
+    <div class="diagram-card">
+      <h4>Diagram: H200 host vs Docker data plane (black box)</h4>
+      <div class="mermaid" id="topo-highlevel">
+        flowchart TB
+            subgraph HOST["H200 host — bare metal / venv (black box)"]
+                MG[Manager :9000 — OpenAI gateway]
+                INF[LLM backends — Gemma / TRT-LLM / DeepSeek / Qwen]
+                EMB[Embedding services :8001-8003]
+            end
+
+            subgraph DOCKER_PLANE["Docker containers — docker-compose.yml (black box)"]
+                DP[Data plane — Redis / Qdrant / pgvector / Milvus / Open WebUI]
+            end
+
+            MG -.-> INF
+            MG --> EMB
+            DP -.-> MG
+            EMB -.-> DP
+      </div>
+      <div class="diagram-caption">
+        <strong>Caption:</strong> Service topology — high-level black box view (H200 host vs Docker data plane).
+        <ul>
+          <li>The <strong>H200 host</strong> runs bare-metal / venv processes: the Manager :9000 OpenAI gateway, LLM backends (Gemma / TRT-LLM / DeepSeek / Qwen), and embedding services on :8001–8003.</li>
+          <li>The <strong>Docker data plane</strong> runs via docker-compose.yml: Redis, Qdrant, pgvector, Milvus, and Open WebUI.</li>
+          <li>The Manager talks to LLM backends and embedding services; the data plane talks back to the Manager; embedding services write to the data plane.</li>
+          <li>This is an abstraction boundary — internal ports and container details are hidden behind each subgraph.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2.2 MVP Integration Point — High-Level Black Box View</h2>
+    <div class="diagram-card">
+      <h4>Diagram: MVP request flow (host vs Docker boundary)</h4>
+      <div class="mermaid" id="mvp-highlevel">
+        flowchart LR
+            subgraph HOST["H200 host (black box)"]
+                API[Orchestrator :8100]
+                MG[Manager :9000]
+                LLM[Gemma champion :8010]
+            end
+
+            subgraph DOCKER["Docker containers (black box)"]
+                UI[Open WebUI :13000]
+                DS[Data plane — Redis / Qdrant / pgvector / Milvus]
+            end
+
+            UI --> API
+            API --> MG
+            MG --> LLM
+      </div>
+      <div class="diagram-caption">
+        <strong>Caption:</strong> MVP integration point — high-level black box view (host vs Docker boundary).
+        <ul>
+          <li>Open WebUI :13000 sends the chat request to the Orchestrator :8100.</li>
+          <li>The Orchestrator calls the Manager :9000 OpenAI gateway.</li>
+          <li>The Manager routes to the Gemma champion LLM on :8010 via Triton promotion.</li>
+          <li>Open WebUI and the data plane (Redis / Qdrant / pgvector / Milvus) live in Docker containers.</li>
+          <li>This view hides internal sub-component details behind host/Docker boundaries.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Core Services — Summary</h2>
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Port</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Embedding (e5-small)</td><td>8001</td><td>384-d multilingual embeddings</td></tr>
+        <tr><td>Embedding (bge-m3)</td><td>8002</td><td>1024-d embeddings</td></tr>
+        <tr><td>Embedding (MiniLM)</td><td>8003</td><td>384-d embeddings</td></tr>
+        <tr><td>5× Gemma llama.cpp</td><td>8080–8084</td><td>Gemma-4-31B backends (supervisor)</td></tr>
+        <tr><td>Qwen2.5-7B</td><td>8090</td><td>Qwen backend</td></tr>
+        <tr><td>LLM Inference Manager</td><td>9000</td><td>OpenAI-compatible gateway</td></tr>
+        <tr><td>DeepSeek-V4-Flash</td><td>9001</td><td>Standalone FastAPI wrapper</td></tr>
+        <tr><td>Open WebUI</td><td>13000</td><td>Docker chat frontend</td></tr>
+        <tr><td>pgvector</td><td>15432</td><td>Docker vector store</td></tr>
+        <tr><td>Qdrant</td><td>16333</td><td>Docker vector store</td></tr>
+        <tr><td>Redis</td><td>16379</td><td>Docker cache / queue</td></tr>
+        <tr><td>Milvus</td><td>19530</td><td>Docker vector store</td></tr>
+        <tr><td>TRT-LLM Gemma-4-31B</td><td>8010</td><td>GPU1 champion (TensorRT-LLM)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Documentation Convention</h2>
+    <div class="card">
+      <p>Maintain detailed markdown history under <code>docs/history/</code> — one file per work day/session with exact commands, versions, and outcomes. Store gotchas, quirks, and env facts in <code>docs/findings.md</code>, not inside code comments. Never rely on <code>.state.json</code> or log files alone as the record of what's installed.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="brand"><strong>Dana</strong><span>&#8226;Server Setup</span></div>
+    <p>&copy; 2026 Work Credit RAG Platform &middot; Built for GitHub Pages &middot; <a href="index.html">Dana</a> documentation theme</p>
+  </div>
+</footer>
+
+</body>
+</html>
