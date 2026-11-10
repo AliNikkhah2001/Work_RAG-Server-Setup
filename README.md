@@ -449,7 +449,11 @@ This submodule stays the **GPU / TRT / Manager** owner. Parent repo owns the Mul
 
 **No Cloudflare webhook** — Jenkins `pollSCM` every hour.
 
-### One-time bring-up on the GPU host
+### One-time bring-up on the GPU host (first-boot checklist)
+
+Parent overview: umbrella `README.md` → **Server first-boot checklist**. Operator twin: `deploy/jenkins/README.md`.
+
+**Important:** Laptop and GPU each have their own Jenkins. Reusing `dana-jenkins:lts` does **not** copy admin password or jobs. Migrate `jenkins_home` only if you intentionally want that.
 
 1. **Prereqs:** Docker Engine, NVIDIA Container Toolkit, `nvidia-smi` OK, GitHub PAT for clone.
 2. **Clone umbrella** (not only this submodule):
@@ -463,18 +467,9 @@ cd Work_Credit-RAG_Phase1
    - Manager `:9000` + embeds `:8001–8003` (this repo), and/or
    - TRT-LLM champion `:8010` via `scripts/serve_trtllm.sh`, and/or
    - parent `deploy/vast/start.sh` / `deploy/docker/docker-compose.yml` for Gemma `:18000`.
-4. **Jenkins container** (same compose as laptop):
+4. **Prod env** (`deploy/compose/.env.prod`, gitignored):
 
 ```bash
-docker compose -f deploy/jenkins/docker-compose.yml up -d
-# UI on :8085 — complete wizard, install Pipeline + GitHub Branch Source + Docker Pipeline
-```
-
-5. **Credentials on GPU Jenkins:** GitHub PAT only. **Do not** put OpenRouter keys on the GPU host.
-6. **Env for prod agent:**
-
-```bash
-# deploy/compose/.env.prod  (gitignored)
 DANA_ENV=prod
 DANA_HOST=gpu
 LLM_UPSTREAM_MODE=self_hosted
@@ -484,8 +479,18 @@ KB_EMBED_DEVICE=cuda
 KB_RERANKER_DEVICE=cuda
 ```
 
-7. **Multibranch job** `dana-rag` → GitHub `Work_Credit-RAG_Phase1` → branches `develop`, `main`, `feature/*` → Jenkinsfile at root. Rely on hourly poll (or Scan Now).
-8. **Trigger unattended prod** from your laptop:
+5. **Patch Jenkins compose for this host:** in `deploy/jenkins/docker-compose.yml`, replace the Mac bind path with this server’s absolute clone path (same path in container + host). Set `DANA_HOST_REPO` to match.
+6. **Jenkins container:**
+
+```bash
+docker compose -f deploy/jenkins/docker-compose.yml up -d --build
+# UI on :8085 — new admin password if jenkins_home is fresh
+```
+
+7. **Credentials on GPU Jenkins:** GitHub PAT only (`github-pat`). **Do not** put OpenRouter keys on the GPU host.
+8. **Multibranch job** `dana-rag` → GitHub `Work_Credit-RAG_Phase1` → prefer **`main` only** on GPU (laptop keeps `develop` / stage). Jenkinsfile at root. Hourly poll or Scan Now.
+9. **Agent env:** `DANA_HOST=gpu` so prod uses `compose.gpu.yml`.
+10. **Trigger unattended prod** from your laptop:
 
 ```bash
 git checkout main
@@ -494,7 +499,8 @@ git push origin main
 # Within ~1 hour (or Scan Now) GPU Jenkins builds and deploys with compose.gpu.yml
 ```
 
-9. **Verify:** `curl` Manager/Gemma health, then orchestrator `:8100` chat; confirm `LLM_UPSTREAM_MODE=self_hosted` (no LiteLLM container required).
+11. **Verify:** `curl` Manager/Gemma health, then orchestrator `:8100` chat; confirm `LLM_UPSTREAM_MODE=self_hosted` (no LiteLLM container required).
+12. **Backup (optional but recommended):** snapshot the `jenkins_home` Docker volume after the job works.
 
 Architecture reminder: generation stays on **TRT / llama.cpp / Manager**; CI only rebuilds/restarts app containers (KB, guardrails, orchestrator, webui) unless you explicitly change model-serving scripts.
 
