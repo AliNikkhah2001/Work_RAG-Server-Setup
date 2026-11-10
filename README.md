@@ -435,6 +435,80 @@ curl -s -X POST "http://127.0.0.1:9000/admin/triton/promote?backend=trt&url=http
 
 ---
 
+## Jenkins / CI on H200 (first-time GPU server setup)
+
+This submodule stays the **GPU / TRT / Manager** owner. Parent repo owns the Multibranch [`Jenkinsfile`](../../Jenkinsfile) and [`deploy/jenkins/`](../../deploy/jenkins/). Use the same commit-message keys as the parent README:
+
+| Token | Meaning |
+|-------|---------|
+| $\textcolor{red}{\textbf{[ci skip]}}$ | Skip |
+| $\textcolor{red}{\textbf{[ci build]}}$ | Build images |
+| $\textcolor{red}{\textbf{[ci stage]}}$ | Unattended stage (`develop`) |
+| $\textcolor{red}{\textbf{[ci prod]}}$ | Unattended prod (`main`) — **no approval** |
+| $\textcolor{red}{\textbf{[ci auto]}}$ | Unattended stage or prod by branch |
+
+**No Cloudflare webhook** — Jenkins `pollSCM` every hour.
+
+### One-time bring-up on the GPU host
+
+1. **Prereqs:** Docker Engine, NVIDIA Container Toolkit, `nvidia-smi` OK, GitHub PAT for clone.
+2. **Clone umbrella** (not only this submodule):
+
+```bash
+git clone --recurse-submodules https://github.com/AliNikkhah2001/Work_Credit-RAG_Phase1.git
+cd Work_Credit-RAG_Phase1
+```
+
+3. **Self-hosted LLM path first** (do this before CI deploys traffic):
+   - Manager `:9000` + embeds `:8001–8003` (this repo), and/or
+   - TRT-LLM champion `:8010` via `scripts/serve_trtllm.sh`, and/or
+   - parent `deploy/vast/start.sh` / `deploy/docker/docker-compose.yml` for Gemma `:18000`.
+4. **Jenkins container** (same compose as laptop):
+
+```bash
+docker compose -f deploy/jenkins/docker-compose.yml up -d
+# UI on :8085 — complete wizard, install Pipeline + GitHub Branch Source + Docker Pipeline
+```
+
+5. **Credentials on GPU Jenkins:** GitHub PAT only. **Do not** put OpenRouter keys on the GPU host.
+6. **Env for prod agent:**
+
+```bash
+# deploy/compose/.env.prod  (gitignored)
+DANA_ENV=prod
+DANA_HOST=gpu
+LLM_UPSTREAM_MODE=self_hosted
+UPSTREAM_LLM_BASE_URL=http://127.0.0.1:9000/v1   # or :18000/v1
+UPSTREAM_LLM_MODEL=gemma-4-31b
+KB_EMBED_DEVICE=cuda
+KB_RERANKER_DEVICE=cuda
+```
+
+7. **Multibranch job** `dana-rag` → GitHub `Work_Credit-RAG_Phase1` → branches `develop`, `main`, `feature/*` → Jenkinsfile at root. Rely on hourly poll (or Scan Now).
+8. **Trigger unattended prod** from your laptop:
+
+```bash
+git checkout main
+git commit --allow-empty -m "chore: promote stage pins [ci prod]"
+git push origin main
+# Within ~1 hour (or Scan Now) GPU Jenkins builds and deploys with compose.gpu.yml
+```
+
+9. **Verify:** `curl` Manager/Gemma health, then orchestrator `:8100` chat; confirm `LLM_UPSTREAM_MODE=self_hosted` (no LiteLLM container required).
+
+Architecture reminder: generation stays on **TRT / llama.cpp / Manager**; CI only rebuilds/restarts app containers (KB, guardrails, orchestrator, webui) unless you explicitly change model-serving scripts.
+
+```mermaid
+flowchart TB
+  push[Push main with ci prod] --> poll[H200 Jenkins pollSCM]
+  poll --> build[Build rag-* images]
+  build --> up[compose.base + compose.gpu]
+  up --> guard[Guardrails UPSTREAM to Manager or Gemma]
+  guard --> trt[Existing TRT / llama.cpp — not rebuilt by default]
+```
+
+---
+
 ## License
 
 See parent repository `LICENSE` and the submodule's own obligations.
