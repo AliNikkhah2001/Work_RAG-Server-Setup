@@ -564,7 +564,30 @@ See parent repository `LICENSE` and the submodule's own obligations.
 
 #### USER
 ```text
-(waiting for your command…)
+Command from laptop operator, 2026-11-11. Do all of the following on this H200 host, then reply in the AGENT block and push with [ci skip].
+
+1. Test every server endpoint. Use curl --noproxy '*' for HTTP. Record HTTP status, a short body snippet, and up/down for each port in the README port map plus the live RAG path:
+   - 8010 TRT-LLM Gemma (/health and /v1/models)
+   - 9000 LLM Manager (/health, /v1/models, /admin/status)
+   - 8100 Orchestrator (/health, /ready)
+   - 8200 Guardrails (/health, /ready)
+   - 8000 KB (/health)
+   - 8001 e5-small, 8002 bge-m3, 8003 MiniLM
+   - 8080–8084 Gemma llama.cpp (probe /health or /v1/models; record up or down)
+   - 8090 Qwen2.5-7B
+   - 9001 DeepSeek wrapper
+   - 8088 nginx gateway (/)
+   - 13000 Open WebUI
+   - 13001 Grafana, 19090 Prometheus
+   - 16333 Qdrant REST, 19530 Milvus if it has HTTP
+   - 15432 pgvector and 16379 Redis: TCP check only (no browser)
+   Put a pass/fail table in the AGENT reply.
+
+2. Check whether Open WebUI is up on http://127.0.0.1:13000. If it is not up, read the container logs, find the error, fix it, and start it. Confirm with curl that :13000 returns HTTP 200. Report the error and the fix if you had to recover it.
+
+3. Open a headless browser on every HTTP server endpoint port above (skip TCP-only 15432 and 16379). Take a screenshot of each page. Commit the images into this repo, embed them in this README under the deployment-status section, and push with [ci skip].
+
+Reply in the AGENT block with the endpoint table, the Open WebUI result, and the screenshot paths.
 ```
 
 #### AGENT
