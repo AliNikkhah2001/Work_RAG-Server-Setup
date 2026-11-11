@@ -356,6 +356,55 @@ async def proxy_chat(model_id: str, payload: dict):
             last_err = f"backend {attempt_backend} timeout: {e}"
             continue
     raise HTTPException(status_code=502, detail=f"All backends for {model_id} unreachable. Tried {backends}. Last: {last_err}. Use POST /admin/models/load or check 8080-8084.")
+
+@app.get("/health")
+def health():
+    return {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec": int(time.time()-START_TIME), "gpus":gpu_info(),"models_loaded": sum(1 for m in MODEL_REGISTRY.values() if m["backends"]) }
+
+@app.get("/v1/models")
+def list_models():
+    data=[]
+    for mid, cfg in MODEL_REGISTRY.items():
+        data.append({
+            "id": mid,
+            "object": "model",
+            "created": 0,
+            "owned_by": cfg["creator"],
+            "meta": {
+                "name": cfg["name"],
+                "family": cfg["family"],
+                "params": cfg["params"],
+                "size_gb": cfg["size_gb"],
+                "quant": cfg["quant"],
+                "context": cfg.get("context"),
+                "benchmark_mean": cfg.get("benchmark_mean"),
+                "status": cfg.get("status"),
+                "backends": cfg.get("backends"),
+                "path": cfg.get("path"),
+            }
+        })
+    return {"object":"list","data":data}
+
+@app.get("/v1/models/{model_id}")
+def get_model(model_id: str):
+    cfg=MODEL_REGISTRY.get(model_id)
+    if not cfg:
+        raise HTTPException(404, "model not found")
+    return {"id":model_id,"object":"model","owned_by":cfg["creator"],"meta":cfg,"backends":cfg.get("backends"),"gpus":gpu_info()}
+
+# --------------------------------------------------------------------------
+# OpenAI-compatible chat
+# --------------------------------------------------------------------------
+class ChatReq(BaseModel):
+    model: str = Field(default="gemma-4-31b")
+    messages: List[Dict[str, Any]]
+    max_tokens: int = 512
+    temperature: float = 0.7
+    top_p: float = 1.0
+    stream: bool = False
+    session_id: Optional[str] = None
+
+@app.post("/v1/chat/completions")
 async def chat_completions(req: ChatReq, authorized=Depends(verify_token)):
     start=time.time()
     # session handling: inject full history if session_id provided
