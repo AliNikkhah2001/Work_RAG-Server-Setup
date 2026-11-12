@@ -3,6 +3,8 @@
 Provisioning, local model/embedding services, the **Gemma LLM inference manager** gateway, Open WebUI, and infrastructure for the Work Credit RAG platform. Runs on an NVIDIA H200 host (2× H200 NVL, 281 GiB VRAM) behind a corporate Squid proxy (`http://192.168.203.2:3128`). Working directory: `/splunk-data/v1/Work_RAG-Server-Setup`.
 
 > The live, command-verified runbook is preserved at [`README.runbook.md`](README.runbook.md). This README is the module overview, architecture (validated against `llm_inference_manager/app.py` and `scripts/services/*.py`), port map, and run/verify steps.
+>
+> **Production pin `v1.3.0`:** exact Docker digests for Jenkins / embed / WebUI recreate live in parent [`deploy/PRODUCTION.md`](../../deploy/PRODUCTION.md). WebUI recreate script: [`deploy/recreate_dana_webui.sh`](deploy/recreate_dana_webui.sh) (prefers `rag-webui:production`).
 
 ---
 
