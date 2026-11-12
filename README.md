@@ -531,70 +531,48 @@ See parent repository `LICENSE` and the submodule's own obligations.
 | | |
 |:--|:--|
 | **Status** | <span style="color:#16a34a;font-weight:700">DEPLOYED · HEALTHY · E2E PASSED</span> |
-| **Verified at** | 2026-11-11 08:10:05 UTC |
+| **Verified at** | 2026-11-12 04:45:50 UTC |
+| **Parent main** | `Work_Credit-RAG_Phase1@8bd17b2` (develop merged via PR #57) |
+| **Pins** | guardrails `8f119cc` · orchestrator `2703a52` · kb `d5273a5` · webui `2e45b5a97` · server-setup `cc4bcb1` |
 | **Host** | H200 NVL ×2 · `/splunk-data/v1/Work_RAG-Server-Setup` |
 | **UI** | Open WebUI **دانا** → `http://127.0.0.1:13000` |
 | **Champion LLM** | Gemma-4-31B via **TensorRT-LLM** (`trtllm-serve`, GPU1, `:8010`) |
 | **Gateway** | Manager `:9000` → Triton-promoted to TRT `:8010` |
-| **RAG path** | OpenWebUI → Orchestrator `:8100` → Guardrails `:8200` → KB `:8000` → Manager/TRT |
-| **Streaming / TTFT** | **Enabled** end-to-end (`stream_response=true`; Manager SSE passthrough fixed; OpenWebUI TTFT ~45–51 ms on first SSE) |
+| **Streaming / TTFT** | Enabled — Manager SSE TTFT ≈ **0.155s**; OpenWebUI TTFT ≈ **0.044s / 0.041s** |
 
-### Health checks (command-verified)
+### Health checks (re-verified after pull)
 
 | Service | Port | Result |
 |:--|:--:|:--|
-| TRT-LLM Gemma (`tensorrt_llm`) | 8010 | OK — model `google_gemma-4-31b-it` |
-| LLM Manager | 9000 | OK — `gemma-4-31b` backends → `:8010` |
+| TRT-LLM Gemma | 8010 | OK |
+| LLM Manager | 9000 | OK |
 | Orchestrator | 8100 | OK |
 | Guardrails | 8200 | OK |
-| KB (pgvector) | 8000 | OK — ~110 docs / ~5413 chunks |
-| Open WebUI | 13000 | OK |
-| GPU1 VRAM (TRT) | — | ~133 GiB in use by `trtllm-serve` |
+| KB (pgvector) | 8000 | OK |
+| Open WebUI | 13000 | OK (rebuilt from `2e45b5a97`) |
 
-### E2E test notes
+### E2E (OpenWebUI multi-turn)
 
-- Multi-turn chat through Open WebUI API (`ics-helper-agent`) with **SSE streaming** succeeded.
-- Turn 1 (اعتبارسنجی): streamed answer, TTFT ≈ **0.05 s**.
-- Turn 2 (follow-up): streamed; KB may return “no answer” for out-of-corpus topics — path still healthy.
-- Manager streaming fix: Triton-promoted path now proxies SSE (was buffering JSON and dropping `stream`).
+- Model: `ics-helper-agent`
+- Turn 1 streamed OK (TTFT 0.044s)
+- Turn 2 streamed OK (TTFT 0.041s)
+- Result: **E2E_PASS**
 
-### Operator channel (leave commands below — agent will reply under your block)
+### Operator channel
 
-> Write your next instruction inside the `USER` fenced block. The deploy agent watches this section, replies in `AGENT`, then commits with `[ci skip]`.
+> Write your next instruction inside the `USER` fenced block. Agent replies in `AGENT`, then commits with `[ci skip]`.
 
 #### USER
 ```text
-Command from laptop operator, 2026-11-11. Do all of the following on this H200 host, then reply in the AGENT block and push with [ci skip].
-
-1. Test every server endpoint. Use curl --noproxy '*' for HTTP. Record HTTP status, a short body snippet, and up/down for each port in the README port map plus the live RAG path:
-   - 8010 TRT-LLM Gemma (/health and /v1/models)
-   - 9000 LLM Manager (/health, /v1/models, /admin/status)
-   - 8100 Orchestrator (/health, /ready)
-   - 8200 Guardrails (/health, /ready)
-   - 8000 KB (/health)
-   - 8001 e5-small, 8002 bge-m3, 8003 MiniLM
-   - 8080–8084 Gemma llama.cpp (probe /health or /v1/models; record up or down)
-   - 8090 Qwen2.5-7B
-   - 9001 DeepSeek wrapper
-   - 8088 nginx gateway (/)
-   - 13000 Open WebUI
-   - 13001 Grafana, 19090 Prometheus
-   - 16333 Qdrant REST, 19530 Milvus if it has HTTP
-   - 15432 pgvector and 16379 Redis: TCP check only (no browser)
-   Put a pass/fail table in the AGENT reply.
-
-2. Check whether Open WebUI is up on http://127.0.0.1:13000. If it is not up, read the container logs, find the error, fix it, and start it. Confirm with curl that :13000 returns HTTP 200. Report the error and the fix if you had to recover it.
-
-3. Open a headless browser on every HTTP server endpoint port above (skip TCP-only 15432 and 16379). Take a screenshot of each page. Commit the images into this repo, embed them in this README under the deployment-status section, and push with [ci skip].
-
-Reply in the AGENT block with the endpoint table, the Open WebUI result, and the screenshot paths.
+(waiting for your command…)
 ```
 
 #### AGENT
 ```text
-Deployment complete. Standing by for commands in the USER block above.
+Pulled origin/main @8bd17b2 + submodule pins; rebuilt webui; restarted apps; E2E_PASS. Standing by.
 ```
 
 </div>
 
 <!-- /DANA-H200-DEPLOYMENT-STATUS -->
+
