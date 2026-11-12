@@ -287,17 +287,41 @@ def _triton_promoted_backend(model_id: str) -> Optional[str]:
                 return b
     return None
 
+async def _stream_backend_chat(backend: str, payload: dict) -> StreamingResponse:
+    """Proxy SSE from a backend. Keep the httpx stream open for the response lifetime."""
+    client = httpx.AsyncClient(timeout=120, trust_env=False)
+
+    async def stream_gen():
+        try:
+            async with client.stream(
+                "POST",
+                f"{backend}/v1/chat/completions",
+                json=payload,
+            ) as resp:
+                resp.raise_for_status()
+                async for chunk in resp.aiter_bytes():
+                    if chunk:
+                        yield chunk
+        finally:
+            await client.aclose()
+
+    return StreamingResponse(stream_gen(), media_type="text/event-stream")
+
+
 async def proxy_chat(model_id: str, payload: dict):
     # Triton promotion: champion gemma routes to optimized Triton pool when available
+    is_stream = bool(payload.get("stream", False))
     promoted = _triton_promoted_backend(model_id)
     if promoted:
-        # short-circuit to optimized backend (preserves OpenAI shape)
+        # short-circuit to optimized backend (preserves OpenAI shape + SSE when requested)
         payload = dict(payload)
         cfg = MODEL_REGISTRY.get("gemma-4-31b-triton-trt" if "trt" in promoted else "gemma-4-31b-triton-vllm", {})
         backends = cfg.get("backends", [promoted])
         last_err = None
         for attempt_backend in [promoted] + [b for b in backends if b != promoted]:
             try:
+                if is_stream:
+                    return await _stream_backend_chat(attempt_backend, payload)
                 async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
                     r = await client.post(f"{attempt_backend}/v1/chat/completions", json=payload)
                     if r.status_code != 200:
@@ -305,6 +329,9 @@ async def proxy_chat(model_id: str, payload: dict):
                     return r.json()
             except (httpx.ConnectError, httpx.ReadTimeout) as e:
                 last_err = f"optimized backend {attempt_backend} unreachable: {e}"
+                continue
+            except httpx.HTTPStatusError as e:
+                last_err = f"optimized backend {attempt_backend} HTTP {e.response.status_code}"
                 continue
         # fallback to legacy gemma pool if optimized down
         pass
@@ -326,36 +353,75 @@ async def proxy_chat(model_id: str, payload: dict):
     cfg = MODEL_REGISTRY.get(base_id) or MODEL_REGISTRY.get(model_id) or {}
     backends = cfg.get("backends", [backend])
     last_err = None
-    is_stream = payload.get("stream", False)
-    
+
     for attempt_backend in [backend] + [b for b in backends if b != backend]:
         try:
+            if is_stream:
+                return await _stream_backend_chat(attempt_backend, payload)
             async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
-                if is_stream:
-                    # Stream SSE from backend to client
-                    async with client.stream(
-                        "POST",
-                        f"{attempt_backend}/v1/chat/completions",
-                        json=payload,
-                    ) as resp:
-                        resp.raise_for_status()
-                        async def stream_gen():
-                            async for chunk in resp.aiter_text():
-                                if chunk:
-                                    yield chunk
-                        return StreamingResponse(stream_gen(), media_type="text/event-stream")
-                else:
-                    r = await client.post(f"{attempt_backend}/v1/chat/completions", json=payload)
-                    if r.status_code != 200:
-                        raise HTTPException(status_code=r.status_code, detail=r.text)
-                    return r.json()
+                r = await client.post(f"{attempt_backend}/v1/chat/completions", json=payload)
+                if r.status_code != 200:
+                    raise HTTPException(status_code=r.status_code, detail=r.text)
+                return r.json()
         except httpx.ConnectError as e:
             last_err = f"backend {attempt_backend} unreachable: {e}"
             continue
         except httpx.ReadTimeout as e:
             last_err = f"backend {attempt_backend} timeout: {e}"
             continue
+        except httpx.HTTPStatusError as e:
+            last_err = f"backend {attempt_backend} HTTP {e.response.status_code}"
+            continue
     raise HTTPException(status_code=502, detail=f"All backends for {model_id} unreachable. Tried {backends}. Last: {last_err}. Use POST /admin/models/load or check 8080-8084.")
+
+@app.get("/health")
+def health():
+    return {"status":"ok","manager":"llm_inference_manager","version":"1.0.0","uptime_sec": int(time.time()-START_TIME), "gpus":gpu_info(),"models_loaded": sum(1 for m in MODEL_REGISTRY.values() if m["backends"]) }
+
+@app.get("/v1/models")
+def list_models():
+    data=[]
+    for mid, cfg in MODEL_REGISTRY.items():
+        data.append({
+            "id": mid,
+            "object": "model",
+            "created": 0,
+            "owned_by": cfg["creator"],
+            "meta": {
+                "name": cfg["name"],
+                "family": cfg["family"],
+                "params": cfg["params"],
+                "size_gb": cfg["size_gb"],
+                "quant": cfg["quant"],
+                "context": cfg.get("context"),
+                "benchmark_mean": cfg.get("benchmark_mean"),
+                "status": cfg.get("status"),
+                "backends": cfg.get("backends"),
+                "path": cfg.get("path"),
+            }
+        })
+    return {"object":"list","data":data}
+
+@app.get("/v1/models/{model_id}")
+def get_model(model_id: str):
+    cfg=MODEL_REGISTRY.get(model_id)
+    if not cfg:
+        raise HTTPException(404, "model not found")
+    return {"id":model_id,"object":"model","owned_by":cfg["creator"],"meta":cfg,"backends":cfg.get("backends"),"gpus":gpu_info()}
+
+# --------------------------------------------------------------------------
+# OpenAI-compatible chat
+# --------------------------------------------------------------------------
+class ChatReq(BaseModel):
+    model: str = Field(default="gemma-4-31b")
+    messages: List[Dict[str, Any]]
+    max_tokens: int = 512
+    temperature: float = 0.7
+    top_p: float = 1.0
+    stream: bool = False
+    session_id: Optional[str] = None
+
+@app.post("/v1/chat/completions")
 async def chat_completions(req: ChatReq, authorized=Depends(verify_token)):
     start=time.time()
     # session handling: inject full history if session_id provided
@@ -377,7 +443,15 @@ async def chat_completions(req: ChatReq, authorized=Depends(verify_token)):
         conn.close()
     # merge history + current turn (current turn already in req.messages[-1], but history contains prior turns)
     all_messages = history_messages + req.messages if sid else req.messages
-    payload = {"model": req.model, "messages": all_messages, "max_tokens": req.max_tokens, "temperature": req.temperature}
+    # Pass stream through so Triton/legacy backends can SSE (reduces TTFT).
+    payload = {
+        "model": req.model,
+        "messages": all_messages,
+        "max_tokens": req.max_tokens,
+        "temperature": req.temperature,
+        "top_p": req.top_p,
+        "stream": bool(req.stream),
+    }
     try:
         out = await proxy_chat(req.model, payload)
     except Exception as e:
@@ -388,6 +462,17 @@ async def chat_completions(req: ChatReq, authorized=Depends(verify_token)):
             conn.commit(); conn.close()
         except: pass
         raise HTTPException(status_code=502, detail=str(e)[:500])
+    # Streaming: return SSE immediately (do not buffer into JSONResponse).
+    if isinstance(out, StreamingResponse):
+        latency = (time.time()-start)*1000
+        try:
+            conn=get_db()
+            conn.execute("INSERT INTO metrics(id,model,endpoint,latency_ms,prompt_tokens,completion_tokens,created_at,status,finish_reason,panel,trace_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)", (str(uuid.uuid4()), req.model, "/v1/chat/completions", latency, 0, 0, datetime.utcnow().isoformat(), "success", "stream", "llm", None))
+            conn.commit(); conn.close()
+        except: pass
+        out.headers["X-Manager-Latency-ms"] = str(int(latency))
+        out.headers["X-Manager-Stream"] = "1"
+        return out
     latency = (time.time()-start)*1000
     # save assistant
     if sid:

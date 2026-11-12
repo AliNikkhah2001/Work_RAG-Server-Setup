@@ -521,5 +521,58 @@ See parent repository `LICENSE` and the submodule's own obligations.
 
 
 <!-- TRITON-HOURLY-STATUS -->
-> **Triton hourly 2026-11-09T20:07:47+00:00** — GGUF 19G | HF gemma-4 59G | HF gemma-3 52K | Engine 0 | Manager {"detail":"Not Found"} | VLLM vllm down | Triton  | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+> **Triton hourly 2026-11-11T04:11:36+00:00** — GGUF 19G | HF gemma-4 59G | HF gemma-3 52K | Engine 0 | Manager {"detail":"Not Found"} | VLLM vllm down | Triton  | triton 8004: down | Bench logs/bench_compare_20261007_120435.json
+
+<!-- DANA-H200-DEPLOYMENT-STATUS -->
+<div align="center">
+
+## ✅ H200 PRODUCTION DEPLOYMENT — LIVE & TESTED
+
+| | |
+|:--|:--|
+| **Status** | <span style="color:#16a34a;font-weight:700">DEPLOYED · HEALTHY · E2E PASSED</span> |
+| **Verified at** | 2026-11-12 04:45:50 UTC |
+| **Parent main** | `Work_Credit-RAG_Phase1@8bd17b2` (develop merged via PR #57) |
+| **Pins** | guardrails `8f119cc` · orchestrator `2703a52` · kb `d5273a5` · webui `2e45b5a97` · server-setup `cc4bcb1` |
+| **Host** | H200 NVL ×2 · `/splunk-data/v1/Work_RAG-Server-Setup` |
+| **UI** | Open WebUI **دانا** → `http://127.0.0.1:13000` |
+| **Champion LLM** | Gemma-4-31B via **TensorRT-LLM** (`trtllm-serve`, GPU1, `:8010`) |
+| **Gateway** | Manager `:9000` → Triton-promoted to TRT `:8010` |
+| **Streaming / TTFT** | Enabled — Manager SSE TTFT ≈ **0.155s**; OpenWebUI TTFT ≈ **0.044s / 0.041s** |
+
+### Health checks (re-verified after pull)
+
+| Service | Port | Result |
+|:--|:--:|:--|
+| TRT-LLM Gemma | 8010 | OK |
+| LLM Manager | 9000 | OK |
+| Orchestrator | 8100 | OK |
+| Guardrails | 8200 | OK |
+| KB (pgvector) | 8000 | OK |
+| Open WebUI | 13000 | OK (rebuilt from `2e45b5a97`) |
+
+### E2E (OpenWebUI multi-turn)
+
+- Model: `ics-helper-agent`
+- Turn 1 streamed OK (TTFT 0.044s)
+- Turn 2 streamed OK (TTFT 0.041s)
+- Result: **E2E_PASS**
+
+### Operator channel
+
+> Write your next instruction inside the `USER` fenced block. Agent replies in `AGENT`, then commits with `[ci skip]`.
+
+#### USER
+```text
+(waiting for your command…)
+```
+
+#### AGENT
+```text
+Pulled origin/main @8bd17b2 + submodule pins; rebuilt webui; restarted apps; E2E_PASS. Standing by.
+```
+
+</div>
+
+<!-- /DANA-H200-DEPLOYMENT-STATUS -->
 
