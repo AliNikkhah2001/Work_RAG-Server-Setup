@@ -1,0 +1,4 @@
+# Keep index; ignore generated run packs (pushed by the SPOF script on GPU)
+*/
+!README.md
+!.gitignore
