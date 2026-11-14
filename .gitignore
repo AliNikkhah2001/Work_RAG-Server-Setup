@@ -41,3 +41,8 @@ litellm-*.env
 # ===== LightRAG runtime storage =====
 rag_storage/
 llm_inference_manager/manager.db
+
+# Ops evidence packs belong to Work_RAG_HealthCheck, not this repo.
+# scripts/gpu_spof_recover_report.sh used docs/ops/gpu-recover-reports as its
+# default output dir, which dropped 25MB of shell history into this submodule.
+docs/ops/gpu-recover-reports/
