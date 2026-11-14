@@ -78,8 +78,8 @@ free -h 2>/dev/null | tee "$OUT/meta/free.txt" || true
 MODE=unknown
 if docker ps --format '{{.Names}}' 2>/dev/null | grep -qE 'dana-prod|rag-'; then
   MODE=compose
-elif [[ -x /tmp/kb-venv/bin/python ]] || [[ -f /tmp/kb.log ]]; then
-  MODE=vast_host
+elif [[ -f /tmp/kb.log ]] || [[ -x /tmp/kb-venv/bin/python ]]; then
+  MODE=host_venv
 elif [[ -f "$UMBRELLA/deploy/compose/compose.gpu.yml" ]]; then
   MODE=compose
 fi
@@ -109,10 +109,6 @@ else
         -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" \
         up -d 2>&1 | tee -a "$OUT/meta/compose-up.txt" || true
     fi
-  fi
-  if [[ -x "$UMBRELLA/deploy/vast/start.sh" ]] && [[ "$MODE" == "vast_host" || "$MODE" == "unknown" ]]; then
-    ok "attempting deploy/vast/start.sh (host venv path)"
-    bash "$UMBRELLA/deploy/vast/start.sh" 2>&1 | tee "$OUT/meta/vast-start.txt" || warn "vast start issues"
   fi
   # Manager if present
   if have curl; then
@@ -376,7 +372,7 @@ cat >"$REPORT" <<EOF
 | Log signature hits | $HIT_COUNT |
 
 ## What this run did
-1. Best-effort service bring-up (compose gpu and/or vast start)
+1. Best-effort service bring-up (compose gpu)
 2. Keep-latest / last-good alignment
 3. Postgres ingest history dump
 4. Docker + /tmp log harvest + DOWN/ERROR scan
