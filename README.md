@@ -487,7 +487,21 @@ git commit --allow-empty -m "chore: restore tested freeze [ci force-heal]"
 git push origin main
 ```
 
-**Hourly health (same timer family as Pages status):** parent `deploy/monitor/install.sh` arms `gpu-health-report.timer` + `gpu-webui-watch.timer`. Dashboard: https://alinikkhah2001.github.io/Work_RAG_HealthCheck/ — includes Jenkins **image** freshness, WebUI tip watch, latency, host GPU/RAM/ports.
+**Hourly health (same timer family as Pages status):** parent `deploy/monitor/install.sh` arms `gpu-health-report.timer` + `gpu-webui-watch.timer`. Dashboard: https://alinikkhah2001.github.io/Work_RAG_HealthCheck/ — includes Jenkins **image** freshness, WebUI tip watch, latency, host GPU/RAM/ports, countdown to next report, and resource gauges.
+
+### Ops findings (2026-11-15) — recreate vs image, unreachable pins
+
+Incidents that hit this host / these scripts:
+
+1. **Unreachable umbrella gitlinks** — production pins for `guardrails` / `knowledgebase` pointed at SHAs that GitHub no longer served (`upload-pack: not our ref`). `ci_submodule_sync` failed before any Docker build. **Do not pin commits that were never pushed or were rewritten.** After changing pins: `git submodule update --init --recursive` must succeed on a clean clone.
+
+2. **White Dana theme without a new `rag-webui` digest** — [`deploy/recreate_dana_webui.sh`](deploy/recreate_dana_webui.sh) switched `DANA_THEME_ID` / `DEFAULT_INTERFACE_SETTINGS` from `ics-mono` → `ics-maroon` and patched `dana/themes/index.json` inside the running container because `[ci prod]` image builds were failing. Same image id (`sha256:4e76b1243fab…`) kept serving until a real rebuild. **Recreate/env patches are stopgaps**; bake defaults into the WebUI pin and wait for Deploy prod to retag `rag-webui:production`.
+
+3. **Coverage fail with Build/Deploy skipped** — a `main` tip without `[ci prod]` still runs the prod coverage gate (`missing prod-deploy`). Follow-up empty commits on umbrella `main` must include $\textcolor{red}{\textbf{[ci prod]}}$ $\textcolor{red}{\textbf{[ci all]}}$ when a rebuild is intended.
+
+4. **GPU working tree** — hourly report uses `git merge --ff-only origin/main`. Diverged or dirty umbrella trees skip updates while Jenkins still builds from GitHub. Prefer `git reset --hard origin/main` + submodule sync on the host after any emergency local edits.
+
+Parent umbrella doc (full table): `Work_Credit-RAG_Phase1` README → *Lessons learned (2026-11-15)*.
 
 ### One-time bring-up on the GPU host (first-boot checklist)
 
