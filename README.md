@@ -448,8 +448,46 @@ This submodule stays the **GPU / TRT / Manager** owner. Parent repo owns the Mul
 | $\textcolor{red}{\textbf{[ci stage]}}$ | Unattended stage (`develop`) |
 | $\textcolor{red}{\textbf{[ci prod]}}$ | Unattended prod (`main`) — **no approval** |
 | $\textcolor{red}{\textbf{[ci auto]}}$ | Unattended stage or prod by branch |
+| $\textcolor{red}{\textbf{[ci snapshot]}}$ | Freeze current prod app images under `/splunk-data/production/snapshots/<stamp>/` |
+| $\textcolor{red}{\textbf{[ci heal]}}$ / $\textcolor{red}{\textbf{[ci force-heal]}}$ / $\textcolor{red}{\textbf{[ci heal:STAMP]}}$ | Restore tested snapshot images (commit from any laptop; GPU Jenkins applies) |
+| $\textcolor{red}{\textbf{[ci rollback]}}$ | Restore compose last-good SHA (apps only; Gemma/TRT untouched) |
 
 **No Cloudflare webhook** — Jenkins `pollSCM` every hour.
+
+### Auto image build on H200 (WebUI / app containers)
+
+Generation (Manager `:9000`, TRT, Gemma) is **not** rebuilt by default. CI rebuilds **app** images (`rag-kb`, `rag-orchestrator`, `rag-guardrails`, `rag-webui`, `rag-tracing`, Jenkins alias) when the **umbrella** `main` commit asks for it.
+
+```mermaid
+flowchart LR
+  webuiRemote[Work_RAG-WebUI main] -->|gitlink bump on umbrella| umbrella[Work_Credit-RAG_Phase1 main]
+  umbrella -->|ci prod / ci auto| jenkins[dana-rag-prod pollSCM]
+  jenkins --> build[Build rag-webui:…]
+  build --> recreate[recreate_dana_webui.sh / compose]
+  watch[gpu-webui-watch hourly] -->|scan only if tip ahead| jenkins
+```
+
+**Important:** a push to `Work_RAG-WebUI` alone does **not** rebuild production WebUI. The umbrella must advance `components/webui` and include $\textcolor{red}{\textbf{[ci prod]}}$ (or $\textcolor{red}{\textbf{[ci auto]}}$). The hourly watcher only records tip-vs-pin in `/var/lib/dana-health/webui-watch.json` and scans Multibranch.
+
+**Checklist so a submodule commit actually builds on H200:**
+
+1. Submodule remote has your commit on `main`.
+2. Umbrella gitlink points at that SHA (`git ls-tree HEAD components/webui`).
+3. Umbrella commit message contains $\textcolor{red}{\textbf{[ci prod]}}$ or $\textcolor{red}{\textbf{[ci auto]}}$.
+4. GPU Jenkins `DANA_ROLE=prod` (see `docker-compose.h200.yml`) and Multibranch scanned.
+5. Build console shows Build images + Deploy prod for `webui`; `dana-webui-prod` image id changed.
+
+**H200 Jenkins compose:** use `docker-compose.yml` + `docker-compose.gpu.yml` + [`docker-compose.h200.yml`](../../deploy/jenkins/docker-compose.h200.yml) so `DANA_ROLE=prod`, `DANA_HOST_REPO=/splunk-data/production/Work_Credit-RAG_Phase1`, and image `dana-jenkins:production` (plugins + docker CLI). Stock `jenkins/jenkins:lts` drops Multibranch jobs.
+
+**Force-heal without GPU on your laptop:**
+
+```bash
+git commit --allow-empty -m "chore: restore tested freeze [ci force-heal]"
+# or: git commit --allow-empty -m "chore: restore [ci heal:20261115T124350Z]"
+git push origin main
+```
+
+**Hourly health (same timer family as Pages status):** parent `deploy/monitor/install.sh` arms `gpu-health-report.timer` + `gpu-webui-watch.timer`. Dashboard: https://alinikkhah2001.github.io/Work_RAG_HealthCheck/ — includes Jenkins **image** freshness, WebUI tip watch, latency, host GPU/RAM/ports.
 
 ### One-time bring-up on the GPU host (first-boot checklist)
 
