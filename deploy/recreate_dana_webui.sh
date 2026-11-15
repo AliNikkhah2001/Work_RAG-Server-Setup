@@ -49,8 +49,8 @@ docker run -d --name dana-webui-prod --restart unless-stopped \
   -e OPENAI_API_BASE_URL=http://host.docker.internal:8100/v1 \
   -e OPENAI_API_KEY=sk-local-dev \
   -e ENABLE_OPENAI_API=true \
-  -e DANA_THEME_ID=ics-mono \
-  -e 'DEFAULT_INTERFACE_SETTINGS={"dana_theme_id":"ics-mono","params":{"stream_response":true}}' \
+  -e DANA_THEME_ID=ics-maroon \
+  -e 'DEFAULT_INTERFACE_SETTINGS={"dana_theme_id":"ics-maroon","params":{"stream_response":true}}' \
   -e HTTP_PROXY= \
   -e HTTPS_PROXY= \
   -e http_proxy= \
@@ -65,5 +65,30 @@ for i in $(seq 1 40); do
   [ "$code" = "200" ] && break
   sleep 2
 done
+
+# Until the next [ci prod] WebUI image lands, force white (ics-maroon) defaults
+# on the pinned production image (still ships ics-mono as the baked default).
+docker exec dana-webui-prod python3 -c '
+from pathlib import Path
+import json
+for p in Path("/app").rglob("dana/themes/index.json"):
+    data = json.loads(p.read_text())
+    data["default"] = "ics-maroon"
+    themes = [t for t in (data.get("themes") or []) if t != "ics-maroon"]
+    themes.insert(0, "ics-maroon")
+    data["themes"] = themes
+    p.write_text(json.dumps(data, indent=2) + "\n")
+chunk = Path("/app/build/_app/immutable/chunks/dpZ0QVlb.js")
+if chunk.exists():
+    t = chunk.read_text()
+    t = t.replace(",i=\"ics-mono\",", ",i=\"ics-maroon\",", 1)
+    t = t.replace("y=\"6-force-ics-mono\"", "y=\"7-force-ics-maroon\"", 1)
+    chunk.write_text(t)
+print("dana theme default -> ics-maroon")
+' || echo "WARN: could not patch theme defaults in container" >&2
+
 docker ps --filter name=dana-webui-prod --format '{{.Names}} {{.Status}} {{.Ports}}'
 curl -sS --noproxy '*' --max-time 3 http://127.0.0.1:13000/api/config | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('name'), d.get('ui',{}).get('default_interface_settings'))"
+curl -sS --noproxy '*' --max-time 3 http://127.0.0.1:13000/static/dana/themes/index.json
+echo
+docker exec dana-webui-prod printenv DANA_THEME_ID DEFAULT_INTERFACE_SETTINGS
