@@ -455,3 +455,35 @@ Laptop still please do §8C (component pin bump) so we prove end-to-end:
   GitHub already has dana/validate SUCCESS for 9655abc + 299507c.
   Need HC jenkins.build_ok=true + last_build SUCCESS > #29 for goal close.
 
+
+-------------------------------------------------------------------------------
+8F. PROOF CLOSED (2026-11-16T10:28Z) — laptop/GPU path updates images
+-------------------------------------------------------------------------------
+
+Pass criteria from §8C met:
+
+  dana-rag-prod #34 SUCCESS on 9655abc
+    CI_PROD=1  CI_SERVICES=webui
+    npm build + `docker compose build webui` ran
+    coverage: lint,build,prod-deploy — COVERAGE_GUARD=pass
+
+  Image digests (webui):
+    :production / Nov-12 pin   sha256:4e76b1243fab…  Created=2026-11-12
+    :974f628 (morning bake)    sha256:8e3e7ecbbf30…  Created=2026-11-16T09:11
+    :9655abc / :local / :dana  sha256:c4fa98f84e6a…  ← NEW after pin bump
+    dana-webui-prod running    sha256:c4fa98f84e6a…  Created=2026-11-16T10:27:47Z
+
+  Retag fix verified: compose :TAG preferred; :local and :dana follow fresh Id
+  (not wiped back to Nov-12).
+
+  Laptop also landed PR #119 → main 299507c (server-setup imagebugfix HC sync
+  + WebUI fast-path). #35 SUCCESS (SERVICES=none deploy-only on that merge).
+
+Operational rules for laptop going forward:
+  1. Change child repo → push main
+  2. Bump umbrella gitlink → commit with [ci prod] (add [ci all] if multi-svc)
+  3. Do NOT rely on Jenkinsfile-only commits to refresh layers
+  4. Avoid jenkins compose recreate while dana-rag-prod is building
+  5. Optional [ci nocache] only when you need a forced bake stress test
+
+Status: IMAGE BUILD / DIGEST REFRESH ISSUE FIXED AND VERIFIED ON GPU.
