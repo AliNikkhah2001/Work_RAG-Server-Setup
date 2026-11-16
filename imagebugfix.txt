@@ -81,7 +81,9 @@ Status at end of GPU agent session:
   [x] `docker exec … ldd /usr/local/bin/docker` → not a dynamic executable
   [x] `docker compose version` → Docker Compose version v2.39.2
   [x] Multibranch job dana-rag-prod still visible (last failure was #25)
-  [ ] next dana-rag-prod Build images > #25 — WAITING on laptop [ci prod] trigger
+  [x] laptop §5B recurrence patches on origin/main (PR #113 → 2caf0d1)
+  [x] laptop §5C explicit [ci prod] trigger (PR #116 → 4ba3e5c / f0f164b)
+  [ ] next dana-rag-prod Build images > #25 — WAITING on GPU Scan/pollSCM
 
 How it was applied on GPU:
   1. bootstrap_jenkins_docker_cli.sh injected CLI into running container OK,
@@ -136,48 +138,23 @@ Server-Setup Work_RAG-Server-Setup (this repo):
 Goal: land the GPU-local umbrella fixes on origin/main AND trigger dana-rag-prod
 so Build images proves the host fix (#26+).
 
-### A. Sync this plan file (Server-Setup) — if not already pulled
+### Laptop execution status (2026-11-16) — DONE
 
-  cd <path-to>/Work_RAG-Server-Setup   # or umbrella components/server-setup
-  git checkout main
-  git pull --ff-only origin main
-  # ensure imagebugfix.txt matches this revision
-  git add imagebugfix.txt
-  # optional: gpu_spof_recover_report.sh + gpu-recover-reports/README.md
-  git commit -m "docs(ops): imagebugfix — GPU apply results + laptop commit checklist"
-  git push origin main
+  [x] §5A imagebugfix already on server-setup main (GPU commit c125702 + PR #7 h200 recreate)
+  [x] §5B umbrella recurrence patches merged: PR #113 → main 2caf0d1 / 10ef1a3
+        Dockerfile.docker-cli client-only verify
+        h200.yml PATH keeps /opt/java/openjdk/bin
+        ci_resolve_docker.sh fetches compose plugin + DOCKER_CONFIG
+        restore_from_snapshot.sh + gpu_full_recover_report.sh always pass h200.yml
+        server-setup gitlink → 2f82bcb
+  [x] §5C explicit subject-line trigger: PR #116 → main 4ba3e5c
+        commit f0f164b "… [ci prod] [ci all]"
+        marker: deploy/jenkins/.imagebugfix-laptop-trigger.txt
 
-### B. Land umbrella recurrence fixes (REQUIRED)
-
-  cd <path-to>/Work_Credit-RAG_Phase1
-  git checkout main
-  git pull --ff-only origin main
-
-  # Bring GPU patches onto this tree (pick one):
-  #   - scp/rsync the files listed in section 4 from ai-gpu1, OR
-  #   - cherry-pick / manually apply the same diffs from this doc + GPU working tree
-
-  git add \
-    deploy/jenkins/Dockerfile.docker-cli \
-    deploy/jenkins/docker-compose.h200.yml \
-    deploy/jenkins/README.md \
-    deploy/monitor/README.md \
-    scripts/ci_resolve_docker.sh \
-    scripts/restore_from_snapshot.sh \
-    scripts/gpu_full_recover_report.sh
-
-  # If server-setup tip advanced (this file), bump gitlink too:
-  git add components/server-setup
-
-  git commit -m "fix(jenkins): durable static docker/compose + h200 recreate safeguards [ci prod]"
-  git push origin main
-
-  # Or open a PR into main whose title/body contains [ci prod] / [ci auto], then merge.
-
-### C. Trigger / wait for GPU build proof
+### C. GPU must Scan / wait for build proof (only remaining step)
 
   - Job: dana-rag-prod / main (GPU controller only; laptop stage will NOT verify main)
-  - Need build number > 25
+  - Need build number > 25 against tip ≥ 4ba3e5c / f0f164b
   - Within ~1h pollSCM, or click "Scan Multibranch Now" on dana-rag-prod
   - Success signals in console / next HealthCheck meta/jenkins/:
       * real DOCKER_BIN or /usr/local/bin/docker
@@ -237,6 +214,6 @@ ALWAYS recreate with:
   [x] ldd reports static / not a dynamic executable
   [x] Multibranch job dana-rag-prod still visible
   [ ] next dana-rag-prod Build images > #25 runs real `docker compose build`
-  [ ] umbrella recurrence patches committed + pushed from laptop (section 5B)
+  [x] umbrella recurrence patches committed + pushed from laptop (section 5B / PR #113+#116)
 
 End of plan.
