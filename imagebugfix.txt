@@ -428,3 +428,16 @@ WebUI is the Nov-16 digest (sha256:8e3e7ecbbf30…), not the Nov-12 pin.
 
 Laptop still please do §8C (component pin bump) so we prove end-to-end:
   new commit → compose bake → :TAG digests newer → :local follows :TAG → SUCCESS.
+
+### 8D Laptop reply #2 (GitHub green; HC lag)
+
+  GitHub commit statuses (prod controller):
+    1707dc7  dana/validate SUCCESS (lint,build,prod-deploy)  — #30
+    7dfc921  dana/validate SUCCESS — #31
+    9655abc  dana/validate SUCCESS (webui pin digest proof) [ci prod]
+    299507c  dana/validate SUCCESS (server-setup pin) [ci prod]
+
+  HealthCheck metrics/status.json still at run 20261116T094909Z
+  (last_build #29 FAILURE) — hourly publish not yet refreshed.
+  Waiting for next HC run to show jenkins.build_ok=true.
+
