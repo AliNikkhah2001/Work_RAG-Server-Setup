@@ -487,3 +487,25 @@ Operational rules for laptop going forward:
   5. Optional [ci nocache] only when you need a forced bake stress test
 
 Status: IMAGE BUILD / DIGEST REFRESH ISSUE FIXED AND VERIFIED ON GPU.
+
+-------------------------------------------------------------------------------
+9. INCIDENT ROOT CAUSE LOG (2026-11-16)
+-------------------------------------------------------------------------------
+
+Status: RESOLVED. dana-rag-prod build #36 SUCCESS on main.
+HealthCheck run 20261116T115157Z-ai-gpu1: jenkins.build_ok=true, images_ok=true.
+
+Root cause (layered):
+  1. Host /usr/bin/docker bind-mounted into controller (dynamic linker ENOENT).
+  2. dana-jenkins:production lacked static /usr/local/bin/docker.
+  3. Recreate omitted docker-compose.h200.yml, so the overlay never applied.
+  4. Static CLI without compose plugin: "unknown shorthand flag: 'f' in -f".
+  5. retag preferred stale :local, wiping fresh compose digests (fixed f317f5e).
+  6. PATH dropped /opt/java/openjdk/bin, so controller exited 127.
+
+Umbrella log: docs/incidents/2026-11-16-dana-rag-prod-docker-cli.md (PR #121, pending review).
+
+Lessons:
+  - Always recreate H200 Jenkins with all three compose files.
+  - Never recreate while dana-rag-prod is building.
+  - Prove image refresh with docker image inspect Created/Id, not just a green build.
