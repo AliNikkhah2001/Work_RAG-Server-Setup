@@ -103,11 +103,16 @@ else
     else
       warn "no .env.prod/.env — cannot compose up apps"
     fi
-    # Jenkins prod controller (optional)
+    # Jenkins prod controller (optional). On H200 always include h200.yml
+    # (static docker CLI PATH + DANA_ROLE=prod). Omitting it regresses Build images.
     if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" ]]; then
-      docker compose -f "$UMBRELLA/deploy/jenkins/docker-compose.yml" \
-        -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" \
-        up -d 2>&1 | tee -a "$OUT/meta/compose-up.txt" || true
+      _jcmd=( docker compose
+        -f "$UMBRELLA/deploy/jenkins/docker-compose.yml"
+        -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" )
+      if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.h200.yml" ]]; then
+        _jcmd+=( -f "$UMBRELLA/deploy/jenkins/docker-compose.h200.yml" )
+      fi
+      "${_jcmd[@]}" up -d 2>&1 | tee -a "$OUT/meta/compose-up.txt" || true
     fi
   fi
   if [[ -x "$UMBRELLA/deploy/vast/start.sh" ]] && [[ "$MODE" == "vast_host" || "$MODE" == "unknown" ]]; then
