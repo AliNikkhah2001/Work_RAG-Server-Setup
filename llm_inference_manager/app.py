@@ -24,6 +24,11 @@ START_TIME = time.time()
 # --------------------------------------------------------------------------
 # Model Registry - from README §4 + huggingface dirs
 # --------------------------------------------------------------------------
+# Primary = TRT-LLM on GPU1 :8010. Secondary = llama.cpp Q4 on GPU0 :8080
+# (most stable fallback: no TRT rebuild, ~20GB VRAM, n_ctx=16384 for overflow).
+_TRT_URL = os.getenv("TRT_BACKEND_URL", "http://127.0.0.1:8010").rstrip("/")
+_LLAMA_FALLBACK_URL = os.getenv("LLAMACPP_FALLBACK_URL", "http://127.0.0.1:8080").rstrip("/")
+
 MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
     "gemma-4-31b": {
         "id": "gemma-4-31b",
@@ -34,13 +39,14 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
         "size_gb": 19.6,
         "quant": "Q4_K_M",
         "path": "offline-prep/models/huggingface/bartowski_google_gemma-4-31B-it-GGUF/google_gemma-4-31B-it-Q4_K_M.gguf",
-        "context": 8192,
+        "context": 16384,
         "license": "Apache-2.0",
         "benchmark_mean": 0.663,
         "status": "loaded",
-        "backends": ["http://127.0.0.1:8010"],
-        "n_ctx": 8192,
-        "notes": "Champion model - best Persian eval",
+        # Order matters: TRT first, llama.cpp fallback second.
+        "backends": [_TRT_URL, _LLAMA_FALLBACK_URL],
+        "n_ctx": 16384,
+        "notes": "Champion alias — TRT GPU1 primary, llama.cpp GPU0 fallback",
     },
     # --- Triton-optimized champion variants (B + A) ---
     "gemma-4-31b-triton-trt": {
@@ -57,10 +63,28 @@ MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
         "license": "Apache-2.0",
         "benchmark_mean": 0.663,
         "status": "loaded",
-        "backends": ["http://127.0.0.1:8010"],
+        "backends": [_TRT_URL],
         "n_ctx": 8192,
         "backend_type": "triton_trtllm",
-        "notes": "A: best future - HF FP8 TRT-LLM engine, Triton dynamic batching",
+        "notes": "A: TRT-LLM champion on GPU1 :8010 (max_seq_len 8192)",
+    },
+    "gemma-4-31b-llamacpp-fallback": {
+        "id": "gemma-4-31b-llamacpp-fallback",
+        "name": "Gemma-4 31B llama.cpp Q4 (GPU0 fallback)",
+        "creator": "Google DeepMind",
+        "family": "Gemma-4-llama.cpp",
+        "params": "31B",
+        "size_gb": 19.6,
+        "quant": "Q4_K_M",
+        "path": "offline-prep/models/huggingface/bartowski_google_gemma-4-31B-it-GGUF/google_gemma-4-31B-it-Q4_K_M.gguf",
+        "context": 16384,
+        "license": "Apache-2.0",
+        "benchmark_mean": 0.663,
+        "status": "loaded",
+        "backends": [_LLAMA_FALLBACK_URL],
+        "n_ctx": 16384,
+        "backend_type": "llamacpp",
+        "notes": "Stable secondary on idle GPU0 — used when TRT 400/timeout/OOM",
     },
 }
 
@@ -287,92 +311,136 @@ def _triton_promoted_backend(model_id: str) -> Optional[str]:
                 return b
     return None
 
-async def _stream_backend_chat(backend: str, payload: dict) -> StreamingResponse:
-    """Proxy SSE from a backend. Keep the httpx stream open for the response lifetime."""
-    client = httpx.AsyncClient(timeout=120, trust_env=False)
+def _ordered_backends_for(model_id: str) -> List[str]:
+    """TRT / promoted first, then llama.cpp GPU0 fallback, deduped."""
+    ordered: List[str] = []
+    promoted = _triton_promoted_backend(model_id)
+    if promoted:
+        ordered.append(promoted)
+    base_id = model_id.split("-31b-")[0] + "-31b" if "-31b-" in model_id else model_id
+    for mid in (model_id, base_id, "gemma-4-31b", "gemma-4-31b-llamacpp-fallback"):
+        cfg = MODEL_REGISTRY.get(mid) or {}
+        for b in cfg.get("backends") or []:
+            if b and b not in ordered:
+                ordered.append(b)
+    # Always append env fallback URL last if somehow missing
+    if _LLAMA_FALLBACK_URL and _LLAMA_FALLBACK_URL not in ordered:
+        if model_id.startswith("gemma") or model_id in MODEL_REGISTRY:
+            ordered.append(_LLAMA_FALLBACK_URL)
+    return ordered
 
-    async def stream_gen():
-        try:
-            async with client.stream(
-                "POST",
-                f"{backend}/v1/chat/completions",
-                json=payload,
-            ) as resp:
-                resp.raise_for_status()
+
+async def _post_chat_once(backend: str, payload: dict, is_stream: bool):
+    """One attempt against a backend. Raises on non-200 / transport errors."""
+    url = f"{backend.rstrip('/')}/v1/chat/completions"
+    if is_stream:
+        client = httpx.AsyncClient(timeout=180, trust_env=False)
+        req = client.build_request("POST", url, json=payload)
+        resp = await client.send(req, stream=True)
+        if resp.status_code != 200:
+            body = (await resp.aread())[:500]
+            await resp.aclose()
+            await client.aclose()
+            raise RuntimeError(f"HTTP {resp.status_code}: {body!r}")
+
+        async def stream_gen():
+            try:
                 async for chunk in resp.aiter_bytes():
                     if chunk:
                         yield chunk
-        finally:
-            await client.aclose()
+            finally:
+                await resp.aclose()
+                await client.aclose()
 
-    return StreamingResponse(stream_gen(), media_type="text/event-stream")
+        return StreamingResponse(stream_gen(), media_type="text/event-stream")
+
+    async with httpx.AsyncClient(timeout=180, trust_env=False) as client:
+        r = await client.post(url, json=payload)
+        if r.status_code != 200:
+            raise RuntimeError(f"HTTP {r.status_code}: {r.text[:500]}")
+        return r.json()
+
+
+def _shrink_messages_for_fallback(payload: dict, char_budget: int = 28000) -> dict:
+    """Aggressively trim history before retrying llama.cpp after TRT overflow."""
+    out = dict(payload)
+    msgs = list(out.get("messages") or [])
+    if not msgs:
+        return out
+    system = [m for m in msgs if (m or {}).get("role") == "system"]
+    rest = [m for m in msgs if (m or {}).get("role") != "system"]
+    fitted = []
+    budget = char_budget
+    if system:
+        content = str(system[0].get("content", ""))[:2000]
+        fitted.append({"role": "system", "content": content})
+        budget -= len(content)
+    kept = []
+    for m in reversed(rest):
+        if budget <= 0:
+            break
+        content = str((m or {}).get("content", ""))
+        if len(content) > budget:
+            content = content[-budget:] if not kept else content[:budget]
+        kept.append({"role": (m or {}).get("role", "user"), "content": content})
+        budget -= len(content)
+    kept.reverse()
+    out["messages"] = fitted + kept
+    # Cap completion so fallback has room inside n_ctx.
+    try:
+        mt = int(out.get("max_tokens") or 512)
+        out["max_tokens"] = max(16, min(mt, 1024))
+    except Exception:
+        out["max_tokens"] = 512
+    return out
 
 
 async def proxy_chat(model_id: str, payload: dict):
-    # Triton promotion: champion gemma routes to optimized Triton pool when available
-    is_stream = bool(payload.get("stream", False))
-    promoted = _triton_promoted_backend(model_id)
-    if promoted:
-        # short-circuit to optimized backend (preserves OpenAI shape + SSE when requested)
-        payload = dict(payload)
-        cfg = MODEL_REGISTRY.get("gemma-4-31b-triton-trt" if "trt" in promoted else "gemma-4-31b-triton-vllm", {})
-        backends = cfg.get("backends", [promoted])
-        last_err = None
-        for attempt_backend in [promoted] + [b for b in backends if b != promoted]:
-            try:
-                if is_stream:
-                    return await _stream_backend_chat(attempt_backend, payload)
-                async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
-                    r = await client.post(f"{attempt_backend}/v1/chat/completions", json=payload)
-                    if r.status_code != 200:
-                        raise HTTPException(status_code=r.status_code, detail=r.text)
-                    return r.json()
-            except (httpx.ConnectError, httpx.ReadTimeout) as e:
-                last_err = f"optimized backend {attempt_backend} unreachable: {e}"
-                continue
-            except httpx.HTTPStatusError as e:
-                last_err = f"optimized backend {attempt_backend} HTTP {e.response.status_code}"
-                continue
-        # fallback to legacy gemma pool if optimized down
-        pass
-    # resolve alias: gemma-4-31b-1 -> gemma-4-31b
-    base_id = model_id.split("-31b-")[0]+"-31b" if "-31b-" in model_id else model_id
-    if base_id not in MODEL_REGISTRY and model_id in MODEL_REGISTRY:
-        base_id = model_id
-    backend = pick_backend(base_id) or pick_backend(model_id)
-    if not backend:
-        # try default gemma pool if unknown model
-        if model_id.startswith("gemma"):
-            backend = pick_backend("gemma-4-31b")
-        if not backend:
-            raise HTTPException(status_code=404, detail=f"Model {model_id} not loaded. Available: {list(MODEL_REGISTRY.keys())} - use POST /admin/models/load to spawn")
-    # rewrite model field to backend's expected id (strip alias)
-    # backend expects its own model-id like gemma-4-31b-1 ; but we pass original
-    payload = dict(payload)
-    # ensure max_tokens etc — health-aware retry across backends
-    cfg = MODEL_REGISTRY.get(base_id) or MODEL_REGISTRY.get(model_id) or {}
-    backends = cfg.get("backends", [backend])
-    last_err = None
+    """Route chat to TRT primary then llama.cpp fallback on 400/5xx/timeout.
 
-    for attempt_backend in [backend] + [b for b in backends if b != backend]:
+    Important: non-200 must NOT raise FastAPI HTTPException inside the loop
+    (that previously aborted failover when TRT returned context-overflow 400).
+    """
+    is_stream = bool(payload.get("stream", False))
+    payload = dict(payload)
+    backends = _ordered_backends_for(model_id)
+    if not backends:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Model {model_id} not loaded. Available: {list(MODEL_REGISTRY.keys())}",
+        )
+
+    last_err = None
+    for i, attempt_backend in enumerate(backends):
+        attempt_payload = payload
+        # After a context-overflow style failure, shrink before secondary backends.
+        if i > 0 and last_err and any(
+            k in str(last_err).lower()
+            for k in ("400", "max_num_tokens", "max_seq_len", "prompt length", "context", "default_max_tokens")
+        ):
+            attempt_payload = _shrink_messages_for_fallback(payload)
+            print(
+                f"[manager] shrunk messages for fallback chars≈"
+                f"{sum(len(str(m.get('content',''))) for m in attempt_payload.get('messages') or [])}",
+                flush=True,
+            )
         try:
-            if is_stream:
-                return await _stream_backend_chat(attempt_backend, payload)
-            async with httpx.AsyncClient(timeout=120, trust_env=False) as client:
-                r = await client.post(f"{attempt_backend}/v1/chat/completions", json=payload)
-                if r.status_code != 200:
-                    raise HTTPException(status_code=r.status_code, detail=r.text)
-                return r.json()
-        except httpx.ConnectError as e:
-            last_err = f"backend {attempt_backend} unreachable: {e}"
+            print(
+                f"[manager] proxy_chat model={model_id} backend={attempt_backend} stream={is_stream}",
+                flush=True,
+            )
+            return await _post_chat_once(attempt_backend, attempt_payload, is_stream)
+        except Exception as e:
+            last_err = f"backend {attempt_backend}: {e}"
+            print(f"[manager] failover after {last_err}", flush=True)
             continue
-        except httpx.ReadTimeout as e:
-            last_err = f"backend {attempt_backend} timeout: {e}"
-            continue
-        except httpx.HTTPStatusError as e:
-            last_err = f"backend {attempt_backend} HTTP {e.response.status_code}"
-            continue
-    raise HTTPException(status_code=502, detail=f"All backends for {model_id} unreachable. Tried {backends}. Last: {last_err}. Use POST /admin/models/load or check 8080-8084.")
+    raise HTTPException(
+        status_code=502,
+        detail=(
+            f"All backends for {model_id} failed. Tried {backends}. Last: {last_err}. "
+            "Start GPU0 fallback: bash scripts/serve_llamacpp_fallback.sh"
+        ),
+    )
 
 @app.get("/health")
 def health():
@@ -685,7 +753,32 @@ def triton_demote():
         if cfg:
             cfg["backends"]=[]
             cfg["status"]="available"
-    return {"status":"demoted","note":"gemma-4-31b demoted — no legacy fallback (18000 removed)"}
+    # Keep llama.cpp GPU0 on the champion alias so demote still has a backend.
+    gem = MODEL_REGISTRY.get("gemma-4-31b")
+    if gem is not None:
+        gem["backends"] = [_LLAMA_FALLBACK_URL] if _LLAMA_FALLBACK_URL else []
+        gem["status"] = "loaded" if gem["backends"] else "available"
+    return {
+        "status": "demoted",
+        "note": "TRT pool cleared; gemma-4-31b routes to llama.cpp GPU0 fallback only",
+        "backends": (gem or {}).get("backends"),
+    }
+
+
+@app.get("/admin/fallback/status")
+async def fallback_status():
+    """Health of TRT primary + llama.cpp secondary (GPU0)."""
+    out = {"trt": _TRT_URL, "llamacpp": _LLAMA_FALLBACK_URL, "backends": {}}
+    async with httpx.AsyncClient(timeout=3, trust_env=False) as c:
+        for name, url in (("trt", _TRT_URL), ("llamacpp", _LLAMA_FALLBACK_URL)):
+            try:
+                r = await c.get(f"{url}/v1/models")
+                out["backends"][name] = {"url": url, "ok": r.status_code == 200, "code": r.status_code}
+            except Exception as e:
+                out["backends"][name] = {"url": url, "ok": False, "error": str(e)[:200]}
+    out["ordered_for_gemma"] = _ordered_backends_for("gemma-4-31b")
+    out["gpus"] = gpu_info()
+    return out
 
 @app.get("/admin/tokens")
 def list_tokens():

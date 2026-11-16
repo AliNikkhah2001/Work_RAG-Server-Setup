@@ -172,7 +172,9 @@ The Manager exposes `/v1/chat/completions`, `/v1/completions`, `/v1/models`, `/h
 
 ### 2.3 TRT-LLM Gemma-4-31B champion (production)
 
-The champion model `gemma-4-31b` is served by **TensorRT-LLM 1.3.0rc29** via `trtllm-serve` (PyTorch backend, `tp_size=1`) on GPU1 port `:8010`, launched by `scripts/serve_trtllm.sh`. It is promoted in the Manager (`POST /admin/triton/promote?backend=trt&url=http://127.0.0.1:8010`) and wired to the orchestrator through Guardrails (`UPSTREAM_LLM_BASE_URL=http://127.0.0.1:8010/v1`).
+The champion model `gemma-4-31b` is served by **TensorRT-LLM 1.3.0rc29** via `trtllm-serve` (PyTorch backend, `tp_size=1`) on GPU1 port `:8010`, launched by `scripts/serve_trtllm.sh`. It is promoted in the Manager (`POST /admin/triton/promote?backend=trt&url=http://127.0.0.1:8010`) and wired to the orchestrator through Guardrails / Manager (`UPSTREAM_LLM_BASE_URL=http://127.0.0.1:9000/v1`).
+
+**GPU0 llama.cpp fallback (stable secondary):** long WebUI threads can exceed TRT `max_seq_len=8192` (HTTP 400, `default_max_tokens` negative) — this is **context overflow**, not classic VRAM OOM. Manager now fails over to **llama.cpp Q4** on idle GPU0 `:8080` (`n_ctx=16384`). Start with `bash scripts/serve_llamacpp_fallback.sh`. Status: `GET /admin/fallback/status`. Full write-up + diagram: [`docs/ops/llm-fallback-gpu0.md`](docs/ops/llm-fallback-gpu0.md).
 
 **Launcher fixes (all required, encoded in `scripts/serve_trtllm.sh`):**
 1. `mpirun -n 1 trtllm-llmapi-launch trtllm-serve serve` — avoids the OpenMPI `MPI_Comm_spawn` deadlock; uses the spawn-proxy IPC path.

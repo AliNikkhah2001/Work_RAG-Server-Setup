@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# =============================================================================
-# gpu_spof_recover_report.sh — Single Point of Failure recovery + evidence pack
-# =============================================================================
-# Run ON the GPU / production host when you regain access. One script that:
+# # gpu_spof_recover_report.sh — Single Point of Failure recovery + evidence pack
+# # Run ON the GPU / production host when you regain access. One script that:
 #   1) Discovers host layout (compose vs Vast host-venv)
 #   2) Brings app (+ best-effort model) services back up
 #   3) Moves to latest healthy build (origin/main or .last_good_sha)
@@ -19,8 +17,7 @@
 #   DANA_HOST_REPO=/path/to/umbrella bash .../gpu_spof_recover_report.sh
 #
 # Never commits secrets (.env, tokens). Log redaction is applied before push.
-# =============================================================================
-set -uo pipefail
+# set -uo pipefail
 
 UMBRELLA="${DANA_HOST_REPO:-}"
 if [[ -z "$UMBRELLA" ]]; then
@@ -105,8 +102,7 @@ else
     fi
     # Jenkins prod controller (optional). On H200 always include h200.yml
     # (static docker CLI PATH + DANA_ROLE=prod). Omitting it regresses Build images.
-    if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" ]]; then
-      _jcmd=( docker compose
+    if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" ]]; then      _jcmd=( docker compose
         -f "$UMBRELLA/deploy/jenkins/docker-compose.yml"
         -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" )
       if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.h200.yml" ]]; then
