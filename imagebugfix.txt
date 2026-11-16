@@ -241,3 +241,89 @@ ALWAYS recreate with:
   [x] umbrella recurrence patches committed + pushed from laptop (section 5B / PR #113+#116)
 
 End of plan.
+
+-------------------------------------------------------------------------------
+8. GPU AGENT UPDATE (2026-11-16 ~10:10Z) — docker CLI FIXED; image DIGEST gap open
+-------------------------------------------------------------------------------
+
+Host: ai-gpu1 / dana-jenkins-prod
+Umbrella tip when written: 1707dc7 (will advance after this handoff commit)
+Job: dana-rag-prod / main
+
+### 8A. Success criteria from §7 — docker CLI path CLOSED
+
+  [x] dana-rag-prod Build images > #25 runs real docker compose build
+  [x] DOCKER_BIN=/usr/local/bin/docker (static; ldd → not a dynamic executable)
+  [x] compose plugin OK (no `unknown shorthand flag: 'f'`)
+  [x] NO `docker: command not found`
+  [x] NO `REGISTRY: unbound variable` (fixed in 95d0806 — bash -u + ${REGISTRY:-})
+  [x] Deploy prod WebUI recreate works from Jenkins network
+        (0b7ee7a: probe via docker exec :8080 + LAN :13000, not host loopback)
+  [x] Build #30 SUCCESS on 1707dc7
+        CI_SERVICES=all  CI_PROD=1
+        coverage: lint,build,prod-deploy — COVERAGE_GUARD=pass
+        dana/validate + dana/prod-deploy → success
+
+Build history (relevant):
+  #25 FAILURE  docker / compose CLI
+  #26 FAILURE  REGISTRY unbound after compose Built
+  #27 ABORTED  (stale SHA while REGISTRY fix pushed)
+  #28 FAILURE  Deploy prod: curl 127.0.0.1:13000 from Jenkins container
+  #29 FAILURE  Jenkins controller REPLACED mid-deploy (~09:49Z) — durable task killed
+               (HealthCheck/recover compose up — do NOT force-recreate jenkins while building)
+  #30 SUCCESS  1707dc7  duration ~384s
+
+Controller recreate warning:
+  At 09:49:16Z dana-jenkins-prod was replaced (compose project jenkins,
+  label com.docker.compose.replace). That aborted #29 during "Waiting for WebUI".
+  Laptop/GPU: never `docker compose … up --force-recreate` on jenkins during an
+  active dana-rag-prod build. Prefer wait for build idle.
+
+### 8B. CRITICAL GAP — SUCCESS does NOT yet mean images refreshed
+
+#30 retagged SHA tags onto **Nov 12 2026** layer digests (BuildKit cache hit).
+Proof (docker image inspect):
+
+  rag-kb:1707dc7           Created=2026-11-12T10:53:15Z  Id=sha256:e3e94a77cac2…
+  rag-guardrails:1707dc7   Created=2026-11-12T10:51:56Z  Id=sha256:0f3a49c6bfe2…
+  rag-orchestrator:1707dc7 Created=2026-11-12T10:52:12Z  Id=sha256:a865567e3a18…
+  rag-webui:1707dc7/:dana  Created=2026-11-12T10:43:15Z  Id=sha256:4e76b1243fab…
+
+So pipeline plumbing is green, but laptop→GPU “images actually update” is NOT proven.
+CI-only / Jenkinsfile / server-setup-only commits correctly skip layer work when
+component build contexts are unchanged.
+
+### 8C. WHAT LAPTOP MUST DO NEXT (image digest proof)
+
+Pick ONE path (prefer A — faster):
+
+A) Real component change (preferred — proves path filter + pin flow)
+   1. In child repo (e.g. Work_RAG-WebUI or knowledgebase):
+        printf 'gpu-image-proof %s\n' "$(date -u +%Y%m%dT%H%M%SZ)" >> .ci-image-proof
+        git add .ci-image-proof && git commit -m "chore(ci): GPU image digest proof"
+        git push origin main
+   2. Umbrella Work_Credit-RAG_Phase1:
+        git submodule update --remote components/webui   # or knowledgebase
+        git add components/webui
+        git commit -m "chore(ci): bump webui pin for GPU image proof [ci prod]"
+        git push origin main
+   3. Wait for dana-rag-prod; GPU will reply here with new Created/Id.
+
+B) Force no-cache bake (heavier)
+   Commit subject must include: [ci all] [ci prod] [ci nocache]
+   (GPU lands [ci nocache] support in the same handoff commit as this section.)
+   Full matrix --no-cache can take a long time (torch); prefer A unless you need
+   a bake stress test.
+
+Pass criteria GPU will verify before closing this bug:
+  - dana-rag-prod SUCCESS on the laptop commit SHA
+  - docker image inspect rag-<svc>:<shortsha> → Created AFTER that commit
+  - Image Id DIFFERENT from the Nov-12 digests listed in §8B
+  - For webui: dana-webui-prod running that new Id (or rag-webui:dana retagged)
+
+### 8D. Append replies below (laptop ↔ GPU)
+
+Laptop: paste commit SHAs + what you changed after you push.
+GPU: will append build #, result, and `docker image inspect` Created/Id lines.
+
+--- GPU waiting for laptop proof commit ---
