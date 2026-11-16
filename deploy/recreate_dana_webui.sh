@@ -23,6 +23,23 @@ if [ -z "${IMAGE:-}" ]; then
 fi
 echo "Using WebUI image: $IMAGE"
 
+# Fast path: already running the requested image and healthy — skip rm/recreate
+# (avoids a long durable-task wait that dies if Jenkins itself restarts mid-deploy).
+if docker ps --format '{{.Names}}' | grep -qx dana-webui-prod; then
+  cur=$(docker inspect -f '{{.Config.Image}}' dana-webui-prod 2>/dev/null || true)
+  want_id=$(docker image inspect -f '{{.Id}}' "$IMAGE" 2>/dev/null || true)
+  cur_id=$(docker inspect -f '{{.Image}}' dana-webui-prod 2>/dev/null || true)
+  if [ -n "$want_id" ] && [ "$cur_id" = "$want_id" ]; then
+    code=$(docker exec dana-webui-prod curl -sS --noproxy '*' --max-time 2 \
+      -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/config 2>/dev/null || echo 000)
+    if [ "$code" = "200" ]; then
+      echo "WebUI already healthy on image $IMAGE (cur=$cur) — skip recreate"
+      docker ps --filter name=dana-webui-prod --format '{{.Names}} {{.Status}} {{.Ports}}'
+      exit 0
+    fi
+  fi
+fi
+
 SECRET_ENV=/root/.config/rag/webui.env
 if [ ! -s "$SECRET_ENV" ]; then
   mkdir -p /root/.config/rag && chmod 700 /root/.config/rag

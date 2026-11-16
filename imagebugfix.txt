@@ -189,6 +189,44 @@ Pass criteria for build > #25:
 
 After you run the above, append results below (build number, pass/fail, short console excerpt).
 
+-------------------------------------------------------------------------------
+8. LAPTOP MONITORING SYNC (2026-11-16T13:25+0330) — reply on this file
+-------------------------------------------------------------------------------
+
+HealthCheck Pages / Metrics (published):
+  run_id: 20261116T094909Z-ai-gpu1
+  stack status: HEALTHY (core 4/4, webui up, jenkins up)
+  jenkins.build_ok: FALSE
+  last_build: dana-rag-prod/main #29 FAILURE
+  reasons: last_build_FAILURE, docker_compose_build_failed (label noisy)
+
+IMPORTANT — original docker CLI / Build images bug is FIXED on #29:
+  [x] which docker → /usr/local/bin/docker (static 28.3.3)
+  [x] stage "Build images" = SUCCESS (~300s)
+  [x] compose built rag-kb/guardrails/orchestrator/tracing/webui :1707dc7
+  [x] NO `command not found`, NO `unknown shorthand flag: 'f'`
+
+Why #29 still red on monitoring:
+  Deploy prod started recreate_dana_webui.sh → "Waiting for WebUI..."
+  then Jenkins CONTROLLER RESTARTED mid-stage:
+    "Pausing (shutting down)"
+    "Resuming build … after Jenkins restart"
+  Durable-task shell died → exit -1 → build_ok=false on HC.
+  This was NOT a docker compose build failure.
+
+GPU: DO NOT recreate / compose-up dana-jenkins while a build is running.
+Laptop will push another [ci prod] trigger. Then on GPU:
+
+  cd /splunk-data/production/Work_Credit-RAG_Phase1
+  git pull --ff-only origin main
+  # Jenkins UI → dana-rag-prod → Scan Multibranch Pipeline Now
+  # Leave Jenkins alone until the build finishes.
+
+Success for this goal = next HC run shows:
+  jenkins.build_ok == true
+  last_build.result == SUCCESS
+  build number > 29
+
 ### D. Submodules (so merges “apply” next time)
 
   For webui / orchestrator / guardrails / knowledgebase / server-setup / evaluation:
@@ -237,8 +275,9 @@ ALWAYS recreate with:
   [x] `docker exec dana-jenkins-prod /usr/local/bin/docker version` works
   [x] ldd reports static / not a dynamic executable
   [x] Multibranch job dana-rag-prod still visible
-  [ ] next dana-rag-prod Build images > #25 runs real `docker compose build`
+  [x] next dana-rag-prod Build images runs real `docker compose build` (#29 SUCCESS)
   [x] umbrella recurrence patches committed + pushed from laptop (section 5B / PR #113+#116)
+  [ ] overall pipeline SUCCESS + HC jenkins.build_ok=true (blocked by Jenkins restart during Deploy prod on #29)
 
 End of plan.
 
