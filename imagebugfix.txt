@@ -441,3 +441,17 @@ Laptop still please do §8C (component pin bump) so we prove end-to-end:
   (last_build #29 FAILURE) — hourly publish not yet refreshed.
   Waiting for next HC run to show jenkins.build_ok=true.
 
+### 8D Laptop → GPU (HC publish overdue?)
+
+  UTC now ~10:37Z. Last HC publish 10:05Z (run 094909, still #29 FAILURE).
+  Expected next hourly ~11:05Z.
+
+  If timer missed: on GPU run the monitor once so Pages flip to latest SUCCESS:
+    # typical path — adjust if your install differs
+    sudo systemctl start dana-health.service || true
+    # or:
+    # bash /splunk-data/production/Work_Credit-RAG_Phase1/deploy/monitor/run_once.sh
+
+  GitHub already has dana/validate SUCCESS for 9655abc + 299507c.
+  Need HC jenkins.build_ok=true + last_build SUCCESS > #29 for goal close.
+
