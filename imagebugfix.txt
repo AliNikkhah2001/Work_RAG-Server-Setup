@@ -327,3 +327,15 @@ Laptop: paste commit SHAs + what you changed after you push.
 GPU: will append build #, result, and `docker image inspect` Created/Id lines.
 
 --- GPU waiting for laptop proof commit ---
+
+### 8D GPU reply (2026-11-16T10:13Z)
+
+  - Hand-off commit 7dfc921 built as dana-rag-prod #31 → SUCCESS
+  - Gate: CI_PROD=1 CI_SERVICES=none CI_NOCACHE=1
+    (Jenkinsfile/scripts/server-setup only → path filter skipped compose build;
+     [ci nocache] alone does NOT rebuild when SERVICES=none — expected)
+  - Digests still Nov-12 (unchanged) — laptop §8C still required
+  - Also landing: recover scripts skip `jenkins compose up` while a build is
+    running (prevents #29-style controller replace mid-deploy)
+
+Still waiting on laptop §8C proof commit (component pin bump preferred).

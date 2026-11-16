@@ -102,13 +102,27 @@ else
     fi
     # Jenkins prod controller (optional). On H200 always include h200.yml
     # (static docker CLI PATH + DANA_ROLE=prod). Omitting it regresses Build images.
-    if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" ]]; then      _jcmd=( docker compose
-        -f "$UMBRELLA/deploy/jenkins/docker-compose.yml"
-        -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" )
-      if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.h200.yml" ]]; then
-        _jcmd+=( -f "$UMBRELLA/deploy/jenkins/docker-compose.h200.yml" )
+    # Skip recreate while dana-rag-prod is building (imagebugfix §8A #29).
+    if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" ]]; then
+      _jenkins_busy=0
+      _jpass="${JENKINS_PASS:-}"
+      [[ -n "$_jpass" ]] || _jpass="$(cat /splunk-data/production/.jenkins-admin-pass 2>/dev/null || true)"
+      if [[ -n "$_jpass" ]] && curl -sf --max-time 3 -u "${JENKINS_USER:-admin}:${_jpass}" \
+           'http://127.0.0.1:8085/job/dana-rag-prod/job/main/lastBuild/api/json' 2>/dev/null \
+           | grep -q '"building":true'; then
+        _jenkins_busy=1
       fi
-      "${_jcmd[@]}" up -d 2>&1 | tee -a "$OUT/meta/compose-up.txt" || true
+      if [[ "$_jenkins_busy" == "1" ]]; then
+        warn "skipping jenkins compose up — dana-rag-prod build in progress"
+      else
+        _jcmd=( docker compose
+          -f "$UMBRELLA/deploy/jenkins/docker-compose.yml"
+          -f "$UMBRELLA/deploy/jenkins/docker-compose.gpu.yml" )
+        if [[ -f "$UMBRELLA/deploy/jenkins/docker-compose.h200.yml" ]]; then
+          _jcmd+=( -f "$UMBRELLA/deploy/jenkins/docker-compose.h200.yml" )
+        fi
+        "${_jcmd[@]}" up -d 2>&1 | tee -a "$OUT/meta/compose-up.txt" || true
+      fi
     fi
   fi
   if [[ -x "$UMBRELLA/deploy/vast/start.sh" ]] && [[ "$MODE" == "vast_host" || "$MODE" == "unknown" ]]; then
