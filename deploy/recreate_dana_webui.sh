@@ -12,12 +12,13 @@ set -euo pipefail
 # Image must already exist: bash components/webui/scripts/dana-local-image.sh
 IMAGE="${DANA_WEBUI_IMAGE:-}"
 if [ -z "$IMAGE" ]; then
-  for cand in rag-webui:production rag-webui:working rag-webui:dana; do
+  # Prefer CI-tagged :dana when present; :production is the pinned fallback.
+  for cand in rag-webui:dana rag-webui:production rag-webui:working; do
     if docker image inspect "$cand" >/dev/null 2>&1; then IMAGE=$cand; break; fi
   done
 fi
 if [ -z "${IMAGE:-}" ]; then
-  echo "ERROR: no rag-webui:production|working|dana image found" >&2
+  echo "ERROR: no rag-webui:dana|production|working image found" >&2
   exit 1
 fi
 echo "Using WebUI image: $IMAGE"
@@ -59,12 +60,58 @@ docker run -d --name dana-webui-prod --restart unless-stopped \
   -e no_proxy=localhost,127.0.0.1,host.docker.internal,172.17.0.0/16,192.168.0.0/16,10.0.0.0/8,.local \
   "$IMAGE"
 
+# Health probe must work from host AND from dana-jenkins-prod (no host
+# loopback). Prefer docker exec into the container; fall back to LAN binds.
+webui_http_code() {
+  local code
+  code=$(docker exec dana-webui-prod curl -sS --noproxy '*' --max-time 2 \
+    -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/config 2>/dev/null || echo 000)
+  if [ "$code" = "200" ]; then echo 200; return 0; fi
+  for url in \
+    ${DANA_WEBUI_PROBE_URL:-} \
+    http://127.0.0.1:13000/api/config \
+    http://192.168.96.82:13000/api/config \
+    http://192.168.177.10:13000/api/config; do
+    [ -n "$url" ] || continue
+    code=$(curl -sS --noproxy '*' --max-time 2 -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || echo 000)
+    if [ "$code" = "200" ]; then echo 200; return 0; fi
+  done
+  echo 000
+  return 1
+}
+
+webui_get() {
+  # stdout = body; prefer in-container fetch (Jenkins-safe)
+  local path="$1"
+  if docker exec dana-webui-prod curl -sS --noproxy '*' --max-time 3 \
+      "http://127.0.0.1:8080${path}" 2>/dev/null; then
+    return 0
+  fi
+  for base in \
+    ${DANA_WEBUI_PROBE_BASE:-} \
+    http://127.0.0.1:13000 \
+    http://192.168.96.82:13000 \
+    http://192.168.177.10:13000; do
+    [ -n "$base" ] || continue
+    if curl -sS --noproxy '*' --max-time 3 "${base}${path}" 2>/dev/null; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 echo "Waiting for WebUI..."
+ready=0
 for i in $(seq 1 40); do
-  code=$(curl -sS --noproxy '*' --max-time 2 -o /dev/null -w '%{http_code}' http://127.0.0.1:13000/api/config || echo 000)
-  [ "$code" = "200" ] && break
+  if [ "$(webui_http_code)" = "200" ]; then ready=1; break; fi
   sleep 2
 done
+if [ "$ready" != "1" ]; then
+  echo "ERROR: WebUI did not become healthy on :13000 / in-container :8080" >&2
+  docker ps --filter name=dana-webui-prod --format '{{.Names}} {{.Status}} {{.Ports}}' >&2 || true
+  docker logs --tail 40 dana-webui-prod >&2 || true
+  exit 1
+fi
 
 # Until the next [ci prod] WebUI image lands, force white (ics-maroon) defaults
 # on the pinned production image (still ships ics-mono as the baked default).
@@ -88,7 +135,7 @@ print("dana theme default -> ics-maroon")
 ' || echo "WARN: could not patch theme defaults in container" >&2
 
 docker ps --filter name=dana-webui-prod --format '{{.Names}} {{.Status}} {{.Ports}}'
-curl -sS --noproxy '*' --max-time 3 http://127.0.0.1:13000/api/config | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('name'), d.get('ui',{}).get('default_interface_settings'))"
-curl -sS --noproxy '*' --max-time 3 http://127.0.0.1:13000/static/dana/themes/index.json
+webui_get /api/config | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('name'), d.get('ui',{}).get('default_interface_settings'))"
+webui_get /static/dana/themes/index.json || true
 echo
 docker exec dana-webui-prod printenv DANA_THEME_ID DEFAULT_INTERFACE_SETTINGS
