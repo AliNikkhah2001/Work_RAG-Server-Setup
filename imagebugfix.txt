@@ -4,6 +4,7 @@ Date: 2026-11-16
 Host: ai-gpu1 / H200 (dana-jenkins-prod)
 Umbrella repo on GPU: /splunk-data/production/Work_Credit-RAG_Phase1
 This file lives in: Work_RAG-Server-Setup (server-setup)
+Updated: after GPU apply + investigation (same day)
 
 -------------------------------------------------------------------------------
 1. FINDINGS (why dana-rag-prod Build images failed)
@@ -13,20 +14,38 @@ Builds #21 / #22 failed at "Build images" with:
 
     docker: command not found
 
-Root cause:
-  - docker-compose.h200.yml historically bind-mounted the HOST /usr/bin/docker
-    into the Jenkins container.
-  - Host Docker CLIs are dynamically linked. Inside the container the ELF
-    interpreter (ld-linux) is missing → kernel ENOENT → bash prints
-    "command not found" (looks like PATH, but it is not).
-  - The pinned plugin-rich image dana-jenkins:production also lacked a working
-    static /usr/local/bin/docker.
-  - Iran mirrors / dash `source` issues were separate and already fixed earlier;
-    after those fixed, the real blocker was the missing/broken docker CLI.
+Later builds (through #25) evolved to:
+
+    unknown shorthand flag: 'f' in -f
+
+while HealthCheck Pages still showed stack HEALTHY (apps/QA up). Evidence:
+  /var/lib/dana-health/Work_RAG_HealthCheck/logs/*/meta/jenkins/
+  (console_excerpt, compose-build.log, diagnosis.json, ci-evidence/)
+
+Root cause (two layers):
+  A. Historical: docker-compose.h200.yml bind-mounted HOST /usr/bin/docker.
+     Host CLIs are dynamically linked. Inside the container the ELF interpreter
+     (ld-linux) is missing → kernel ENOENT → bash prints "command not found"
+     (looks like PATH, but it is not). Image also lacked static /usr/local/bin/docker.
+  B. Why "yesterday's merges didn't apply" on this machine:
+     - Umbrella origin/main ALREADY had PRs #95/#98/#99/#100 (HEAD 0663e2a).
+     - git pull alone does NOT recreate the Jenkins controller.
+     - dana-jenkins-prod was last started with ONLY:
+         docker-compose.yml + docker-compose.gpu.yml
+       MISSING docker-compose.h200.yml → sock-only / static-CLI overlay never applied.
+     - Image tag dana-jenkins:production still pointed at the old digest without CLI.
+  C. Partial CI self-heal made things look different but still broken:
+     - ci_resolve_docker.sh fetched static docker into .ci-bin/docker
+     - WITHOUT compose plugin → `docker compose -f …` → unknown shorthand flag: 'f'
+  D. diagnosis.json often labeled webui_image_skipped_no_npm_build — secondary.
+     Real gate was compose build failing instantly.
+
+Iran mirrors / dash `source` issues were separate and already fixed earlier (#95/#92/#93).
 
 Do NOT re-add the host /usr/bin/docker bind-mount.
 Do NOT switch the controller to bare jenkins/jenkins:lts (drops Multibranch jobs).
 Do NOT run `pkill python` on this host.
+Do NOT recreate Jenkins with only yml+gpu on H200 (omitting h200.yml).
 
 -------------------------------------------------------------------------------
 2. PRs ALREADY MERGED ON umbrella origin/main (Phase1)
@@ -47,128 +66,177 @@ Related (mirrors, not the docker crash):
 
 Ignore for THIS fix (orchestrator/WebUI pins): #101–#108
 
-Code fix is on origin/main. GPU still needs a ONE-TIME host apply:
-  pull main → inject static CLI → recreate Jenkins without host docker mount.
+Server-Setup:
+  #6 — this file (imagebugfix.txt) on main
 
 -------------------------------------------------------------------------------
-3. ARTIFACTS ON umbrella main (must exist after git pull)
+3. WHAT THE GPU HOST ALREADY DID (2026-11-16) — applied, durable
 -------------------------------------------------------------------------------
 
-  scripts/bootstrap_jenkins_docker_cli.sh
-  scripts/ci_resolve_docker.sh
-  scripts/ci_capture_build_evidence.sh
-  scripts/ci_apply_iran_mirrors.sh
+Status at end of GPU agent session:
+
+  [x] umbrella HEAD >= 0663e2a
+  [x] h200.yml in use (all three compose files); NO host /usr/bin/docker bind
+  [x] dana-jenkins:production rebaked with static /usr/local/bin/docker + compose plugin
+  [x] `docker exec … ldd /usr/local/bin/docker` → not a dynamic executable
+  [x] `docker compose version` → Docker Compose version v2.39.2
+  [x] Multibranch job dana-rag-prod still visible (last failure was #25)
+  [ ] next dana-rag-prod Build images > #25 — WAITING on laptop [ci prod] trigger
+
+How it was applied on GPU:
+  1. bootstrap_jenkins_docker_cli.sh injected CLI into running container OK,
+     but `docker commit` FAILED (containerd "device or resource busy").
+  2. Fallback: docker build -f deploy/jenkins/Dockerfile.docker-cli
+     — first build failed because RUN called full `docker version` (no sock in build).
+     — Dockerfile fixed to client-only: `docker --version` + test compose plugin.
+  3. Recreate with three compose files. First PATH in h200.yml was
+     `/usr/local/bin:/usr/bin:/bin` which DROPPED OpenJDK → container exit 127.
+     PATH fixed to keep `/opt/java/openjdk/bin`.
+  4. Smoke: inside controller, `docker compose … config --services` works.
+
+Also updated / notified:
+  - Work_RAG_HealthCheck README (pushed) — incident note for Pages readers
+  - docs/ops/gpu-recover-reports/README.md (local on server-setup) — same cause
+  - deploy/jenkins/README.md, deploy/monitor/README.md (local on umbrella)
+
+-------------------------------------------------------------------------------
+4. ARTIFACTS / LOCAL FIXES STILL ONLY ON GPU DISK (must commit from laptop)
+-------------------------------------------------------------------------------
+
+These umbrella files were patched on the GPU clone but are NOT on origin/main yet.
+Copy or pull them onto the OTHER (dev) machine, then commit + push with [ci prod].
+
+Umbrella Work_Credit-RAG_Phase1 (REQUIRED for recurrence prevention):
+
   deploy/jenkins/Dockerfile.docker-cli
+    - client-only verify (`docker --version`) so image build works without sock
   deploy/jenkins/docker-compose.h200.yml
-    - image: dana-jenkins:production
-    - NO /usr/bin/docker volume mount
-    - PATH=/usr/local/bin:/usr/bin:/bin
-    - docker.sock mount only (+ optional compose plugins)
+    - PATH includes /opt/java/openjdk/bin (avoid controller exit 127)
+  scripts/ci_resolve_docker.sh
+    - also fetch compose plugin into .ci-bin/cli-plugins
+    - wire DOCKER_CONFIG/cli-plugins so `docker compose -f` works
+  scripts/restore_from_snapshot.sh
+    - include docker-compose.h200.yml when recreating Jenkins
+  scripts/gpu_full_recover_report.sh
+    - same: always add h200.yml on H200 recreate
+  deploy/jenkins/README.md
+  deploy/monitor/README.md
+    - H200 recreate rule + submodule apply path for ALL submodules
+
+Server-Setup Work_RAG-Server-Setup (this repo):
+
+  imagebugfix.txt          — this document (commit/push here)
+  scripts/gpu_spof_recover_report.sh  — include h200.yml on Jenkins up
+  docs/ops/gpu-recover-reports/README.md — incident note (optional with reports)
 
 -------------------------------------------------------------------------------
-4. FIX OPTIONS (ranked)
+5. WHAT TO DO ON THE OTHER (DEV) MACHINE — commit, push, trigger build
 -------------------------------------------------------------------------------
 
-  A. Bootstrap (fastest on GPU)
+Goal: land the GPU-local umbrella fixes on origin/main AND trigger dana-rag-prod
+so Build images proves the host fix (#26+).
+
+### A. Sync this plan file (Server-Setup) — if not already pulled
+
+  cd <path-to>/Work_RAG-Server-Setup   # or umbrella components/server-setup
+  git checkout main
+  git pull --ff-only origin main
+  # ensure imagebugfix.txt matches this revision
+  git add imagebugfix.txt
+  # optional: gpu_spof_recover_report.sh + gpu-recover-reports/README.md
+  git commit -m "docs(ops): imagebugfix — GPU apply results + laptop commit checklist"
+  git push origin main
+
+### B. Land umbrella recurrence fixes (REQUIRED)
+
+  cd <path-to>/Work_Credit-RAG_Phase1
+  git checkout main
+  git pull --ff-only origin main
+
+  # Bring GPU patches onto this tree (pick one):
+  #   - scp/rsync the files listed in section 4 from ai-gpu1, OR
+  #   - cherry-pick / manually apply the same diffs from this doc + GPU working tree
+
+  git add \
+    deploy/jenkins/Dockerfile.docker-cli \
+    deploy/jenkins/docker-compose.h200.yml \
+    deploy/jenkins/README.md \
+    deploy/monitor/README.md \
+    scripts/ci_resolve_docker.sh \
+    scripts/restore_from_snapshot.sh \
+    scripts/gpu_full_recover_report.sh
+
+  # If server-setup tip advanced (this file), bump gitlink too:
+  git add components/server-setup
+
+  git commit -m "fix(jenkins): durable static docker/compose + h200 recreate safeguards [ci prod]"
+  git push origin main
+
+  # Or open a PR into main whose title/body contains [ci prod] / [ci auto], then merge.
+
+### C. Trigger / wait for GPU build proof
+
+  - Job: dana-rag-prod / main (GPU controller only; laptop stage will NOT verify main)
+  - Need build number > 25
+  - Within ~1h pollSCM, or click "Scan Multibranch Now" on dana-rag-prod
+  - Success signals in console / next HealthCheck meta/jenkins/:
+      * real DOCKER_BIN or /usr/local/bin/docker
+      * `docker compose build` actually runs (not instant fail)
+      * NO `docker: command not found`
+      * NO `unknown shorthand flag: 'f' in -f`
+  - Optional host verify (already green on GPU):
+      docker exec dana-jenkins-prod bash -c \
+        'ldd /usr/local/bin/docker || true; docker compose version'
+
+### D. Submodules (so merges “apply” next time)
+
+  For webui / orchestrator / guardrails / knowledgebase / server-setup / evaluation:
+  1. Merge/push on the CHILD repo main
+  2. Bump the umbrella gitlink on Work_Credit-RAG_Phase1 main
+  3. Commit with [ci prod] or [ci auto]
+  Watchers alone do NOT advance pins. Until Build images works, no tip lands in images.
+
+-------------------------------------------------------------------------------
+6. FIX OPTIONS (ranked) — reference
+-------------------------------------------------------------------------------
+
+  A. Bootstrap (fast on GPU)
        bash scripts/bootstrap_jenkins_docker_cli.sh --commit
        then recreate with h200 overlay
+       NOTE: commit may fail on containerd busy mounts → use B
 
-  B. Layer Dockerfile
-       docker build -f deploy/jenkins/Dockerfile.docker-cli ...
-       (static CLI on dana-jenkins:production, no apt)
+  B. Layer Dockerfile (USED SUCCESSFULLY ON GPU)
+       docker build -f deploy/jenkins/Dockerfile.docker-cli \
+         --build-arg HTTP_PROXY=http://192.168.203.2:3128 \
+         --build-arg HTTPS_PROXY=http://192.168.203.2:3128 \
+         --build-arg BASE_IMAGE=dana-jenkins:production-pre-dockercli \
+         -t dana-jenkins:production deploy/jenkins/
+       docker tag dana-jenkins:production dana-jenkins:lts
 
   C. CI self-heal (backup only)
-       scripts/ci_resolve_docker.sh fetches static CLI into .ci-bin/ per build
+       scripts/ci_resolve_docker.sh — must fetch docker AND compose plugin
+       C alone is not enough if Squid blocks mid-build
 
   D. Full Dockerfile rebuild
        only if OK reinstalling Multibranch plugins
 
-Permanent fix = A or B baked into dana-jenkins:production + correct h200.yml.
-C alone is not enough if Squid/network blocks the download mid-build.
+Permanent fix = B (or A) baked into dana-jenkins:production + correct h200.yml
+ALWAYS recreate with:
+  docker compose -f deploy/jenkins/docker-compose.yml \
+    -f deploy/jenkins/docker-compose.gpu.yml \
+    -f deploy/jenkins/docker-compose.h200.yml up -d
 
 -------------------------------------------------------------------------------
-5. COMMANDS TO RUN ON THE GPU HOST
+7. SUCCESS CRITERIA
 -------------------------------------------------------------------------------
 
-cd /splunk-data/production/Work_Credit-RAG_Phase1
-git fetch origin
-git checkout main
-git pull --ff-only origin main
-
-# Confirm HEAD >= 0663e2a and key files exist
-git rev-parse HEAD
-ls -la scripts/bootstrap_jenkins_docker_cli.sh \
-       scripts/ci_resolve_docker.sh \
-       deploy/jenkins/Dockerfile.docker-cli
-grep -nE 'docker|/usr/bin/docker|PATH|image:' deploy/jenkins/docker-compose.h200.yml
-
-export http_proxy=http://192.168.203.2:3128
-export https_proxy=http://192.168.203.2:3128
-export no_proxy=localhost,127.0.0.1
-
-# Inject static Docker CLI and bake into dana-jenkins:production / :lts
-bash scripts/bootstrap_jenkins_docker_cli.sh --container dana-jenkins-prod --commit
-
-# Recreate Jenkins (sock only — no host docker binary mount)
-docker compose -f deploy/jenkins/docker-compose.yml \
-  -f deploy/jenkins/docker-compose.gpu.yml \
-  -f deploy/jenkins/docker-compose.h200.yml up -d
-
-# Verify (ldd should say "not a dynamic executable")
-docker exec dana-jenkins-prod /usr/local/bin/docker version
-docker exec dana-jenkins-prod bash -lc \
-  'which docker; ldd /usr/local/bin/docker || true; docker compose version'
-
-# Then trigger or wait for next dana-rag-prod main build.
-# Build images should show a real DOCKER_BIN and compose build must run
-# (not instant "command not found").
-
--------------------------------------------------------------------------------
-6. PROMPT TO PASTE INTO THE GPU CURSOR AGENT
--------------------------------------------------------------------------------
-
-Fix the dana-rag-prod auto-build failure (`docker: command not found` in Build images) permanently on this H200 host.
-
-Context:
-- Repo: /splunk-data/production/Work_Credit-RAG_Phase1
-- Root cause: host /usr/bin/docker bind-mount into dana-jenkins-prod is dynamically linked → ENOENT → “command not found”. Image also lacked static /usr/local/bin/docker.
-- Fixes already merged on origin/main: PRs #95, #98, #99, #100 (especially #99+#100). Do NOT re-add the host docker binary mount.
-- Plan file also in server-setup: imagebugfix.txt (this document).
-
-Do this:
-1. cd /splunk-data/production/Work_Credit-RAG_Phase1 && git fetch origin && git checkout main && git pull --ff-only origin main
-2. Confirm HEAD ≥ 0663e2a and these exist:
-   - scripts/bootstrap_jenkins_docker_cli.sh
-   - scripts/ci_resolve_docker.sh
-   - deploy/jenkins/Dockerfile.docker-cli
-   - deploy/jenkins/docker-compose.h200.yml (must NOT mount /usr/bin/docker; must use image dana-jenkins:production and PATH=/usr/local/bin:...)
-3. Inject static Docker CLI into the running controller and bake it into the image:
-   export http_proxy=http://192.168.203.2:3128 https_proxy=http://192.168.203.2:3128
-   export no_proxy=localhost,127.0.0.1
-   bash scripts/bootstrap_jenkins_docker_cli.sh --container dana-jenkins-prod --commit
-4. Recreate Jenkins with the three compose files (sock only, no host docker binary):
-   docker compose -f deploy/jenkins/docker-compose.yml \
-     -f deploy/jenkins/docker-compose.gpu.yml \
-     -f deploy/jenkins/docker-compose.h200.yml up -d
-5. Verify:
-   docker exec dana-jenkins-prod /usr/local/bin/docker version
-   docker exec dana-jenkins-prod bash -lc 'which docker; ldd /usr/local/bin/docker || true; docker compose version'
-   # ldd should say “not a dynamic executable” (static CLI)
-6. Trigger or wait for next dana-rag-prod main build; confirm Build images uses a real DOCKER_BIN (ci_resolve_docker or /usr/local/bin/docker) and compose build actually runs.
-7. Do not switch image to bare jenkins/jenkins:lts (drops Multibranch). Do not remount host /usr/bin/docker. Do not pkill python.
-
-Report back: git HEAD, docker version output, and whether the next build passed Build images.
-
--------------------------------------------------------------------------------
-7. SUCCESS CRITERIA (won't happen again)
--------------------------------------------------------------------------------
-
-  [ ] umbrella main pulled on GPU (HEAD >= 0663e2a)
-  [ ] h200.yml has NO /usr/bin/docker bind-mount
-  [ ] dana-jenkins:production contains static /usr/local/bin/docker
-  [ ] `docker exec dana-jenkins-prod /usr/local/bin/docker version` works
-  [ ] ldd reports static / not a dynamic executable
-  [ ] next dana-rag-prod Build images runs real `docker compose build`
-  [ ] Multibranch job dana-rag-prod still visible in Jenkins UI
+  [x] umbrella main on GPU (HEAD >= 0663e2a)
+  [x] h200.yml has NO /usr/bin/docker bind-mount; PATH keeps OpenJDK
+  [x] dana-jenkins:production contains static /usr/local/bin/docker + compose
+  [x] `docker exec dana-jenkins-prod /usr/local/bin/docker version` works
+  [x] ldd reports static / not a dynamic executable
+  [x] Multibranch job dana-rag-prod still visible
+  [ ] next dana-rag-prod Build images > #25 runs real `docker compose build`
+  [ ] umbrella recurrence patches committed + pushed from laptop (section 5B)
 
 End of plan.
