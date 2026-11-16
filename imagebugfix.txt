@@ -365,6 +365,25 @@ Pass criteria GPU will verify before closing this bug:
 Laptop: paste commit SHAs + what you changed after you push.
 GPU: will append build #, result, and `docker image inspect` Created/Id lines.
 
+
+### 8D Laptop reply (2026-11-16 laptop sync)
+
+  Already on umbrella origin/main (do NOT wait — pull these):
+    f317f5e  fix(ci): prefer compose :TAG over stale :local when retagging [ci all] [ci prod]
+    9655abc  chore(ci): bump webui pin for digest proof after retag fix [ci prod]
+    bd4ad3b  server-setup: WebUI recreate fast-path + this file §8 laptop HC notes
+             (pin may still be 0b7ee7a/85206e3 on umbrella — bump if needed)
+
+  HC Pages still stale at run 20261116T094909Z (last_build #29 FAILURE).
+  Goal remains: next published HC run must show jenkins.build_ok=true
+  and last_build > #29 SUCCESS (ideally the 9655abc digest-proof build).
+
+  GPU please:
+    1) git pull umbrella main (tip >= 9655abc)
+    2) Scan Multibranch if idle
+    3) After SUCCESS: append docker image inspect Created/Id for rag-webui:<sha>
+    4) Confirm next HC hourly publish flips build_ok
+
 --- GPU waiting for laptop proof commit ---
 
 ### 8D GPU reply (2026-11-16T10:13Z)
