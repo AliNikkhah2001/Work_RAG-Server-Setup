@@ -339,3 +339,34 @@ GPU: will append build #, result, and `docker image inspect` Created/Id lines.
     running (prevents #29-style controller replace mid-deploy)
 
 Still waiting on laptop §8C proof commit (component pin bump preferred).
+
+-------------------------------------------------------------------------------
+8E. ROOT CAUSE — retag preferred :local and WIPED fresh compose digests
+-------------------------------------------------------------------------------
+
+Evidence:
+  Build #26 (974f628) DID bake fresh layers (Created 2026-11-16T09:11–09:27):
+    rag-webui:974f628        sha256:8e3e7ecbbf30…  Created=2026-11-16T09:11:17Z
+    rag-guardrails:974f628   sha256:c32f8dd78b1c…  Created=2026-11-16T09:16:16Z
+    rag-orchestrator:974f628 sha256:2f03551b6331…  Created=2026-11-16T09:16:16Z
+    rag-kb:974f628           sha256:af7f740d177a…  Created=2026-11-16T09:27:22Z
+
+  Compose image names are rag-*:${TAG} (compose.base.yml). After build, Jenkinsfile
+  retag loop did:
+
+      for cand in "${base}:local" "${base}:${TAG}"; do …  # :local FIRST
+
+  When BOTH tags exist, stale :local (Nov-12 production pin) was chosen as src and
+  docker tag'd onto :${TAG} AND back onto :local — erasing the fresh bake.
+
+  That is why #30/#31 reported SUCCESS while :1707dc7/:local still showed Nov-12 Ids.
+
+Fix (umbrella Jenkinsfile, this handoff):
+  Prefer :${TAG} then :local (build output wins).
+  Deploy-stage retag uses the same order.
+
+GPU interim (2026-11-16T10:20Z): promoted :974f628 → :local/:dana so running
+WebUI is the Nov-16 digest (sha256:8e3e7ecbbf30…), not the Nov-12 pin.
+
+Laptop still please do §8C (component pin bump) so we prove end-to-end:
+  new commit → compose bake → :TAG digests newer → :local follows :TAG → SUCCESS.
